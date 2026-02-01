@@ -86,6 +86,8 @@ void ADMC_PlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 		
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ACharacter::Jump);
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
+		
+		EnhancedInputComponent->BindAction(LightAttackAction, ETriggerEvent::Started, this, &ADMC_PlayerCharacter::LightAttack);
 	}
 }
 
@@ -145,4 +147,69 @@ void ADMC_PlayerCharacter::EquipWeapon()
 			}
 		}
 	}
+}
+
+void ADMC_PlayerCharacter::LightAttack()
+{
+	TArray<EDMC_PlayerState> StatesToCheck;
+	StatesToCheck.Add(EDMC_PlayerState::ECS_Attack);
+	
+	if (IsStateEqualToAny(StatesToCheck))
+	{
+		bSaveLightAttack = true;
+	}
+	else
+	{
+		PerformLightAttack(LightAttackIndex);
+	}
+}
+
+bool ADMC_PlayerCharacter::PerformLightAttack(int32 InAttackIndex)
+{
+	if (LightAttackCombo.IsValidIndex(InAttackIndex))
+	{
+		UAnimMontage* L_AttackMontage = LightAttackCombo[InAttackIndex];
+		
+		if (L_AttackMontage)
+		{
+			SetState(EDMC_PlayerState::ECS_Attack);
+			PlayAnimMontage(L_AttackMontage);
+			
+			LightAttackIndex++;
+			
+			if (LightAttackIndex >= LightAttackCombo.Num())
+			{
+				LightAttackIndex = 0;
+			}
+			
+			return true;
+		}
+	}
+	
+	return false;
+}
+
+void ADMC_PlayerCharacter::SaveLightAttack()
+{
+	if (bSaveLightAttack)
+	{
+		bSaveLightAttack = false;
+		
+		TArray<EDMC_PlayerState> StatesToCheck;
+		StatesToCheck.Add(EDMC_PlayerState::ECS_Attack);
+		
+		if (IsStateEqualToAny(StatesToCheck))
+		{
+			SetState(EDMC_PlayerState::ECS_Nothing);
+		}
+		
+		LightAttack();
+	}
+}
+
+void ADMC_PlayerCharacter::ResetState()
+{
+	SetState(EDMC_PlayerState::ECS_Nothing);
+	LightAttackIndex = 0;
+	bSaveLightAttack = false;
 }
