@@ -19,6 +19,8 @@ class UE5_DMC_CLONE_API ADMC_PlayerCharacter : public ACharacter
 
 public:
 	ADMC_PlayerCharacter();
+	
+	void SetState(EDMC_PlayerState NewState);
 
 protected:
 	virtual void BeginPlay() override;
@@ -73,6 +75,5 @@ public:
 	
 	// State
 	FORCEINLINE EDMC_PlayerState GetState() const { return CurrentState; }
-	FORCEINLINE void SetState(EDMC_PlayerState NewState) { if (CurrentState != NewState) CurrentState = NewState; }
 	FORCEINLINE bool IsStateEqualToAny(const TArray<EDMC_PlayerState>& StatesToCheck) const { return StatesToCheck.Contains(CurrentState); }
 };

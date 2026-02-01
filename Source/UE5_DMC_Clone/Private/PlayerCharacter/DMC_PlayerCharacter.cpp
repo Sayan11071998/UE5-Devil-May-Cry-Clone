@@ -43,6 +43,14 @@ ADMC_PlayerCharacter::ADMC_PlayerCharacter()
 	CurrentState = EDMC_PlayerState::ECS_Nothing;
 }
 
+void ADMC_PlayerCharacter::SetState(EDMC_PlayerState NewState)
+{
+	if (CurrentState != NewState)
+	{
+		CurrentState = NewState;
+	}
+}
+
 void ADMC_PlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
@@ -118,6 +126,8 @@ void ADMC_PlayerCharacter::Look(const FInputActionValue& Value)
 
 void ADMC_PlayerCharacter::EquipWeapon()
 {
+	if (!WeaponClass || EquippedWeapon) return;
+	
 	if (WeaponClass)
 	{
 		UWorld* World = GetWorld();

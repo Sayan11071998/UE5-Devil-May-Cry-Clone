@@ -14,6 +14,7 @@ void UDMC_PlayerAnimInstance::NativeInitializeAnimation()
 	
 	Speed = 0.f;
 	bIsFalling = false;
+	CurrentState = EDMC_PlayerState::ECS_Nothing;
 }
 
 void UDMC_PlayerAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
@@ -36,5 +37,6 @@ void UDMC_PlayerAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 		
 		Speed = Velocity.Size();
 		bIsFalling = PlayerCharacterMovement->IsFalling();
+		CurrentState = PlayerCharacter->GetState();
 	}
 }

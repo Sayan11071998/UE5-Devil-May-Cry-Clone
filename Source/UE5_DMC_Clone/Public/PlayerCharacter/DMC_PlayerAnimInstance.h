@@ -4,6 +4,7 @@
 #include "Animation/AnimInstance.h"
 #include "DMC_PlayerAnimInstance.generated.h"
 
+enum class EDMC_PlayerState : uint8;
 class UCharacterMovementComponent;
 class ADMC_PlayerCharacter;
 
@@ -30,4 +31,7 @@ protected:
 	
 	UPROPERTY(BlueprintReadOnly, Category = "Movement")
 	bool bIsFalling;
+	
+	UPROPERTY(BlueprintReadOnly, Category = "State")
+	EDMC_PlayerState CurrentState;
 };
