@@ -38,6 +38,8 @@ ADMC_PlayerCharacter::ADMC_PlayerCharacter()
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
 	FollowCamera->bUsePawnControlRotation = false;
+	
+	CurrentState = EDMC_PlayerState::ECS_Nothing;
 }
 
 void ADMC_PlayerCharacter::BeginPlay()

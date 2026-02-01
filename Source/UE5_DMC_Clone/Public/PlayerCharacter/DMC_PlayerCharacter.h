@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "DMC_CharacterTypes.h"
 #include "DMC_PlayerCharacter.generated.h"
 
 class USpringArmComponent;
@@ -48,7 +49,17 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UInputAction> JumpAction;
 	
+	// Player State
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State", meta = (AllowPrivateAccess = "true"))
+	EDMC_PlayerState CurrentState;
+	
 public:
+	// Components
 	FORCEINLINE TObjectPtr<USpringArmComponent> GetCameraBoom() const { return CameraBoom; }
 	FORCEINLINE TObjectPtr<UCameraComponent> GetFollowCamera() const { return FollowCamera; }
+	
+	// State
+	FORCEINLINE EDMC_PlayerState GetState() const { return CurrentState; }
+	FORCEINLINE void SetState(EDMC_PlayerState NewState) { if (CurrentState != NewState) CurrentState = NewState; }
+	FORCEINLINE bool IsStateEqualToAny(const TArray<EDMC_PlayerState>& StatesToCheck) const { return StatesToCheck.Contains(CurrentState); }
 };
