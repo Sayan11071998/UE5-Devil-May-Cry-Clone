@@ -8,6 +8,7 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
+#include "Items/DMC_BaseWeapon.h"
 
 ADMC_PlayerCharacter::ADMC_PlayerCharacter()
 {
@@ -45,6 +46,9 @@ ADMC_PlayerCharacter::ADMC_PlayerCharacter()
 void ADMC_PlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+	
+	// Automatically Equip Weapon at start
+	EquipWeapon();
 }
 
 void ADMC_PlayerCharacter::Tick(float DeltaTime)
@@ -109,5 +113,26 @@ void ADMC_PlayerCharacter::Look(const FInputActionValue& Value)
 		// Add yaw and pitch input to controller
 		AddControllerYawInput(LookAxisVector.X);
 		AddControllerPitchInput(LookAxisVector.Y);
+	}
+}
+
+void ADMC_PlayerCharacter::EquipWeapon()
+{
+	if (WeaponClass)
+	{
+		UWorld* World = GetWorld();
+		if (World)
+		{
+			FActorSpawnParameters SpawnParams;
+			SpawnParams.Owner = this;
+			SpawnParams.Instigator = GetInstigator();
+			
+			EquippedWeapon = World->SpawnActor<ADMC_BaseWeapon>(WeaponClass, SpawnParams);
+			
+			if (EquippedWeapon)
+			{
+				EquippedWeapon->Equip(GetMesh(), WeaponSocketName, this, this);
+			}
+		}
 	}
 }

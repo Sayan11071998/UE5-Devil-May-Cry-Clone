@@ -5,6 +5,7 @@
 #include "DMC_CharacterTypes.h"
 #include "DMC_PlayerCharacter.generated.h"
 
+class ADMC_BaseWeapon;
 class USpringArmComponent;
 class UCameraComponent;
 class UInputMappingContext;
@@ -27,6 +28,8 @@ protected:
 	// Movement Methods
 	void Move(const FInputActionValue& Value);
 	void Look(const FInputActionValue& Value);
+	
+	void EquipWeapon();
 	
 private:
 	// Camera Settings
@@ -52,6 +55,16 @@ private:
 	// Player State
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State", meta = (AllowPrivateAccess = "true"))
 	EDMC_PlayerState CurrentState;
+	
+	// Player Weapon
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon", meta = (AllowPrivateAccess = "true"))
+	TSubclassOf<ADMC_BaseWeapon>  WeaponClass;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Weapon", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<ADMC_BaseWeapon> EquippedWeapon;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon", meta = (AllowPrivateAccess = "true"))
+	FName WeaponSocketName;
 	
 public:
 	// Components
