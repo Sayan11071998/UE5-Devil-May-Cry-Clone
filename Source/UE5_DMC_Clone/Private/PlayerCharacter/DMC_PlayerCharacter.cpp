@@ -43,14 +43,6 @@ ADMC_PlayerCharacter::ADMC_PlayerCharacter()
 	CurrentState = EDMC_PlayerState::ECS_Nothing;
 }
 
-void ADMC_PlayerCharacter::SetState(EDMC_PlayerState NewState)
-{
-	if (CurrentState != NewState)
-	{
-		CurrentState = NewState;
-	}
-}
-
 void ADMC_PlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
@@ -88,6 +80,7 @@ void ADMC_PlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
 		
 		EnhancedInputComponent->BindAction(LightAttackAction, ETriggerEvent::Started, this, &ADMC_PlayerCharacter::LightAttack);
+		EnhancedInputComponent->BindAction(HeavyAttackAction, ETriggerEvent::Started, this, &ADMC_PlayerCharacter::HeavyAttack);
 	}
 }
 
@@ -151,6 +144,8 @@ void ADMC_PlayerCharacter::EquipWeapon()
 
 void ADMC_PlayerCharacter::LightAttack()
 {
+	bSaveHeavyAttack = false;
+	
 	TArray<EDMC_PlayerState> StatesToCheck;
 	StatesToCheck.Add(EDMC_PlayerState::ECS_Attack);
 	
@@ -160,6 +155,7 @@ void ADMC_PlayerCharacter::LightAttack()
 	}
 	else
 	{
+		ResetHeavyAttackVariables();
 		PerformLightAttack(LightAttackIndex);
 	}
 }
@@ -189,6 +185,49 @@ bool ADMC_PlayerCharacter::PerformLightAttack(int32 InAttackIndex)
 	return false;
 }
 
+void ADMC_PlayerCharacter::HeavyAttack()
+{
+	bSaveLightAttack = false;
+	
+	TArray<EDMC_PlayerState> StatesToCheck;
+	StatesToCheck.Add(EDMC_PlayerState::ECS_Attack);
+	
+	if (IsStateEqualToAny(StatesToCheck))
+	{
+		bSaveHeavyAttack = true;
+	}
+	else
+	{
+		ResetLightAttackVariables();
+		PerformHeavyAttack(HeavyAttackIndex);
+	}
+}
+
+bool ADMC_PlayerCharacter::PerformHeavyAttack(int32 InAttackIndex)
+{
+	if (HeavyAttackCombo.IsValidIndex(InAttackIndex))
+	{
+		UAnimMontage* H_AttackMontage = HeavyAttackCombo[InAttackIndex];
+		
+		if (H_AttackMontage)
+		{
+			SetState(EDMC_PlayerState::ECS_Attack);
+			PlayAnimMontage(H_AttackMontage);
+			
+			HeavyAttackIndex++;
+			
+			if (HeavyAttackIndex >= HeavyAttackCombo.Num())
+			{
+				HeavyAttackIndex = 0;
+			}
+			
+			return true;
+		}
+	}
+	
+	return false;
+}
+
 void ADMC_PlayerCharacter::SaveLightAttack()
 {
 	if (bSaveLightAttack)
@@ -207,9 +246,47 @@ void ADMC_PlayerCharacter::SaveLightAttack()
 	}
 }
 
+void ADMC_PlayerCharacter::SaveHeavyAttack()
+{
+	if (bSaveHeavyAttack)
+	{
+		bSaveHeavyAttack = false;
+		
+		TArray<EDMC_PlayerState> StatesToCheck;
+		StatesToCheck.Add(EDMC_PlayerState::ECS_Attack);
+		
+		if (IsStateEqualToAny(StatesToCheck))
+		{
+			SetState(EDMC_PlayerState::ECS_Nothing);
+		}
+		
+		HeavyAttack();
+	}
+}
+
+void ADMC_PlayerCharacter::SetState(EDMC_PlayerState NewState)
+{
+	if (CurrentState != NewState)
+	{
+		CurrentState = NewState;
+	}
+}
+
 void ADMC_PlayerCharacter::ResetState()
 {
 	SetState(EDMC_PlayerState::ECS_Nothing);
+	ResetLightAttackVariables();
+	ResetHeavyAttackVariables();
+}
+
+void ADMC_PlayerCharacter::ResetLightAttackVariables()
+{
 	LightAttackIndex = 0;
 	bSaveLightAttack = false;
+}
+
+void ADMC_PlayerCharacter::ResetHeavyAttackVariables()
+{
+	HeavyAttackIndex = 0;
+	bSaveHeavyAttack = false;
 }
