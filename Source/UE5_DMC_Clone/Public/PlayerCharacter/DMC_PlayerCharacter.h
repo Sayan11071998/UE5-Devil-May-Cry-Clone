@@ -23,7 +23,11 @@ public:
 	void SetState(EDMC_PlayerState NewState);
 	void ResetState();
 	
+	void ResetLightAttackVariables();
+	void ResetHeavyAttackVariables();
+	
 	void SaveLightAttack();
+	void SaveHeavyAttack();
 
 protected:
 	virtual void BeginPlay() override;
@@ -40,6 +44,10 @@ protected:
 	// Light Attack Combo
 	void LightAttack();
 	bool PerformLightAttack(int32 InAttackIndex);
+	
+	// Heavy Attack Combo
+	void HeavyAttack();
+	bool PerformHeavyAttack(int32 InAttackIndex);
 
 private:
 	// Camera Settings
@@ -65,6 +73,9 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UInputAction> LightAttackAction;
 	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UInputAction> HeavyAttackAction;
+	
 	// Player State
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State", meta = (AllowPrivateAccess = "true"))
 	EDMC_PlayerState CurrentState;
@@ -88,6 +99,16 @@ private:
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
 	bool bSaveLightAttack = false;
+	
+	// Heavy Attack Combo
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
+	TArray<TObjectPtr<UAnimMontage>> HeavyAttackCombo;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
+	int32 HeavyAttackIndex = 0;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
+	bool bSaveHeavyAttack = false;
 	
 public:
 	// Components
