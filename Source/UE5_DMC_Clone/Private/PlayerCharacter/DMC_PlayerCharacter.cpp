@@ -54,6 +54,27 @@ void ADMC_PlayerCharacter::BeginPlay()
 void ADMC_PlayerCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+	
+	if (bIsBuffering && BufferCurve)
+	{
+		BufferTimeElapsed += DeltaTime;
+		
+		if (BufferTimeElapsed <= BufferDuration)
+		{
+			float Alpha = BufferCurve->GetFloatValue(BufferTimeElapsed);
+			
+			FVector CurrentLocation = GetActorLocation();
+			FVector Forward = GetActorForwardVector();
+			FVector Offset = Forward * CurrentBufferAmount * Alpha;
+			
+			FHitResult Hit;
+			SetActorLocation(CurrentLocation + Offset, true, &Hit);
+		}
+		else
+		{
+			StopBuffer();
+		}
+	}
 }
 
 void ADMC_PlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -172,6 +193,9 @@ bool ADMC_PlayerCharacter::PerformLightAttack(int32 InAttackIndex)
 		
 		if (L_AttackMontage)
 		{
+			StopBuffer();
+			StartBuffer(LightAttackBufferAmount);
+			
 			SetState(EDMC_PlayerState::ECS_Attack);
 			PlayAnimMontage(L_AttackMontage);
 			
@@ -217,6 +241,9 @@ bool ADMC_PlayerCharacter::PerformHeavyAttack(int32 InAttackIndex)
 		
 		if (H_AttackMontage)
 		{
+			StopBuffer();
+			StartBuffer(HeavyAttackBufferAmount);
+			
 			SetState(EDMC_PlayerState::ECS_Attack);
 			PlayAnimMontage(H_AttackMontage);
 			
@@ -251,8 +278,23 @@ void ADMC_PlayerCharacter::Dodge()
 
 void ADMC_PlayerCharacter::PerformDodge()
 {
+	StopBuffer();
+	StartBuffer(DodgeBufferAmount);
+	
 	SetState(EDMC_PlayerState::ECS_Dodge);
 	PlayAnimMontage(DodgeMontage);
+}
+
+void ADMC_PlayerCharacter::StartBuffer(float Amount)
+{
+	CurrentBufferAmount = Amount;
+	BufferTimeElapsed = 0.f;
+	bIsBuffering = true;
+}
+
+void ADMC_PlayerCharacter::StopBuffer()
+{
+	bIsBuffering = false;
 }
 
 void ADMC_PlayerCharacter::SaveLightAttack()

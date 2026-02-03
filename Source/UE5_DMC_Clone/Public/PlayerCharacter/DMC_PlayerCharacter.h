@@ -53,6 +53,10 @@ protected:
 	// Dodge
 	void Dodge();
 	void PerformDodge();
+	
+	// Buffer
+	void StartBuffer(float Amount);
+	void StopBuffer();
 
 private:
 	// Camera Settings
@@ -99,31 +103,49 @@ private:
 	FName WeaponSocketName;
 	
 	// Light Attack Combo
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat|Light Attack", meta = (AllowPrivateAccess = "true"))
 	TArray<TObjectPtr<UAnimMontage>> LightAttackCombo;
 	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat|Light Attack", meta = (AllowPrivateAccess = "true"))
 	int32 LightAttackIndex = 0;
 	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat|Light Attack", meta = (AllowPrivateAccess = "true"))
 	bool bSaveLightAttack = false;
 	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat|Light Attack", meta = (AllowPrivateAccess = "true"))
+	float LightAttackBufferAmount = 3.f;
+	
 	// Heavy Attack Combo
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat|Heavy Attack", meta = (AllowPrivateAccess = "true"))
 	TArray<TObjectPtr<UAnimMontage>> HeavyAttackCombo;
 	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat|Heavy Attack", meta = (AllowPrivateAccess = "true"))
 	int32 HeavyAttackIndex = 0;
 	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat|Heavy Attack", meta = (AllowPrivateAccess = "true"))
 	bool bSaveHeavyAttack = false;
 	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat|Heavy Attack", meta = (AllowPrivateAccess = "true"))
+	float HeavyAttackBufferAmount = 3.f;
+	
 	// Dodge
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat|Dodge", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UAnimMontage> DodgeMontage;
 	
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat|Dodge", meta = (AllowPrivateAccess = "true"))
 	bool bSaveDodge = false;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat|Dodge", meta = (AllowPrivateAccess = "true"))
+	float DodgeBufferAmount = 20.f;
+	
+	// Buffer
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat|Buffer", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UCurveFloat> BufferCurve;
+	
+	bool bIsBuffering = false;
+	float CurrentBufferAmount = 0.f;
+	float BufferTimeElapsed = 0.f;
+	const float BufferDuration = 0.25f;
 	
 public:
 	// Components
