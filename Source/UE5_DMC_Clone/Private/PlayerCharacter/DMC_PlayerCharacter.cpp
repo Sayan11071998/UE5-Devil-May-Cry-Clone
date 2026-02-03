@@ -54,6 +54,27 @@ void ADMC_PlayerCharacter::BeginPlay()
 void ADMC_PlayerCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+	
+	if (bIsBuffering && BufferCurve)
+	{
+		BufferTimeElapsed += DeltaTime;
+		
+		if (BufferTimeElapsed <= BufferDuration)
+		{
+			float Alpha = BufferCurve->GetFloatValue(BufferTimeElapsed);
+			
+			FVector CurrentLocation = GetActorLocation();
+			FVector Forward = GetActorForwardVector();
+			FVector Offset = Forward * CurrentBufferAmount * Alpha;
+			
+			FHitResult Hit;
+			SetActorLocation(CurrentLocation + Offset, true, &Hit);
+		}
+		else
+		{
+			StopBuffer();
+		}
+	}
 }
 
 void ADMC_PlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -81,6 +102,8 @@ void ADMC_PlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 		
 		EnhancedInputComponent->BindAction(LightAttackAction, ETriggerEvent::Started, this, &ADMC_PlayerCharacter::LightAttack);
 		EnhancedInputComponent->BindAction(HeavyAttackAction, ETriggerEvent::Started, this, &ADMC_PlayerCharacter::HeavyAttack);
+		
+		EnhancedInputComponent->BindAction(DodgeAction, ETriggerEvent::Started, this, &ADMC_PlayerCharacter::Dodge);
 	}
 }
 
@@ -145,9 +168,11 @@ void ADMC_PlayerCharacter::EquipWeapon()
 void ADMC_PlayerCharacter::LightAttack()
 {
 	bSaveHeavyAttack = false;
+	bSaveDodge = false;
 	
 	TArray<EDMC_PlayerState> StatesToCheck;
 	StatesToCheck.Add(EDMC_PlayerState::ECS_Attack);
+	StatesToCheck.Add(EDMC_PlayerState::ECS_Dodge);
 	
 	if (IsStateEqualToAny(StatesToCheck))
 	{
@@ -168,6 +193,9 @@ bool ADMC_PlayerCharacter::PerformLightAttack(int32 InAttackIndex)
 		
 		if (L_AttackMontage)
 		{
+			StopBuffer();
+			StartBuffer(LightAttackBufferAmount);
+			
 			SetState(EDMC_PlayerState::ECS_Attack);
 			PlayAnimMontage(L_AttackMontage);
 			
@@ -188,9 +216,11 @@ bool ADMC_PlayerCharacter::PerformLightAttack(int32 InAttackIndex)
 void ADMC_PlayerCharacter::HeavyAttack()
 {
 	bSaveLightAttack = false;
+	bSaveDodge = false;
 	
 	TArray<EDMC_PlayerState> StatesToCheck;
 	StatesToCheck.Add(EDMC_PlayerState::ECS_Attack);
+	StatesToCheck.Add(EDMC_PlayerState::ECS_Dodge);
 	
 	if (IsStateEqualToAny(StatesToCheck))
 	{
@@ -211,6 +241,9 @@ bool ADMC_PlayerCharacter::PerformHeavyAttack(int32 InAttackIndex)
 		
 		if (H_AttackMontage)
 		{
+			StopBuffer();
+			StartBuffer(HeavyAttackBufferAmount);
+			
 			SetState(EDMC_PlayerState::ECS_Attack);
 			PlayAnimMontage(H_AttackMontage);
 			
@@ -226,6 +259,42 @@ bool ADMC_PlayerCharacter::PerformHeavyAttack(int32 InAttackIndex)
 	}
 	
 	return false;
+}
+
+void ADMC_PlayerCharacter::Dodge()
+{
+	TArray<EDMC_PlayerState> StatesToCheck;
+	StatesToCheck.Add(EDMC_PlayerState::ECS_Dodge);
+	
+	if (IsStateEqualToAny(StatesToCheck))
+	{
+		bSaveDodge = true;
+	}
+	else
+	{
+		PerformDodge();
+	}
+}
+
+void ADMC_PlayerCharacter::PerformDodge()
+{
+	StopBuffer();
+	StartBuffer(DodgeBufferAmount);
+	
+	SetState(EDMC_PlayerState::ECS_Dodge);
+	PlayAnimMontage(DodgeMontage);
+}
+
+void ADMC_PlayerCharacter::StartBuffer(float Amount)
+{
+	CurrentBufferAmount = Amount;
+	BufferTimeElapsed = 0.f;
+	bIsBuffering = true;
+}
+
+void ADMC_PlayerCharacter::StopBuffer()
+{
+	bIsBuffering = false;
 }
 
 void ADMC_PlayerCharacter::SaveLightAttack()
@@ -264,6 +333,24 @@ void ADMC_PlayerCharacter::SaveHeavyAttack()
 	}
 }
 
+void ADMC_PlayerCharacter::SaveDodge()
+{
+	if (bSaveDodge)
+	{
+		bSaveDodge = false;
+		
+		TArray<EDMC_PlayerState> StatesToCheck;
+		StatesToCheck.Add(EDMC_PlayerState::ECS_Dodge);
+		
+		if (IsStateEqualToAny(StatesToCheck))
+		{
+			SetState(EDMC_PlayerState::ECS_Dodge);
+		}
+		
+		PerformDodge();
+	}
+}
+
 void ADMC_PlayerCharacter::SetState(EDMC_PlayerState NewState)
 {
 	if (CurrentState != NewState)
@@ -277,6 +364,7 @@ void ADMC_PlayerCharacter::ResetState()
 	SetState(EDMC_PlayerState::ECS_Nothing);
 	ResetLightAttackVariables();
 	ResetHeavyAttackVariables();
+	bSaveDodge = false;
 }
 
 void ADMC_PlayerCharacter::ResetLightAttackVariables()

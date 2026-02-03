@@ -2,10 +2,10 @@
 
 #include "CoreMinimal.h"
 #include "Animation/AnimNotifies/AnimNotifyState.h"
-#include "NotifyState_RotationState.generated.h"
+#include "NotifyState_RootMotionRotation.generated.h"
 
 UCLASS()
-class UE5_DMC_CLONE_API UNotifyState_RotationState : public UAnimNotifyState
+class UE5_DMC_CLONE_API UNotifyState_RootMotionRotation : public UAnimNotifyState
 {
 	GENERATED_BODY()
 	

@@ -1,8 +1,8 @@
-#include "PlayerCharacter/Notifies/NotifyState_RotationState.h"
+#include "PlayerCharacter/Notifies/NotifyState_RootMotionRotation.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "PlayerCharacter/DMC_PlayerCharacter.h"
 
-void UNotifyState_RotationState::NotifyBegin(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation,
+void UNotifyState_RootMotionRotation::NotifyBegin(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation,
                                              float TotalDuration, const FAnimNotifyEventReference& EventReference)
 {
 	Super::NotifyBegin(MeshComp, Animation, TotalDuration, EventReference);
@@ -16,7 +16,7 @@ void UNotifyState_RotationState::NotifyBegin(USkeletalMeshComponent* MeshComp, U
 	}
 }
 
-void UNotifyState_RotationState::NotifyEnd(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation,
+void UNotifyState_RootMotionRotation::NotifyEnd(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation,
 	const FAnimNotifyEventReference& EventReference)
 {
 	Super::NotifyEnd(MeshComp, Animation, EventReference);
