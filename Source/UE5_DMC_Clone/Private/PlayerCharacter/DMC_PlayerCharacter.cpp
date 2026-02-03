@@ -81,6 +81,8 @@ void ADMC_PlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 		
 		EnhancedInputComponent->BindAction(LightAttackAction, ETriggerEvent::Started, this, &ADMC_PlayerCharacter::LightAttack);
 		EnhancedInputComponent->BindAction(HeavyAttackAction, ETriggerEvent::Started, this, &ADMC_PlayerCharacter::HeavyAttack);
+		
+		EnhancedInputComponent->BindAction(DodgeAction, ETriggerEvent::Started, this, &ADMC_PlayerCharacter::Dodge);
 	}
 }
 
@@ -145,9 +147,11 @@ void ADMC_PlayerCharacter::EquipWeapon()
 void ADMC_PlayerCharacter::LightAttack()
 {
 	bSaveHeavyAttack = false;
+	bSaveDodge = false;
 	
 	TArray<EDMC_PlayerState> StatesToCheck;
 	StatesToCheck.Add(EDMC_PlayerState::ECS_Attack);
+	StatesToCheck.Add(EDMC_PlayerState::ECS_Dodge);
 	
 	if (IsStateEqualToAny(StatesToCheck))
 	{
@@ -188,9 +192,11 @@ bool ADMC_PlayerCharacter::PerformLightAttack(int32 InAttackIndex)
 void ADMC_PlayerCharacter::HeavyAttack()
 {
 	bSaveLightAttack = false;
+	bSaveDodge = false;
 	
 	TArray<EDMC_PlayerState> StatesToCheck;
 	StatesToCheck.Add(EDMC_PlayerState::ECS_Attack);
+	StatesToCheck.Add(EDMC_PlayerState::ECS_Dodge);
 	
 	if (IsStateEqualToAny(StatesToCheck))
 	{
@@ -226,6 +232,27 @@ bool ADMC_PlayerCharacter::PerformHeavyAttack(int32 InAttackIndex)
 	}
 	
 	return false;
+}
+
+void ADMC_PlayerCharacter::Dodge()
+{
+	TArray<EDMC_PlayerState> StatesToCheck;
+	StatesToCheck.Add(EDMC_PlayerState::ECS_Dodge);
+	
+	if (IsStateEqualToAny(StatesToCheck))
+	{
+		bSaveDodge = true;
+	}
+	else
+	{
+		PerformDodge();
+	}
+}
+
+void ADMC_PlayerCharacter::PerformDodge()
+{
+	SetState(EDMC_PlayerState::ECS_Dodge);
+	PlayAnimMontage(DodgeMontage);
 }
 
 void ADMC_PlayerCharacter::SaveLightAttack()
@@ -264,6 +291,24 @@ void ADMC_PlayerCharacter::SaveHeavyAttack()
 	}
 }
 
+void ADMC_PlayerCharacter::SaveDodge()
+{
+	if (bSaveDodge)
+	{
+		bSaveDodge = false;
+		
+		TArray<EDMC_PlayerState> StatesToCheck;
+		StatesToCheck.Add(EDMC_PlayerState::ECS_Dodge);
+		
+		if (IsStateEqualToAny(StatesToCheck))
+		{
+			SetState(EDMC_PlayerState::ECS_Dodge);
+		}
+		
+		PerformDodge();
+	}
+}
+
 void ADMC_PlayerCharacter::SetState(EDMC_PlayerState NewState)
 {
 	if (CurrentState != NewState)
@@ -277,6 +322,7 @@ void ADMC_PlayerCharacter::ResetState()
 	SetState(EDMC_PlayerState::ECS_Nothing);
 	ResetLightAttackVariables();
 	ResetHeavyAttackVariables();
+	bSaveDodge = false;
 }
 
 void ADMC_PlayerCharacter::ResetLightAttackVariables()

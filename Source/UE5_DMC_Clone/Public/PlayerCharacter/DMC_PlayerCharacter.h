@@ -28,6 +28,7 @@ public:
 	
 	void SaveLightAttack();
 	void SaveHeavyAttack();
+	void SaveDodge();
 
 protected:
 	virtual void BeginPlay() override;
@@ -48,6 +49,10 @@ protected:
 	// Heavy Attack Combo
 	void HeavyAttack();
 	bool PerformHeavyAttack(int32 InAttackIndex);
+	
+	// Dodge
+	void Dodge();
+	void PerformDodge();
 
 private:
 	// Camera Settings
@@ -75,6 +80,9 @@ private:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UInputAction> HeavyAttackAction;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UInputAction> DodgeAction;
 	
 	// Player State
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State", meta = (AllowPrivateAccess = "true"))
@@ -109,6 +117,13 @@ private:
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
 	bool bSaveHeavyAttack = false;
+	
+	// Dodge
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UAnimMontage> DodgeMontage;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
+	bool bSaveDodge = false;
 	
 public:
 	// Components
