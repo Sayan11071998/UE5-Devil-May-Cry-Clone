@@ -97,7 +97,7 @@ void ADMC_PlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ADMC_PlayerCharacter::Move);
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &ADMC_PlayerCharacter::Look);
 		
-		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ACharacter::Jump);
+		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ADMC_PlayerCharacter::Jump);
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
 		
 		EnhancedInputComponent->BindAction(LightAttackAction, ETriggerEvent::Started, this, &ADMC_PlayerCharacter::LightAttack);
@@ -139,6 +139,52 @@ void ADMC_PlayerCharacter::Look(const FInputActionValue& Value)
 		// Add yaw and pitch input to controller
 		AddControllerYawInput(LookAxisVector.X);
 		AddControllerPitchInput(LookAxisVector.Y);
+	}
+}
+
+void ADMC_PlayerCharacter::Jump()
+{
+	TArray<EDMC_PlayerState> StatesToCheck;
+	StatesToCheck.Add(EDMC_PlayerState::ECS_Attack);
+	StatesToCheck.Add(EDMC_PlayerState::ECS_Dodge);
+	if (IsStateEqualToAny(StatesToCheck)) return;
+	
+	if (GetCharacterMovement()->IsFalling())
+	{
+		if (!bDoubleJump)
+		{
+			bDoubleJump = true;
+			
+			if (DoubleJumpMontage)
+			{
+				PlayAnimMontage(DoubleJumpMontage);
+			}
+			
+			FVector LaunchVelocity = FVector(0.f, 0.f, DoubleJumpLaunchVelocity);
+			LaunchCharacter(LaunchVelocity, false, true);
+		}
+	}
+	else
+	{
+		Super::Jump();
+	}
+}
+
+void ADMC_PlayerCharacter::Landed(const FHitResult& Hit)
+{
+	Super::Landed(Hit);
+	
+	if (Hit.GetActor())
+	{
+		UClass* HitActorClass = Hit.GetActor()->GetClass();
+		for (TSubclassOf<AActor> AllowedClass : CanLandClasses)
+		{
+			if (HitActorClass->IsChildOf(AllowedClass))
+			{
+				ResetDoubleJump();
+				break;
+			}
+		}
 	}
 }
 
@@ -442,6 +488,11 @@ void ADMC_PlayerCharacter::SetState(EDMC_PlayerState NewState)
 	{
 		CurrentState = NewState;
 	}
+}
+
+void ADMC_PlayerCharacter::ResetDoubleJump()
+{
+	bDoubleJump = false;
 }
 
 void ADMC_PlayerCharacter::ResetState()
