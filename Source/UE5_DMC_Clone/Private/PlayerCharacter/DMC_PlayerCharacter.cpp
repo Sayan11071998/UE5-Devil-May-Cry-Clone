@@ -142,6 +142,43 @@ void ADMC_PlayerCharacter::Look(const FInputActionValue& Value)
 	}
 }
 
+void ADMC_PlayerCharacter::Jump()
+{
+	if (GetCharacterMovement()->IsFalling())
+	{
+		if (!bDoubleJump)
+		{
+			bDoubleJump = true;
+			
+			if (DoubleJumpMontage)
+			{
+				PlayAnimMontage(DoubleJumpMontage);
+			}
+			
+			FVector LaunchVelocity = FVector(0.f, 0.f, GetCharacterMovement()->JumpZVelocity);
+			LaunchCharacter(LaunchVelocity, false, true);
+		}
+	}
+	else
+	{
+		Super::Jump();
+	}
+}
+
+void ADMC_PlayerCharacter::Landed(const FHitResult& Hit)
+{
+	Super::Landed(Hit);
+	
+	if (Hit.GetActor())
+	{
+		UClass* HitActorClass = Hit.GetActor()->GetClass();
+		if (CanLandClasses.Contains(HitActorClass))
+		{
+			ResetDoubleJump();
+		}
+	}
+}
+
 void ADMC_PlayerCharacter::EquipWeapon()
 {
 	if (!WeaponClass || EquippedWeapon) return;
@@ -442,6 +479,11 @@ void ADMC_PlayerCharacter::SetState(EDMC_PlayerState NewState)
 	{
 		CurrentState = NewState;
 	}
+}
+
+void ADMC_PlayerCharacter::ResetDoubleJump()
+{
+	bDoubleJump = false;
 }
 
 void ADMC_PlayerCharacter::ResetState()

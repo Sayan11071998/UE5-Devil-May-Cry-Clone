@@ -21,6 +21,7 @@ public:
 	ADMC_PlayerCharacter();
 	
 	void SetState(EDMC_PlayerState NewState);
+	void ResetDoubleJump();
 	void ResetState();
 	
 	void ResetLightAttackVariables();
@@ -38,6 +39,8 @@ protected:
 	// Movement Methods
 	void Move(const FInputActionValue& Value);
 	void Look(const FInputActionValue& Value);
+	virtual void Jump() override;
+	virtual void Landed(const FHitResult& Hit) override;
 	
 	// Combat
 	void EquipWeapon();
@@ -91,6 +94,16 @@ private:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UInputAction> DodgeAction;
+	
+	// Double Jump
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Jump", meta = (AllowPrivateAccess = "true"))
+	TArray<TSubclassOf<AActor>> CanLandClasses;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Jump", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UAnimMontage> DoubleJumpMontage;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Jump", meta = (AllowPrivateAccess = "true"))
+	bool bDoubleJump = false;
 	
 	// Player State
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State", meta = (AllowPrivateAccess = "true"))
@@ -170,6 +183,9 @@ public:
 	// Components
 	FORCEINLINE TObjectPtr<USpringArmComponent> GetCameraBoom() const { return CameraBoom; }
 	FORCEINLINE TObjectPtr<UCameraComponent> GetFollowCamera() const { return FollowCamera; }
+	
+	// Double Jump
+	FORCEINLINE bool GetDoubleJumpState() const { return bDoubleJump; }
 	
 	// State
 	FORCEINLINE EDMC_PlayerState GetState() const { return CurrentState; }
