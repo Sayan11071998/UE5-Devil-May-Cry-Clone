@@ -50,6 +50,10 @@ protected:
 	void HeavyAttack();
 	bool PerformHeavyAttack(int32 InAttackIndex);
 	
+	// Heavy-Light Combo
+	bool PerformComboStarter();
+	bool PerformComboExtender();
+	
 	// Dodge
 	void Dodge();
 	void PerformDodge();
@@ -127,6 +131,21 @@ private:
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat|Heavy Attack", meta = (AllowPrivateAccess = "true"))
 	float HeavyAttackBufferAmount = 3.f;
+	
+	// Heavy-Light Attack Combo
+	UPROPERTY(EditDefaultsOnly, Category = "Combat|Combo", meta = (AllowPrivateAccess = "true"))
+	TArray<TObjectPtr<UAnimMontage>> ComboStarterMontages;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Combat|Combo", meta = (AllowPrivateAccess = "true"))
+	TArray<TObjectPtr<UAnimMontage>> ComboExtenderMontages;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat|Combo", meta = (AllowPrivateAccess = "true"))
+	float StarterAttackBufferAmount = 3.f;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat|Combo", meta = (AllowPrivateAccess = "true"))
+	float ExtenderAttackBufferAmount = 3.f;
+	
+	int32 ComboExtenderIndex = 0;
 	
 	// Dodge
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat|Dodge", meta = (AllowPrivateAccess = "true"))

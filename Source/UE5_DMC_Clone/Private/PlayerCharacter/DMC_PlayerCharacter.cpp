@@ -65,7 +65,7 @@ void ADMC_PlayerCharacter::Tick(float DeltaTime)
 			
 			FVector CurrentLocation = GetActorLocation();
 			FVector Forward = GetActorForwardVector();
-			FVector Offset = Forward * CurrentBufferAmount * Alpha;
+			FVector Offset = Forward * CurrentBufferAmount * Alpha * DeltaTime * 60.f;
 			
 			FHitResult Hit;
 			SetActorLocation(CurrentLocation + Offset, true, &Hit);
@@ -261,6 +261,67 @@ bool ADMC_PlayerCharacter::PerformHeavyAttack(int32 InAttackIndex)
 	return false;
 }
 
+bool ADMC_PlayerCharacter::PerformComboStarter()
+{
+	TArray<EDMC_PlayerState> StatesToCheck;
+	StatesToCheck.Add(EDMC_PlayerState::ECS_Attack);
+	StatesToCheck.Add(EDMC_PlayerState::ECS_Dodge);
+	if (IsStateEqualToAny(StatesToCheck)) return false;
+	
+	int32 HL_ComboStarterIndex = HeavyAttackIndex - 1;
+	
+	if (ComboStarterMontages.IsValidIndex(HL_ComboStarterIndex))
+	{
+		UAnimMontage* HL_AttackMontage = ComboStarterMontages[HL_ComboStarterIndex];
+		
+		if (HL_AttackMontage)
+		{
+			ComboExtenderIndex = HeavyAttackIndex;
+			
+			StopBuffer();
+			StartBuffer(StarterAttackBufferAmount);
+			
+			bSaveHeavyAttack = false;
+			bSaveLightAttack = false;
+			
+			SetState(EDMC_PlayerState::ECS_Attack);
+			PlayAnimMontage(HL_AttackMontage);
+			
+			return true;
+		}
+	}
+	
+	return false;
+}
+
+bool ADMC_PlayerCharacter::PerformComboExtender()
+{
+	TArray<EDMC_PlayerState> StatesToCheck;
+	StatesToCheck.Add(EDMC_PlayerState::ECS_Attack);
+	StatesToCheck.Add(EDMC_PlayerState::ECS_Dodge);
+	if (IsStateEqualToAny(StatesToCheck)) return false;
+
+	int32 LH_FinisherIndex = ComboExtenderIndex - 1;
+	if (ComboExtenderMontages.IsValidIndex(LH_FinisherIndex))
+	{
+		UAnimMontage* LH_AttackMontage = ComboExtenderMontages[LH_FinisherIndex];
+		if (LH_AttackMontage)
+		{
+			ResetLightAttackVariables();
+			ResetHeavyAttackVariables();
+
+			StopBuffer();
+			StartBuffer(ExtenderAttackBufferAmount);
+
+			SetState(EDMC_PlayerState::ECS_Attack);
+			PlayAnimMontage(LH_AttackMontage);
+			return true;
+		}
+	}
+
+	return false;
+}
+
 void ADMC_PlayerCharacter::Dodge()
 {
 	TArray<EDMC_PlayerState> StatesToCheck;
@@ -302,16 +363,28 @@ void ADMC_PlayerCharacter::SaveLightAttack()
 	if (bSaveLightAttack)
 	{
 		bSaveLightAttack = false;
+
+		TArray<EDMC_PlayerState> AttackStates;
+		AttackStates.Add(EDMC_PlayerState::ECS_Attack);
 		
-		TArray<EDMC_PlayerState> StatesToCheck;
-		StatesToCheck.Add(EDMC_PlayerState::ECS_Attack);
-		
-		if (IsStateEqualToAny(StatesToCheck))
+		if (IsStateEqualToAny(AttackStates))
 		{
 			SetState(EDMC_PlayerState::ECS_Nothing);
 		}
 		
 		LightAttack();
+	}
+	else if (bSaveHeavyAttack && ComboExtenderIndex > 0)
+	{
+		TArray<EDMC_PlayerState> AttackStates;
+		AttackStates.Add(EDMC_PlayerState::ECS_Attack);
+			
+		if (IsStateEqualToAny(AttackStates))
+		{
+			SetState(EDMC_PlayerState::ECS_Nothing);
+		}
+			
+		PerformComboExtender();
 	}
 }
 
@@ -321,15 +394,27 @@ void ADMC_PlayerCharacter::SaveHeavyAttack()
 	{
 		bSaveHeavyAttack = false;
 		
-		TArray<EDMC_PlayerState> StatesToCheck;
-		StatesToCheck.Add(EDMC_PlayerState::ECS_Attack);
+		TArray<EDMC_PlayerState> AttackStates;
+		AttackStates.Add(EDMC_PlayerState::ECS_Attack);
 		
-		if (IsStateEqualToAny(StatesToCheck))
+		if (IsStateEqualToAny(AttackStates))
 		{
 			SetState(EDMC_PlayerState::ECS_Nothing);
 		}
 		
 		HeavyAttack();
+	}
+	else if (bSaveLightAttack && HeavyAttackIndex > 0)
+	{
+		TArray<EDMC_PlayerState> AttackStates;
+		AttackStates.Add(EDMC_PlayerState::ECS_Attack);
+		
+		if (IsStateEqualToAny(AttackStates))
+		{
+			SetState(EDMC_PlayerState::ECS_Nothing);
+		}
+		
+		PerformComboStarter();
 	}
 }
 
@@ -365,6 +450,8 @@ void ADMC_PlayerCharacter::ResetState()
 	ResetLightAttackVariables();
 	ResetHeavyAttackVariables();
 	bSaveDodge = false;
+	StopBuffer();
+	ComboExtenderIndex = 0;
 }
 
 void ADMC_PlayerCharacter::ResetLightAttackVariables()
