@@ -102,6 +102,9 @@ private:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Jump", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UAnimMontage> DoubleJumpMontage;
 	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Jump", meta = (AllowPrivateAccess = "true"))
+	float DoubleJumpLaunchVelocity = 800.f;
+	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Jump", meta = (AllowPrivateAccess = "true"))
 	bool bDoubleJump = false;
 	

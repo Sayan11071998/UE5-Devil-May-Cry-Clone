@@ -97,7 +97,7 @@ void ADMC_PlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ADMC_PlayerCharacter::Move);
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &ADMC_PlayerCharacter::Look);
 		
-		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ACharacter::Jump);
+		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ADMC_PlayerCharacter::Jump);
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
 		
 		EnhancedInputComponent->BindAction(LightAttackAction, ETriggerEvent::Started, this, &ADMC_PlayerCharacter::LightAttack);
@@ -144,6 +144,9 @@ void ADMC_PlayerCharacter::Look(const FInputActionValue& Value)
 
 void ADMC_PlayerCharacter::Jump()
 {
+	TArray<EDMC_PlayerState> RestrictedStates = { EDMC_PlayerState::ECS_Attack, EDMC_PlayerState::ECS_Dodge };
+	if (IsStateEqualToAny(RestrictedStates)) return;
+	
 	if (GetCharacterMovement()->IsFalling())
 	{
 		if (!bDoubleJump)
@@ -155,7 +158,7 @@ void ADMC_PlayerCharacter::Jump()
 				PlayAnimMontage(DoubleJumpMontage);
 			}
 			
-			FVector LaunchVelocity = FVector(0.f, 0.f, GetCharacterMovement()->JumpZVelocity);
+			FVector LaunchVelocity = FVector(0.f, 0.f, DoubleJumpLaunchVelocity);
 			LaunchCharacter(LaunchVelocity, false, true);
 		}
 	}
@@ -172,9 +175,13 @@ void ADMC_PlayerCharacter::Landed(const FHitResult& Hit)
 	if (Hit.GetActor())
 	{
 		UClass* HitActorClass = Hit.GetActor()->GetClass();
-		if (CanLandClasses.Contains(HitActorClass))
+		for (TSubclassOf<AActor> AllowedClass : CanLandClasses)
 		{
-			ResetDoubleJump();
+			if (HitActorClass->IsChildOf(AllowedClass))
+			{
+				ResetDoubleJump();
+				break;
+			}
 		}
 	}
 }
