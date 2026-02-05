@@ -144,8 +144,10 @@ void ADMC_PlayerCharacter::Look(const FInputActionValue& Value)
 
 void ADMC_PlayerCharacter::Jump()
 {
-	TArray<EDMC_PlayerState> RestrictedStates = { EDMC_PlayerState::ECS_Attack, EDMC_PlayerState::ECS_Dodge };
-	if (IsStateEqualToAny(RestrictedStates)) return;
+	TArray<EDMC_PlayerState> StatesToCheck;
+	StatesToCheck.Add(EDMC_PlayerState::ECS_Attack);
+	StatesToCheck.Add(EDMC_PlayerState::ECS_Dodge);
+	if (IsStateEqualToAny(StatesToCheck)) return;
 	
 	if (GetCharacterMovement()->IsFalling())
 	{
