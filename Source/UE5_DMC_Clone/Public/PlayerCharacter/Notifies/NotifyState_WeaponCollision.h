@@ -4,6 +4,8 @@
 #include "Animation/AnimNotifies/AnimNotifyState.h"
 #include "NotifyState_WeaponCollision.generated.h"
 
+class UDMC_DamageType;
+
 UCLASS()
 class UE5_DMC_CLONE_API UNotifyState_WeaponCollision : public UAnimNotifyState
 {
@@ -24,4 +26,7 @@ public:
 		const FAnimNotifyEventReference& EventReference
 	) override;
 	// ~ End UAnimNotifyState interface
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapon")
+	TSubclassOf<UDMC_DamageType> DamageType;
 };

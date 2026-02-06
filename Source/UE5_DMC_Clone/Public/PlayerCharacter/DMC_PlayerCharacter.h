@@ -5,6 +5,7 @@
 #include "DMC_CharacterTypes.h"
 #include "DMC_PlayerCharacter.generated.h"
 
+class UDMC_DamageType;
 class ADMC_BaseWeapon;
 class USpringArmComponent;
 class UCameraComponent;
@@ -34,6 +35,10 @@ public:
 	// Weapon Collision
 	void StartWeaponCollision();
 	void EndWeaponCollision();
+	
+	// Damage Class
+	UPROPERTY(EditDefaultsOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
+	TSubclassOf<UDMC_DamageType> DamageTypeClass;
 
 protected:
 	virtual void BeginPlay() override;
@@ -192,6 +197,10 @@ private:
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat|Weapon", meta = (AllowPrivateAccess = "true"))
 	bool bActiveCollision;
+	
+	// Enemy Class
+	UPROPERTY(EditDefaultsOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
+	TSubclassOf<AActor> EnemyClass;
 	
 public:
 	// Components
