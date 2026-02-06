@@ -9,6 +9,8 @@
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
 #include "Items/DMC_BaseWeapon.h"
+#include "Kismet/KismetSystemLibrary.h"
+#include "Kismet/GameplayStatics.h"
 
 ADMC_PlayerCharacter::ADMC_PlayerCharacter()
 {
@@ -73,6 +75,51 @@ void ADMC_PlayerCharacter::Tick(float DeltaTime)
 		else
 		{
 			StopBuffer();
+		}
+	}
+	
+	if (bActiveCollision && EquippedWeapon && EquippedWeapon->GetWeaponMesh())
+	{
+		const FVector TraceStart = EquippedWeapon->GetWeaponMesh()->GetSocketLocation(FName("Start"));
+		const FVector TraceEnd = EquippedWeapon->GetWeaponMesh()->GetSocketLocation(FName("End"));
+		
+		TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
+		ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_Pawn));
+		
+		TArray<AActor*> ActorsToIgnore;
+		ActorsToIgnore.Add(this);
+		
+		TArray<FHitResult> OutHits;
+		bool bHit = UKismetSystemLibrary::SphereTraceMultiForObjects(
+			GetWorld(),
+			TraceStart,
+			TraceEnd,
+			20.f,
+			ObjectTypes,
+			false,
+			ActorsToIgnore,
+			EDrawDebugTrace::ForDuration,
+			OutHits,
+			true
+		);
+		
+		if (bHit)
+		{
+			for (const FHitResult& Hit : OutHits)
+			{
+				AActor* HitActor = Hit.GetActor();
+				if (IsValid(HitActor) && !AlreadyHitActors.Contains(HitActor))
+				{
+					AlreadyHitActors.AddUnique(HitActor);
+					UGameplayStatics::ApplyDamage(
+						HitActor,
+						1.f,
+						GetController(),
+						this,
+						nullptr
+					);
+				}
+			}
 		}
 	}
 }
@@ -402,6 +449,17 @@ void ADMC_PlayerCharacter::StartBuffer(float Amount)
 void ADMC_PlayerCharacter::StopBuffer()
 {
 	bIsBuffering = false;
+}
+
+void ADMC_PlayerCharacter::StartWeaponCollision()
+{
+	AlreadyHitActors.Empty();
+	bActiveCollision = true;
+}
+
+void ADMC_PlayerCharacter::EndWeaponCollision()
+{
+	bActiveCollision = false;
 }
 
 void ADMC_PlayerCharacter::SaveLightAttack()
