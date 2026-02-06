@@ -11,6 +11,7 @@ class UE5_DMC_CLONE_API UDMC_DamageType : public UDamageType
 	GENERATED_BODY()
 	
 public:
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Damage")
+	UDMC_DamageType();
+	
 	EDMC_DamageType DamageType = EDMC_DamageType::EDT_None;
 };

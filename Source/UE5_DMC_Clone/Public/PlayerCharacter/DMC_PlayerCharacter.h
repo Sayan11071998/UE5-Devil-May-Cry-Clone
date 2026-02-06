@@ -37,7 +37,7 @@ public:
 	void EndWeaponCollision();
 	
 	// Damage Class
-	UPROPERTY(EditDefaultsOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Combat")
 	TSubclassOf<UDMC_DamageType> DamageTypeClass;
 
 protected:

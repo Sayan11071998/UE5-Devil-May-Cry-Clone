@@ -28,5 +28,5 @@ public:
 	// ~ End UAnimNotifyState interface
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapon")
-	TSubclassOf<UDMC_DamageType> DamageType;
+	TSubclassOf<UDMC_DamageType> DamageTypeClass;
 };
