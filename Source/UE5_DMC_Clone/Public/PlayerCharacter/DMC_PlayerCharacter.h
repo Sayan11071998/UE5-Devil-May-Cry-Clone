@@ -30,6 +30,10 @@ public:
 	void SaveLightAttack();
 	void SaveHeavyAttack();
 	void SaveDodge();
+	
+	// Weapon Collision
+	void StartWeaponCollision();
+	void EndWeaponCollision();
 
 protected:
 	virtual void BeginPlay() override;
@@ -181,6 +185,13 @@ private:
 	float CurrentBufferAmount = 0.f;
 	float BufferTimeElapsed = 0.f;
 	const float BufferDuration = 0.25f;
+	
+	// Weapon Collision
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat|Weapon", meta = (AllowPrivateAccess = "true"))
+	TArray<TObjectPtr<AActor>> AlreadyHitActors;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat|Weapon", meta = (AllowPrivateAccess = "true"))
+	bool bActiveCollision;
 	
 public:
 	// Components
