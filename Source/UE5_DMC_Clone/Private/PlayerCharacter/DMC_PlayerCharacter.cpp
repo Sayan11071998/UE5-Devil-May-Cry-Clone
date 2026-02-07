@@ -11,6 +11,7 @@
 #include "Items/DMC_BaseWeapon.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Kismet/GameplayStatics.h"
+#include "DamageTypes/DMC_DamageType.h"
 
 ADMC_PlayerCharacter::ADMC_PlayerCharacter()
 {
@@ -98,7 +99,7 @@ void ADMC_PlayerCharacter::Tick(float DeltaTime)
 			ObjectTypes,
 			false,
 			ActorsToIgnore,
-			EDrawDebugTrace::ForDuration,
+			EDrawDebugTrace::None,
 			OutHits,
 			true
 		);
@@ -116,7 +117,7 @@ void ADMC_PlayerCharacter::Tick(float DeltaTime)
 						1.f,
 						GetController(),
 						this,
-						nullptr
+						DamageTypeClass
 					);
 				}
 			}

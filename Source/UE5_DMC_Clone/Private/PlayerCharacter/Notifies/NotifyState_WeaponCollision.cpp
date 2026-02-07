@@ -10,6 +10,7 @@ void UNotifyState_WeaponCollision::NotifyBegin(USkeletalMeshComponent* MeshComp,
 	{
 		if (ADMC_PlayerCharacter* PlayerCharacter = Cast<ADMC_PlayerCharacter>(MeshComp->GetOwner()))
 		{
+			PlayerCharacter->DamageTypeClass = DamageTypeClass;
 			PlayerCharacter->StartWeaponCollision();
 		}
 	}
