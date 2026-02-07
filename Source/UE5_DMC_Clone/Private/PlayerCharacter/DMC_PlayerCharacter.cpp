@@ -123,6 +123,25 @@ void ADMC_PlayerCharacter::Tick(float DeltaTime)
 			}
 		}
 	}
+	
+	// --- LockOn Debug Prints (from screenshot) ---
+	if (GEngine)
+	{
+		// 1. Is Valid (Target Actor) -> Print String (Key: 1)
+		GEngine->AddOnScreenDebugMessage(
+			1, 
+			2.0f, 
+			FColor::Cyan, 
+			FString::Printf(TEXT("%s"), IsValid(TargetActor) ? TEXT("true") : TEXT("false"))
+		);
+		// 2. Is Targeting -> Print String (Key: 2)
+		GEngine->AddOnScreenDebugMessage(
+			2, 
+			2.0f, 
+			FColor::Cyan, 
+			FString::Printf(TEXT("%s"), bIsTargeting ? TEXT("true") : TEXT("false"))
+		);
+	}
 }
 
 void ADMC_PlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -152,6 +171,9 @@ void ADMC_PlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 		EnhancedInputComponent->BindAction(HeavyAttackAction, ETriggerEvent::Started, this, &ADMC_PlayerCharacter::HeavyAttack);
 		
 		EnhancedInputComponent->BindAction(DodgeAction, ETriggerEvent::Started, this, &ADMC_PlayerCharacter::Dodge);
+	
+		EnhancedInputComponent->BindAction(LockOnAction, ETriggerEvent::Started, this, &ADMC_PlayerCharacter::LockOn);
+		EnhancedInputComponent->BindAction(LockOnAction, ETriggerEvent::Started, this, &ADMC_PlayerCharacter::StopLockOn);
 	}
 }
 
@@ -438,6 +460,52 @@ void ADMC_PlayerCharacter::PerformDodge()
 	
 	SetState(EDMC_PlayerState::ECS_Dodge);
 	PlayAnimMontage(DodgeMontage);
+}
+
+void ADMC_PlayerCharacter::LockOn()
+{
+	bInputHold = true;
+	
+	FVector Start = GetActorLocation();
+	FVector End = Start + (GetFollowCamera()->GetForwardVector() * 1000.f);
+	
+	TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
+	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_Pawn));
+    
+	TArray<AActor*> ActorsToIgnore;
+	ActorsToIgnore.Add(this);
+	
+	FHitResult OutHit;
+	bool bHit = UKismetSystemLibrary::SphereTraceSingleForObjects(
+		GetWorld(),
+		Start,
+		End,
+		150.f,
+		ObjectTypes,
+		false,
+		ActorsToIgnore,
+		EDrawDebugTrace::ForDuration,
+		OutHit,
+		true
+	);
+	
+	if (bHit && IsValid(OutHit.GetActor()))
+	{
+		bIsTargeting = true;
+		TargetActor = OutHit.GetActor();
+	}
+	else
+	{
+		bIsTargeting = false;
+		TargetActor = nullptr;
+	}
+}
+
+void ADMC_PlayerCharacter::StopLockOn()
+{
+	bInputHold = false;
+	bIsTargeting = false;
+	TargetActor = nullptr;
 }
 
 void ADMC_PlayerCharacter::StartBuffer(float Amount)
