@@ -30,6 +30,9 @@ protected:
 	float Speed;
 	
 	UPROPERTY(BlueprintReadOnly, Category = "Movement")
+	float Direction;
+	
+	UPROPERTY(BlueprintReadOnly, Category = "Movement")
 	bool bIsFalling;
 	
 	UPROPERTY(BlueprintReadOnly, Category = "Movement")

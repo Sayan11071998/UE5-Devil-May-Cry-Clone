@@ -127,14 +127,28 @@ void ADMC_PlayerCharacter::Tick(float DeltaTime)
 	
 	if (bIsTargeting && IsValid(TargetActor))
 	{
-		if (AController* PlayerController = GetController())
+		TArray<EDMC_PlayerState> DodgeState;
+		DodgeState.Add(EDMC_PlayerState::ECS_Dodge);
+		if (!IsStateEqualToAny(DodgeState))
 		{
-			FRotator CurrentRotation = PlayerController->GetControlRotation();
-			FRotator LookAtRotation = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), TargetActor->GetActorLocation());
-		
-			FRotator NewRotation = UKismetMathLibrary::RInterpTo(CurrentRotation, LookAtRotation, DeltaTime, 5.0f);
-			
-			PlayerController->SetControlRotation(NewRotation);
+			GetCharacterMovement()->bUseControllerDesiredRotation = true;
+			GetCharacterMovement()->bOrientRotationToMovement = false;
+
+			if (AController* PC = GetController())
+			{
+				FRotator CurrentRotation = PC->GetControlRotation(); 
+                
+				FVector TargetLoc = TargetActor->GetActorLocation();
+				FRotator LookAtRotation = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), TargetLoc);
+				FRotator NewRotation = UKismetMathLibrary::RInterpTo(CurrentRotation, LookAtRotation, DeltaTime, 5.0f);
+                
+				PC->SetControlRotation(NewRotation);
+			}
+		}
+		else
+		{
+			GetCharacterMovement()->bUseControllerDesiredRotation = false;
+			GetCharacterMovement()->bOrientRotationToMovement = true;
 		}
 	}
 }
@@ -196,6 +210,8 @@ void ADMC_PlayerCharacter::Move(const FInputActionValue& Value)
 
 void ADMC_PlayerCharacter::Look(const FInputActionValue& Value)
 {
+	if (bIsTargeting) return;
+	
 	// Input is a Vector2D
 	FVector2D LookAxisVector = Value.Get<FVector2D>();
 
@@ -491,7 +507,7 @@ void ADMC_PlayerCharacter::LockOn()
 		
 		GetCharacterMovement()->bUseControllerDesiredRotation = true;
 		GetCharacterMovement()->bOrientRotationToMovement = false;
-		GetCharacterMovement()->MaxWalkSpeed = 300.f;
+		GetCharacterMovement()->MaxWalkSpeed = 250.f;
 	}
 	else
 	{

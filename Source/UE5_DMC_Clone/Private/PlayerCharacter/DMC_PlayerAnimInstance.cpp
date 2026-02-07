@@ -1,4 +1,5 @@
 #include "PlayerCharacter/DMC_PlayerAnimInstance.h"
+#include "KismetAnimationLibrary.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "PlayerCharacter/DMC_PlayerCharacter.h"
 
@@ -36,6 +37,8 @@ void UDMC_PlayerAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 		FVector Velocity = PlayerCharacter->GetVelocity();
 		
 		Speed = Velocity.Size();
+		Direction = UKismetAnimationLibrary::CalculateDirection(Velocity, PlayerCharacter->GetActorRotation());
+		
 		bIsFalling = PlayerCharacterMovement->IsFalling();
 		bDoubleJump = PlayerCharacter->GetDoubleJumpState();
 		bIsTargeting = PlayerCharacter->GetIsTargeting();
