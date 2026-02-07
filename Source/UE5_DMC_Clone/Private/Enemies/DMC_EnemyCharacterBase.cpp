@@ -12,17 +12,39 @@ float ADMC_EnemyCharacterBase::TakeDamage(float DamageAmount, struct FDamageEven
 {
 	float ActualDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
 	
-	UDMC_DamageType* DamageType = Cast<UDMC_DamageType>(DamageEvent.DamageTypeClass->GetDefaultObject());
-	if (DamageType)
+	UDMC_DamageType* DamageTypeObject = Cast<UDMC_DamageType>(DamageEvent.DamageTypeClass->GetDefaultObject());
+	if (DamageTypeObject)
 	{
-		EDMC_DamageType HitDirection = DamageType->DamageType;
-		FString EnumValueString = UEnum::GetValueAsString(HitDirection);
-		UE_LOG(LogTemp, Warning, TEXT("Enemy Hit! Damage Type: %s"), *EnumValueString);
-		
-		if (GEngine)
-		{
-			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Magenta, FString::Printf(TEXT("Hit Direction: %s"), *EnumValueString));
-		}
+		EDMC_DamageType HitDirection = DamageTypeObject->DamageType;
+		PlayHitReaction(HitDirection);
 	}
 	return ActualDamage;
+}
+
+void ADMC_EnemyCharacterBase::PlayHitReaction(EDMC_DamageType DamageDirection)
+{
+	UAnimMontage* MontageToPlay = nullptr;
+
+	switch (DamageDirection)
+	{
+	case EDMC_DamageType::EDT_Left:
+		MontageToPlay = HitReactionLeft;
+		break;
+	case EDMC_DamageType::EDT_Right:
+		MontageToPlay = HitReactionRight;
+		break;
+	case EDMC_DamageType::EDT_Middle:
+		MontageToPlay = HitReactionMiddle;
+		break;
+	case EDMC_DamageType::EDT_KnockBack:
+		MontageToPlay = HitReactionKnockBack;
+		break;
+	default:
+		break;
+	}
+	
+	if (MontageToPlay)
+	{
+		PlayAnimMontage(MontageToPlay);
+	}
 }
