@@ -12,6 +12,7 @@
 #include "Kismet/KismetSystemLibrary.h"
 #include "Kismet/GameplayStatics.h"
 #include "DamageTypes/DMC_DamageType.h"
+#include "Kismet/KismetMathLibrary.h"
 
 ADMC_PlayerCharacter::ADMC_PlayerCharacter()
 {
@@ -124,23 +125,17 @@ void ADMC_PlayerCharacter::Tick(float DeltaTime)
 		}
 	}
 	
-	// --- LockOn Debug Prints (from screenshot) ---
-	if (GEngine)
+	if (bIsTargeting && IsValid(TargetActor))
 	{
-		// 1. Is Valid (Target Actor) -> Print String (Key: 1)
-		GEngine->AddOnScreenDebugMessage(
-			1, 
-			2.0f, 
-			FColor::Cyan, 
-			FString::Printf(TEXT("%s"), IsValid(TargetActor) ? TEXT("true") : TEXT("false"))
-		);
-		// 2. Is Targeting -> Print String (Key: 2)
-		GEngine->AddOnScreenDebugMessage(
-			2, 
-			2.0f, 
-			FColor::Cyan, 
-			FString::Printf(TEXT("%s"), bIsTargeting ? TEXT("true") : TEXT("false"))
-		);
+		if (AController* PlayerController = GetController())
+		{
+			FRotator CurrentRotation = PlayerController->GetControlRotation();
+			FRotator LookAtRotation = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), TargetActor->GetActorLocation());
+		
+			FRotator NewRotation = UKismetMathLibrary::RInterpTo(CurrentRotation, LookAtRotation, DeltaTime, 5.0f);
+			
+			PlayerController->SetControlRotation(NewRotation);
+		}
 	}
 }
 
@@ -493,11 +488,19 @@ void ADMC_PlayerCharacter::LockOn()
 	{
 		bIsTargeting = true;
 		TargetActor = OutHit.GetActor();
+		
+		GetCharacterMovement()->bUseControllerDesiredRotation = true;
+		GetCharacterMovement()->bOrientRotationToMovement = false;
+		GetCharacterMovement()->MaxWalkSpeed = 300.f;
 	}
 	else
 	{
 		bIsTargeting = false;
 		TargetActor = nullptr;
+		
+		GetCharacterMovement()->bUseControllerDesiredRotation = false;
+		GetCharacterMovement()->bOrientRotationToMovement = true;
+		GetCharacterMovement()->MaxWalkSpeed = 600.f;
 	}
 }
 
@@ -506,6 +509,10 @@ void ADMC_PlayerCharacter::StopLockOn()
 	bInputHold = false;
 	bIsTargeting = false;
 	TargetActor = nullptr;
+	
+	GetCharacterMovement()->bUseControllerDesiredRotation = false;
+	GetCharacterMovement()->bOrientRotationToMovement = true;
+	GetCharacterMovement()->MaxWalkSpeed = 600.f;
 }
 
 void ADMC_PlayerCharacter::StartBuffer(float Amount)

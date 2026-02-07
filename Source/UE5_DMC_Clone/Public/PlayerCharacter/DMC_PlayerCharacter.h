@@ -227,4 +227,7 @@ public:
 	// State
 	FORCEINLINE EDMC_PlayerState GetState() const { return CurrentState; }
 	FORCEINLINE bool IsStateEqualToAny(const TArray<EDMC_PlayerState>& StatesToCheck) const { return StatesToCheck.Contains(CurrentState); }
+
+	// Lockon
+	FORCEINLINE bool GetIsTargeting() const { return bIsTargeting; }
 };

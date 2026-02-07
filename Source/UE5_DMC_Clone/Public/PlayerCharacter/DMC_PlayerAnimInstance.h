@@ -35,6 +35,9 @@ protected:
 	UPROPERTY(BlueprintReadOnly, Category = "Movement")
 	bool bDoubleJump;
 	
+	UPROPERTY(BlueprintReadOnly, Category = "Movement")
+	bool bIsTargeting;
+	
 	UPROPERTY(BlueprintReadOnly, Category = "State")
 	EDMC_PlayerState CurrentState;
 };

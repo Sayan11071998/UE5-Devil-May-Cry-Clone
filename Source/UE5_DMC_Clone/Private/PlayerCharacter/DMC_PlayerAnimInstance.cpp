@@ -38,6 +38,7 @@ void UDMC_PlayerAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 		Speed = Velocity.Size();
 		bIsFalling = PlayerCharacterMovement->IsFalling();
 		bDoubleJump = PlayerCharacter->GetDoubleJumpState();
+		bIsTargeting = PlayerCharacter->GetIsTargeting();
 		CurrentState = PlayerCharacter->GetState();
 	}
 }
