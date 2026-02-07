@@ -70,6 +70,10 @@ protected:
 	void Dodge();
 	void PerformDodge();
 	
+	// Lock On
+	void LockOn();
+	void StopLockOn();
+	
 	// Buffer
 	void StartBuffer(float Amount);
 	void StopBuffer();
@@ -103,6 +107,9 @@ private:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UInputAction> DodgeAction;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UInputAction> LockOnAction;
 	
 	// Double Jump
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Jump", meta = (AllowPrivateAccess = "true"))
@@ -198,6 +205,13 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat|Weapon", meta = (AllowPrivateAccess = "true"))
 	bool bActiveCollision;
 	
+	// Lock-on System
+	UPROPERTY()
+	TObjectPtr<AActor> TargetActor;
+	
+	bool bInputHold;
+	bool bIsTargeting;
+	
 	// Enemy Class
 	UPROPERTY(EditDefaultsOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
 	TSubclassOf<AActor> EnemyClass;
@@ -213,4 +227,7 @@ public:
 	// State
 	FORCEINLINE EDMC_PlayerState GetState() const { return CurrentState; }
 	FORCEINLINE bool IsStateEqualToAny(const TArray<EDMC_PlayerState>& StatesToCheck) const { return StatesToCheck.Contains(CurrentState); }
+
+	// Lockon
+	FORCEINLINE bool GetIsTargeting() const { return bIsTargeting; }
 };

@@ -30,10 +30,16 @@ protected:
 	float Speed;
 	
 	UPROPERTY(BlueprintReadOnly, Category = "Movement")
+	float Direction;
+	
+	UPROPERTY(BlueprintReadOnly, Category = "Movement")
 	bool bIsFalling;
 	
 	UPROPERTY(BlueprintReadOnly, Category = "Movement")
 	bool bDoubleJump;
+	
+	UPROPERTY(BlueprintReadOnly, Category = "Movement")
+	bool bIsTargeting;
 	
 	UPROPERTY(BlueprintReadOnly, Category = "State")
 	EDMC_PlayerState CurrentState;

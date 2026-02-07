@@ -12,6 +12,7 @@
 #include "Kismet/KismetSystemLibrary.h"
 #include "Kismet/GameplayStatics.h"
 #include "DamageTypes/DMC_DamageType.h"
+#include "Kismet/KismetMathLibrary.h"
 
 ADMC_PlayerCharacter::ADMC_PlayerCharacter()
 {
@@ -123,6 +124,33 @@ void ADMC_PlayerCharacter::Tick(float DeltaTime)
 			}
 		}
 	}
+	
+	if (bIsTargeting && IsValid(TargetActor))
+	{
+		TArray<EDMC_PlayerState> DodgeState;
+		DodgeState.Add(EDMC_PlayerState::ECS_Dodge);
+		if (!IsStateEqualToAny(DodgeState))
+		{
+			GetCharacterMovement()->bUseControllerDesiredRotation = true;
+			GetCharacterMovement()->bOrientRotationToMovement = false;
+
+			if (AController* PC = GetController())
+			{
+				FRotator CurrentRotation = PC->GetControlRotation(); 
+                
+				FVector TargetLoc = TargetActor->GetActorLocation();
+				FRotator LookAtRotation = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), TargetLoc);
+				FRotator NewRotation = UKismetMathLibrary::RInterpTo(CurrentRotation, LookAtRotation, DeltaTime, 5.0f);
+                
+				PC->SetControlRotation(NewRotation);
+			}
+		}
+		else
+		{
+			GetCharacterMovement()->bUseControllerDesiredRotation = false;
+			GetCharacterMovement()->bOrientRotationToMovement = true;
+		}
+	}
 }
 
 void ADMC_PlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -152,6 +180,9 @@ void ADMC_PlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 		EnhancedInputComponent->BindAction(HeavyAttackAction, ETriggerEvent::Started, this, &ADMC_PlayerCharacter::HeavyAttack);
 		
 		EnhancedInputComponent->BindAction(DodgeAction, ETriggerEvent::Started, this, &ADMC_PlayerCharacter::Dodge);
+	
+		EnhancedInputComponent->BindAction(LockOnAction, ETriggerEvent::Started, this, &ADMC_PlayerCharacter::LockOn);
+		EnhancedInputComponent->BindAction(LockOnAction, ETriggerEvent::Started, this, &ADMC_PlayerCharacter::StopLockOn);
 	}
 }
 
@@ -179,6 +210,8 @@ void ADMC_PlayerCharacter::Move(const FInputActionValue& Value)
 
 void ADMC_PlayerCharacter::Look(const FInputActionValue& Value)
 {
+	if (bIsTargeting) return;
+	
 	// Input is a Vector2D
 	FVector2D LookAxisVector = Value.Get<FVector2D>();
 
@@ -438,6 +471,64 @@ void ADMC_PlayerCharacter::PerformDodge()
 	
 	SetState(EDMC_PlayerState::ECS_Dodge);
 	PlayAnimMontage(DodgeMontage);
+}
+
+void ADMC_PlayerCharacter::LockOn()
+{
+	bInputHold = true;
+	
+	FVector Start = GetActorLocation();
+	FVector End = Start + (GetFollowCamera()->GetForwardVector() * 1000.f);
+	
+	TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
+	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_Pawn));
+    
+	TArray<AActor*> ActorsToIgnore;
+	ActorsToIgnore.Add(this);
+	
+	FHitResult OutHit;
+	bool bHit = UKismetSystemLibrary::SphereTraceSingleForObjects(
+		GetWorld(),
+		Start,
+		End,
+		150.f,
+		ObjectTypes,
+		false,
+		ActorsToIgnore,
+		EDrawDebugTrace::ForDuration,
+		OutHit,
+		true
+	);
+	
+	if (bHit && IsValid(OutHit.GetActor()))
+	{
+		bIsTargeting = true;
+		TargetActor = OutHit.GetActor();
+		
+		GetCharacterMovement()->bUseControllerDesiredRotation = true;
+		GetCharacterMovement()->bOrientRotationToMovement = false;
+		GetCharacterMovement()->MaxWalkSpeed = 250.f;
+	}
+	else
+	{
+		bIsTargeting = false;
+		TargetActor = nullptr;
+		
+		GetCharacterMovement()->bUseControllerDesiredRotation = false;
+		GetCharacterMovement()->bOrientRotationToMovement = true;
+		GetCharacterMovement()->MaxWalkSpeed = 600.f;
+	}
+}
+
+void ADMC_PlayerCharacter::StopLockOn()
+{
+	bInputHold = false;
+	bIsTargeting = false;
+	TargetActor = nullptr;
+	
+	GetCharacterMovement()->bUseControllerDesiredRotation = false;
+	GetCharacterMovement()->bOrientRotationToMovement = true;
+	GetCharacterMovement()->MaxWalkSpeed = 600.f;
 }
 
 void ADMC_PlayerCharacter::StartBuffer(float Amount)
