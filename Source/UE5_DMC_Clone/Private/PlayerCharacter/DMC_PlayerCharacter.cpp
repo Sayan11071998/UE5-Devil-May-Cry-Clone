@@ -99,7 +99,7 @@ void ADMC_PlayerCharacter::Tick(float DeltaTime)
 			ObjectTypes,
 			false,
 			ActorsToIgnore,
-			EDrawDebugTrace::ForDuration,
+			EDrawDebugTrace::None,
 			OutHits,
 			true
 		);
