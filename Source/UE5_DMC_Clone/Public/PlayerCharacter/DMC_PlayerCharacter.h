@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "DMC_CharacterTypes.h"
+#include "Components/TimelineComponent.h"
 #include "DMC_PlayerCharacter.generated.h"
 
 class UDMC_DamageType;
@@ -35,6 +36,8 @@ public:
 	// Weapon Collision
 	void StartWeaponCollision();
 	void EndWeaponCollision();
+	
+	void RotateToTarget();
 	
 	// Damage Class
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Combat")
@@ -76,6 +79,7 @@ protected:
 	
 	// Soft Lock On
 	void SoftLockOn();
+	void HandleRotationTimelineProgress(float Value);
 	
 	// Buffer
 	void StartBuffer(float Amount);
@@ -215,6 +219,11 @@ private:
 	// Soft Lock On
 	UPROPERTY()
 	TObjectPtr<AActor> SoftTarget;
+	
+	UPROPERTY(EditAnywhere, Category = "Combat|Rotation")
+	TObjectPtr<UCurveFloat> RotationCurve;
+	
+	FTimeline RotationTimeline;
 	
 	bool bInputHold;
 	bool bIsTargeting;

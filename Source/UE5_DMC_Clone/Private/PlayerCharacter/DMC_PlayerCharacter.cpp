@@ -151,6 +151,11 @@ void ADMC_PlayerCharacter::Tick(float DeltaTime)
 			GetCharacterMovement()->bOrientRotationToMovement = true;
 		}
 	}
+	
+	if (RotationTimeline.IsPlaying())
+	{
+		RotationTimeline.TickTimeline(DeltaTime);
+	}
 }
 
 void ADMC_PlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -574,6 +579,39 @@ void ADMC_PlayerCharacter::SoftLockOn()
 	else
 	{
 		SoftTarget = nullptr;
+	}
+}
+
+void ADMC_PlayerCharacter::HandleRotationTimelineProgress(float Value)
+{
+	AActor* ActualTarget = IsValid(TargetActor) ? TargetActor.Get() : SoftTarget.Get();
+	
+	if (!ActualTarget) return;
+	
+	FVector TargetLocation = ActualTarget->GetActorLocation();
+	FVector MyLocation = GetActorLocation();
+	
+	FRotator LookAtRot = UKismetMathLibrary::FindLookAtRotation(MyLocation, TargetLocation);
+	FRotator CurrentRot = GetActorRotation();
+	
+	FRotator TargetRot = FRotator(CurrentRot.Pitch, LookAtRot.Yaw, CurrentRot.Roll);
+	FRotator NewRot = FMath::Lerp(CurrentRot, TargetRot, Value);
+    
+	SetActorRotation(NewRot);
+}
+
+void ADMC_PlayerCharacter::RotateToTarget()
+{
+	if (IsValid(TargetActor) || IsValid(SoftTarget))
+	{
+		if (RotationCurve)
+		{
+			FOnTimelineFloat ProgressFunction;
+			ProgressFunction.BindUFunction(this, FName("HandleRotationTimelineProgress"));
+			RotationTimeline.AddInterpFloat(RotationCurve, ProgressFunction);
+			RotationTimeline.SetLooping(false);
+			RotationTimeline.PlayFromStart();
+		}
 	}
 }
 
