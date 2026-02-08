@@ -244,6 +244,8 @@ public:
 	FORCEINLINE EDMC_PlayerState GetState() const { return CurrentState; }
 	FORCEINLINE bool IsStateEqualToAny(const TArray<EDMC_PlayerState>& StatesToCheck) const { return StatesToCheck.Contains(CurrentState); }
 
-	// Lockon
+	// Lock On
 	FORCEINLINE bool GetIsTargeting() const { return bIsTargeting; }
+	FORCEINLINE AActor* GetTargetActor() const { return TargetActor; }
+	FORCEINLINE AActor* GetSoftTarget() const { return SoftTarget; }
 };
