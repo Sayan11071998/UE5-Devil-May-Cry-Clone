@@ -406,7 +406,8 @@ bool ADMC_PlayerCharacter::PerformComboStarter()
 	TArray<EDMC_PlayerState> StatesToCheck;
 	StatesToCheck.Add(EDMC_PlayerState::ECS_Attack);
 	StatesToCheck.Add(EDMC_PlayerState::ECS_Dodge);
-	if (IsStateEqualToAny(StatesToCheck)) return false;
+	
+	if (IsStateEqualToAny(StatesToCheck) || GetCharacterMovement()->IsFalling()) return false;
 	
 	int32 HL_ComboStarterIndex = HeavyAttackIndex - 1;
 	
@@ -440,7 +441,8 @@ bool ADMC_PlayerCharacter::PerformComboExtender()
 	TArray<EDMC_PlayerState> StatesToCheck;
 	StatesToCheck.Add(EDMC_PlayerState::ECS_Attack);
 	StatesToCheck.Add(EDMC_PlayerState::ECS_Dodge);
-	if (IsStateEqualToAny(StatesToCheck)) return false;
+	
+	if (IsStateEqualToAny(StatesToCheck) || GetCharacterMovement()->IsFalling()) return false;
 
 	int32 LH_FinisherIndex = ComboExtenderIndex - 1;
 	if (ComboExtenderMontages.IsValidIndex(LH_FinisherIndex))
