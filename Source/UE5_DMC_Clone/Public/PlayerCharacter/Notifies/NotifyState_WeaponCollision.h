@@ -27,6 +27,7 @@ public:
 	) override;
 	// ~ End UAnimNotifyState interface
 	
+	// Damage type class assigned to the player's attack during collision detection (e.g., Left, Right, Middle, KnockBack)
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapon")
 	TSubclassOf<UDMC_DamageType> DamageTypeClass;
 };

@@ -6,11 +6,10 @@ void UNotify_SaveDodge::Notify(USkeletalMeshComponent* MeshComp, UAnimSequenceBa
 {
 	Super::Notify(MeshComp, Animation, EventReference);
 	
-	if (MeshComp && MeshComp->GetOwner())
+	if (!MeshComp || !MeshComp->GetOwner()) return;
+	
+	if (ADMC_PlayerCharacter* PlayerCharacter = Cast<ADMC_PlayerCharacter>(MeshComp->GetOwner()))
 	{
-		if (ADMC_PlayerCharacter* PlayerCharacter = Cast<ADMC_PlayerCharacter>(MeshComp->GetOwner()))
-		{
-			PlayerCharacter->SaveDodge();
-		}
+		PlayerCharacter->SaveDodge();
 	}
 }

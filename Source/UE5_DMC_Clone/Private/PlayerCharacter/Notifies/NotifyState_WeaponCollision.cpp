@@ -6,13 +6,12 @@ void UNotifyState_WeaponCollision::NotifyBegin(USkeletalMeshComponent* MeshComp,
 {
 	Super::NotifyBegin(MeshComp, Animation, TotalDuration, EventReference);
 	
-	if (MeshComp && MeshComp->GetOwner())
+	if (!MeshComp || !MeshComp->GetOwner()) return;
+	
+	if (ADMC_PlayerCharacter* PlayerCharacter = Cast<ADMC_PlayerCharacter>(MeshComp->GetOwner()))
 	{
-		if (ADMC_PlayerCharacter* PlayerCharacter = Cast<ADMC_PlayerCharacter>(MeshComp->GetOwner()))
-		{
-			PlayerCharacter->DamageTypeClass = DamageTypeClass;
-			PlayerCharacter->StartWeaponCollision();
-		}
+		PlayerCharacter->DamageTypeClass = DamageTypeClass;
+		PlayerCharacter->StartWeaponCollision();
 	}
 }
 
@@ -21,11 +20,10 @@ void UNotifyState_WeaponCollision::NotifyEnd(USkeletalMeshComponent* MeshComp, U
 {
 	Super::NotifyEnd(MeshComp, Animation, EventReference);
 	
-	if (MeshComp && MeshComp->GetOwner())
+	if (!MeshComp || !MeshComp->GetOwner()) return;
+	
+	if (ADMC_PlayerCharacter* PlayerCharacter = Cast<ADMC_PlayerCharacter>(MeshComp->GetOwner()))
 	{
-		if (ADMC_PlayerCharacter* PlayerCharacter = Cast<ADMC_PlayerCharacter>(MeshComp->GetOwner()))
-		{
-			PlayerCharacter->EndWeaponCollision();
-		}
+		PlayerCharacter->EndWeaponCollision();
 	}
 }
