@@ -7,14 +7,19 @@ void UDMC_PlayerAnimInstance::NativeInitializeAnimation()
 {
 	Super::NativeInitializeAnimation();
 	
+	// Cache references to player character and movement component
 	PlayerCharacter = Cast<ADMC_PlayerCharacter>(TryGetPawnOwner());
 	if (PlayerCharacter)
 	{
 		PlayerCharacterMovement = PlayerCharacter->GetCharacterMovement();
 	}
 	
+	// Initialize animation variables
 	Speed = 0.f;
+	Direction = 0.f;
 	bIsFalling = false;
+	bDoubleJump = false;
+	bIsTargeting = false;
 	CurrentState = EDMC_PlayerState::ECS_Nothing;
 }
 
@@ -22,26 +27,15 @@ void UDMC_PlayerAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 {
 	Super::NativeUpdateAnimation(DeltaSeconds);
 	
-	// Re-cache if references are invalid (edge case handling)
-	if (!PlayerCharacter || !PlayerCharacterMovement)
-	{
-		PlayerCharacter = Cast<ADMC_PlayerCharacter>(TryGetPawnOwner());
-		if (PlayerCharacter)
-		{
-			PlayerCharacterMovement = PlayerCharacter->GetCharacterMovement();
-		}
-	}
+	if (!PlayerCharacter || !PlayerCharacterMovement) return;
 	
-	if (PlayerCharacter && PlayerCharacterMovement)
-	{
-		FVector Velocity = PlayerCharacter->GetVelocity();
-		
-		Speed = Velocity.Size();
-		Direction = UKismetAnimationLibrary::CalculateDirection(Velocity, PlayerCharacter->GetActorRotation());
-		
-		bIsFalling = PlayerCharacterMovement->IsFalling();
-		bDoubleJump = PlayerCharacter->GetDoubleJumpState();
-		bIsTargeting = PlayerCharacter->GetIsTargeting();
-		CurrentState = PlayerCharacter->GetState();
-	}
+	FVector Velocity = PlayerCharacter->GetVelocity();
+	Speed = Velocity.Size2D();
+	Direction = UKismetAnimationLibrary::CalculateDirection(Velocity, PlayerCharacter->GetActorRotation());
+	
+	// Update state flags for the AnimGraph
+	bIsFalling = PlayerCharacterMovement->IsFalling();
+	bDoubleJump = PlayerCharacter->GetDoubleJumpState();
+	bIsTargeting = PlayerCharacter->GetIsTargeting();
+	CurrentState = PlayerCharacter->GetState();
 }
