@@ -312,8 +312,11 @@ void ADMC_PlayerCharacter::LightAttack()
 	}
 	else
 	{
-		ResetHeavyAttackVariables();
-		PerformLightAttack(LightAttackIndex);
+		if (!GetCharacterMovement()->IsFalling())
+		{
+			ResetHeavyAttackVariables();
+			PerformLightAttack(LightAttackIndex);
+		}
 	}
 }
 
@@ -361,8 +364,11 @@ void ADMC_PlayerCharacter::HeavyAttack()
 	}
 	else
 	{
-		ResetLightAttackVariables();
-		PerformHeavyAttack(HeavyAttackIndex);
+		if (!GetCharacterMovement()->IsFalling())
+		{
+			ResetLightAttackVariables();
+			PerformHeavyAttack(HeavyAttackIndex);
+		}
 	}
 }
 
@@ -469,7 +475,10 @@ void ADMC_PlayerCharacter::Dodge()
 	}
 	else
 	{
-		PerformDodge();
+		if (!GetCharacterMovement()->IsFalling())
+		{
+			PerformDodge();
+		}
 	}
 }
 
