@@ -151,6 +151,11 @@ void ADMC_PlayerCharacter::Tick(float DeltaTime)
 			GetCharacterMovement()->bOrientRotationToMovement = true;
 		}
 	}
+	
+	if (RotationTimeline.IsPlaying())
+	{
+		RotationTimeline.TickTimeline(DeltaTime);
+	}
 }
 
 void ADMC_PlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -307,8 +312,11 @@ void ADMC_PlayerCharacter::LightAttack()
 	}
 	else
 	{
-		ResetHeavyAttackVariables();
-		PerformLightAttack(LightAttackIndex);
+		if (!GetCharacterMovement()->IsFalling())
+		{
+			ResetHeavyAttackVariables();
+			PerformLightAttack(LightAttackIndex);
+		}
 	}
 }
 
@@ -324,6 +332,7 @@ bool ADMC_PlayerCharacter::PerformLightAttack(int32 InAttackIndex)
 			StartBuffer(LightAttackBufferAmount);
 			
 			SetState(EDMC_PlayerState::ECS_Attack);
+			SoftLockOn();
 			PlayAnimMontage(L_AttackMontage);
 			
 			LightAttackIndex++;
@@ -355,8 +364,11 @@ void ADMC_PlayerCharacter::HeavyAttack()
 	}
 	else
 	{
-		ResetLightAttackVariables();
-		PerformHeavyAttack(HeavyAttackIndex);
+		if (!GetCharacterMovement()->IsFalling())
+		{
+			ResetLightAttackVariables();
+			PerformHeavyAttack(HeavyAttackIndex);
+		}
 	}
 }
 
@@ -372,6 +384,7 @@ bool ADMC_PlayerCharacter::PerformHeavyAttack(int32 InAttackIndex)
 			StartBuffer(HeavyAttackBufferAmount);
 			
 			SetState(EDMC_PlayerState::ECS_Attack);
+			SoftLockOn();
 			PlayAnimMontage(H_AttackMontage);
 			
 			HeavyAttackIndex++;
@@ -393,7 +406,8 @@ bool ADMC_PlayerCharacter::PerformComboStarter()
 	TArray<EDMC_PlayerState> StatesToCheck;
 	StatesToCheck.Add(EDMC_PlayerState::ECS_Attack);
 	StatesToCheck.Add(EDMC_PlayerState::ECS_Dodge);
-	if (IsStateEqualToAny(StatesToCheck)) return false;
+	
+	if (IsStateEqualToAny(StatesToCheck) || GetCharacterMovement()->IsFalling()) return false;
 	
 	int32 HL_ComboStarterIndex = HeavyAttackIndex - 1;
 	
@@ -412,6 +426,7 @@ bool ADMC_PlayerCharacter::PerformComboStarter()
 			bSaveLightAttack = false;
 			
 			SetState(EDMC_PlayerState::ECS_Attack);
+			SoftLockOn();
 			PlayAnimMontage(HL_AttackMontage);
 			
 			return true;
@@ -426,7 +441,8 @@ bool ADMC_PlayerCharacter::PerformComboExtender()
 	TArray<EDMC_PlayerState> StatesToCheck;
 	StatesToCheck.Add(EDMC_PlayerState::ECS_Attack);
 	StatesToCheck.Add(EDMC_PlayerState::ECS_Dodge);
-	if (IsStateEqualToAny(StatesToCheck)) return false;
+	
+	if (IsStateEqualToAny(StatesToCheck) || GetCharacterMovement()->IsFalling()) return false;
 
 	int32 LH_FinisherIndex = ComboExtenderIndex - 1;
 	if (ComboExtenderMontages.IsValidIndex(LH_FinisherIndex))
@@ -441,6 +457,7 @@ bool ADMC_PlayerCharacter::PerformComboExtender()
 			StartBuffer(ExtenderAttackBufferAmount);
 
 			SetState(EDMC_PlayerState::ECS_Attack);
+			SoftLockOn();
 			PlayAnimMontage(LH_AttackMontage);
 			return true;
 		}
@@ -460,17 +477,33 @@ void ADMC_PlayerCharacter::Dodge()
 	}
 	else
 	{
-		PerformDodge();
+		if (!GetCharacterMovement()->IsFalling())
+		{
+			PerformDodge();
+		}
 	}
 }
 
 void ADMC_PlayerCharacter::PerformDodge()
 {
+	StopRotation();
+	SoftTarget = nullptr;
+	
+	FVector LastInput = GetCharacterMovement()->GetLastInputVector();
+	if (!LastInput.IsNearlyZero())
+	{
+		SetActorRotation(LastInput.Rotation());
+	}
+	
 	StopBuffer();
 	StartBuffer(DodgeBufferAmount);
 	
 	SetState(EDMC_PlayerState::ECS_Dodge);
-	PlayAnimMontage(DodgeMontage);
+	
+	if (DodgeMontage)
+	{
+		PlayAnimMontage(DodgeMontage);
+	}
 }
 
 void ADMC_PlayerCharacter::LockOn()
@@ -531,6 +564,85 @@ void ADMC_PlayerCharacter::StopLockOn()
 	GetCharacterMovement()->MaxWalkSpeed = 600.f;
 }
 
+void ADMC_PlayerCharacter::SoftLockOn()
+{
+	if (bIsTargeting && IsValid(SoftTarget))
+	{
+		SoftTarget = nullptr;
+		return;
+	}
+	
+	FVector LastInput = GetCharacterMovement()->GetLastInputVector();
+	FVector Start = GetActorLocation();
+	FVector End = Start + (LastInput * 1000.f);
+	
+	TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
+	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_Pawn));
+	
+	TArray<AActor*> ActorsToIgnore;
+	ActorsToIgnore.Add(this);
+	
+	FHitResult OutHit;
+	bool bHit = UKismetSystemLibrary::SphereTraceSingleForObjects(
+		GetWorld(),
+		Start,
+		End,
+		100.f,
+		ObjectTypes,
+		false,
+		ActorsToIgnore,
+		EDrawDebugTrace::None,
+		OutHit,
+		true
+	);
+	
+	if (bHit && IsValid(OutHit.GetActor()))
+	{
+		SoftTarget = OutHit.GetActor();
+	}
+	else
+	{
+		SoftTarget = nullptr;
+	}
+}
+
+void ADMC_PlayerCharacter::HandleRotationTimelineProgress(float Value)
+{
+	AActor* ActualTarget = IsValid(TargetActor) ? TargetActor.Get() : SoftTarget.Get();
+	
+	if (!IsValid(ActualTarget))
+	{
+		StopRotation();
+		return;
+	}
+	
+	FVector TargetLocation = ActualTarget->GetActorLocation();
+	FVector MyLocation = GetActorLocation();
+	
+	FRotator LookAtRot = UKismetMathLibrary::FindLookAtRotation(MyLocation, TargetLocation);
+	FRotator CurrentRot = GetActorRotation();
+	
+	FRotator TargetRot = FRotator(CurrentRot.Pitch, LookAtRot.Yaw, CurrentRot.Roll);
+	FRotator NewRot = FMath::Lerp(CurrentRot, TargetRot, Value);
+    
+	SetActorRotation(NewRot);
+}
+
+void ADMC_PlayerCharacter::RotateToTarget()
+{
+	if (IsValid(TargetActor) || IsValid(SoftTarget))
+	{
+		if (RotationCurve)
+		{
+			FOnTimelineFloat ProgressFunction;
+			ProgressFunction.BindUFunction(this, FName("HandleRotationTimelineProgress"));
+			RotationTimeline.AddInterpFloat(RotationCurve, ProgressFunction);
+			RotationTimeline.SetLooping(false);
+			RotationTimeline.PlayFromStart();
+		}
+	}
+}
+
 void ADMC_PlayerCharacter::StartBuffer(float Amount)
 {
 	CurrentBufferAmount = Amount;
@@ -541,6 +653,14 @@ void ADMC_PlayerCharacter::StartBuffer(float Amount)
 void ADMC_PlayerCharacter::StopBuffer()
 {
 	bIsBuffering = false;
+}
+
+void ADMC_PlayerCharacter::StopRotation()
+{
+	if (RotationTimeline.IsPlaying())
+	{
+		RotationTimeline.Stop();
+	}
 }
 
 void ADMC_PlayerCharacter::StartWeaponCollision()
@@ -650,9 +770,13 @@ void ADMC_PlayerCharacter::ResetState()
 	SetState(EDMC_PlayerState::ECS_Nothing);
 	ResetLightAttackVariables();
 	ResetHeavyAttackVariables();
+	
 	bSaveDodge = false;
 	StopBuffer();
 	ComboExtenderIndex = 0;
+	
+	StopRotation();
+	SoftTarget = nullptr;
 }
 
 void ADMC_PlayerCharacter::ResetLightAttackVariables()

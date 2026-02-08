@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "DMC_CharacterTypes.h"
+#include "Components/TimelineComponent.h"
 #include "DMC_PlayerCharacter.generated.h"
 
 class UDMC_DamageType;
@@ -35,6 +36,8 @@ public:
 	// Weapon Collision
 	void StartWeaponCollision();
 	void EndWeaponCollision();
+	
+	void RotateToTarget();
 	
 	// Damage Class
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Combat")
@@ -74,9 +77,15 @@ protected:
 	void LockOn();
 	void StopLockOn();
 	
+	// Soft Lock On
+	void SoftLockOn();
+	void HandleRotationTimelineProgress(float Value);
+	
 	// Buffer
 	void StartBuffer(float Amount);
 	void StopBuffer();
+	
+	void StopRotation();
 
 private:
 	// Camera Settings
@@ -209,6 +218,15 @@ private:
 	UPROPERTY()
 	TObjectPtr<AActor> TargetActor;
 	
+	// Soft Lock On
+	UPROPERTY()
+	TObjectPtr<AActor> SoftTarget;
+	
+	UPROPERTY(EditAnywhere, Category = "Combat|Rotation")
+	TObjectPtr<UCurveFloat> RotationCurve;
+	
+	FTimeline RotationTimeline;
+	
 	bool bInputHold;
 	bool bIsTargeting;
 	
@@ -228,6 +246,8 @@ public:
 	FORCEINLINE EDMC_PlayerState GetState() const { return CurrentState; }
 	FORCEINLINE bool IsStateEqualToAny(const TArray<EDMC_PlayerState>& StatesToCheck) const { return StatesToCheck.Contains(CurrentState); }
 
-	// Lockon
+	// Lock On
 	FORCEINLINE bool GetIsTargeting() const { return bIsTargeting; }
+	FORCEINLINE AActor* GetTargetActor() const { return TargetActor; }
+	FORCEINLINE AActor* GetSoftTarget() const { return SoftTarget; }
 };
