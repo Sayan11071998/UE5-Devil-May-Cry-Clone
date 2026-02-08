@@ -486,11 +486,23 @@ void ADMC_PlayerCharacter::Dodge()
 
 void ADMC_PlayerCharacter::PerformDodge()
 {
+	FVector LastInput = GetCharacterMovement()->GetLastInputVector();
+	
+	if (!LastInput.IsNearlyZero())
+	{
+		FRotator NewRotation = LastInput.Rotation();
+		SetActorRotation(NewRotation);
+	}
+	
 	StopBuffer();
 	StartBuffer(DodgeBufferAmount);
 	
 	SetState(EDMC_PlayerState::ECS_Dodge);
-	PlayAnimMontage(DodgeMontage);
+	
+	if (DodgeMontage)
+	{
+		PlayAnimMontage(DodgeMontage);
+	}
 }
 
 void ADMC_PlayerCharacter::LockOn()
