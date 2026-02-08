@@ -74,6 +74,9 @@ protected:
 	void LockOn();
 	void StopLockOn();
 	
+	// Soft Lock On
+	void SoftLockOn();
+	
 	// Buffer
 	void StartBuffer(float Amount);
 	void StopBuffer();
@@ -208,6 +211,10 @@ private:
 	// Lock-on System
 	UPROPERTY()
 	TObjectPtr<AActor> TargetActor;
+	
+	// Soft Lock On
+	UPROPERTY()
+	TObjectPtr<AActor> SoftTarget;
 	
 	bool bInputHold;
 	bool bIsTargeting;
