@@ -84,6 +84,8 @@ protected:
 	// Buffer
 	void StartBuffer(float Amount);
 	void StopBuffer();
+	
+	void StopRotation();
 
 private:
 	// Camera Settings

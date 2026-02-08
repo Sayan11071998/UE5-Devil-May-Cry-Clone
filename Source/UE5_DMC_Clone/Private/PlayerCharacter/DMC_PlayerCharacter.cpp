@@ -486,12 +486,13 @@ void ADMC_PlayerCharacter::Dodge()
 
 void ADMC_PlayerCharacter::PerformDodge()
 {
-	FVector LastInput = GetCharacterMovement()->GetLastInputVector();
+	StopRotation();
+	SoftTarget = nullptr;
 	
+	FVector LastInput = GetCharacterMovement()->GetLastInputVector();
 	if (!LastInput.IsNearlyZero())
 	{
-		FRotator NewRotation = LastInput.Rotation();
-		SetActorRotation(NewRotation);
+		SetActorRotation(LastInput.Rotation());
 	}
 	
 	StopBuffer();
@@ -609,7 +610,11 @@ void ADMC_PlayerCharacter::HandleRotationTimelineProgress(float Value)
 {
 	AActor* ActualTarget = IsValid(TargetActor) ? TargetActor.Get() : SoftTarget.Get();
 	
-	if (!ActualTarget) return;
+	if (!IsValid(ActualTarget))
+	{
+		StopRotation();
+		return;
+	}
 	
 	FVector TargetLocation = ActualTarget->GetActorLocation();
 	FVector MyLocation = GetActorLocation();
@@ -648,6 +653,14 @@ void ADMC_PlayerCharacter::StartBuffer(float Amount)
 void ADMC_PlayerCharacter::StopBuffer()
 {
 	bIsBuffering = false;
+}
+
+void ADMC_PlayerCharacter::StopRotation()
+{
+	if (RotationTimeline.IsPlaying())
+	{
+		RotationTimeline.Stop();
+	}
 }
 
 void ADMC_PlayerCharacter::StartWeaponCollision()
@@ -757,9 +770,13 @@ void ADMC_PlayerCharacter::ResetState()
 	SetState(EDMC_PlayerState::ECS_Nothing);
 	ResetLightAttackVariables();
 	ResetHeavyAttackVariables();
+	
 	bSaveDodge = false;
 	StopBuffer();
 	ComboExtenderIndex = 0;
+	
+	StopRotation();
+	SoftTarget = nullptr;
 }
 
 void ADMC_PlayerCharacter::ResetLightAttackVariables()
