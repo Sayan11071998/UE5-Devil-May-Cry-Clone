@@ -567,7 +567,7 @@ void ADMC_PlayerCharacter::SoftLockOn()
 		ObjectTypes,
 		false,
 		ActorsToIgnore,
-		EDrawDebugTrace::ForDuration,
+		EDrawDebugTrace::None,
 		OutHit,
 		true
 	);
