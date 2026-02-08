@@ -41,18 +41,21 @@ float ADMC_EnemyCharacterBase::TakeDamage(float DamageAmount, struct FDamageEven
 	
 	if (DamageCauser)
 	{
+		FRotator CurrentRotation = GetActorRotation();
 		FRotator LookAtRotation = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), DamageCauser->GetActorLocation());
-		LookAtRotation.Pitch = 0.f;
-		LookAtRotation.Roll = 0.f;
-		SetActorRotation(LookAtRotation);
+		FRotator NewRotation = FRotator(CurrentRotation.Pitch, LookAtRotation.Yaw, CurrentRotation.Roll);
+		SetActorRotation(NewRotation);
 	}
 	
-	UDMC_DamageType* DamageTypeObject = Cast<UDMC_DamageType>(DamageEvent.DamageTypeClass->GetDefaultObject());
-	if (DamageTypeObject)
+	if (DamageEvent.DamageTypeClass)
 	{
-		EDMC_DamageType HitDirection = DamageTypeObject->DamageType;
-		PlayHitReaction(HitDirection);
+		UDMC_DamageType* DamageTypeObject = Cast<UDMC_DamageType>(DamageEvent.DamageTypeClass->GetDefaultObject());
+		if (DamageTypeObject)
+		{
+			PlayHitReaction(DamageTypeObject->DamageType);
+		}
 	}
+	
 	return ActualDamage;
 }
 
