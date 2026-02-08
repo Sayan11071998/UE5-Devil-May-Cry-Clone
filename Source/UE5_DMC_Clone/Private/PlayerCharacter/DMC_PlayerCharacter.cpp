@@ -151,6 +151,11 @@ void ADMC_PlayerCharacter::Tick(float DeltaTime)
 			GetCharacterMovement()->bOrientRotationToMovement = true;
 		}
 	}
+	
+	if (RotationTimeline.IsPlaying())
+	{
+		RotationTimeline.TickTimeline(DeltaTime);
+	}
 }
 
 void ADMC_PlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -324,6 +329,7 @@ bool ADMC_PlayerCharacter::PerformLightAttack(int32 InAttackIndex)
 			StartBuffer(LightAttackBufferAmount);
 			
 			SetState(EDMC_PlayerState::ECS_Attack);
+			SoftLockOn();
 			PlayAnimMontage(L_AttackMontage);
 			
 			LightAttackIndex++;
@@ -372,6 +378,7 @@ bool ADMC_PlayerCharacter::PerformHeavyAttack(int32 InAttackIndex)
 			StartBuffer(HeavyAttackBufferAmount);
 			
 			SetState(EDMC_PlayerState::ECS_Attack);
+			SoftLockOn();
 			PlayAnimMontage(H_AttackMontage);
 			
 			HeavyAttackIndex++;
@@ -412,6 +419,7 @@ bool ADMC_PlayerCharacter::PerformComboStarter()
 			bSaveLightAttack = false;
 			
 			SetState(EDMC_PlayerState::ECS_Attack);
+			SoftLockOn();
 			PlayAnimMontage(HL_AttackMontage);
 			
 			return true;
@@ -441,6 +449,7 @@ bool ADMC_PlayerCharacter::PerformComboExtender()
 			StartBuffer(ExtenderAttackBufferAmount);
 
 			SetState(EDMC_PlayerState::ECS_Attack);
+			SoftLockOn();
 			PlayAnimMontage(LH_AttackMontage);
 			return true;
 		}
@@ -529,6 +538,81 @@ void ADMC_PlayerCharacter::StopLockOn()
 	GetCharacterMovement()->bUseControllerDesiredRotation = false;
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 	GetCharacterMovement()->MaxWalkSpeed = 600.f;
+}
+
+void ADMC_PlayerCharacter::SoftLockOn()
+{
+	if (bIsTargeting && IsValid(SoftTarget))
+	{
+		SoftTarget = nullptr;
+		return;
+	}
+	
+	FVector LastInput = GetCharacterMovement()->GetLastInputVector();
+	FVector Start = GetActorLocation();
+	FVector End = Start + (LastInput * 1000.f);
+	
+	TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
+	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_Pawn));
+	
+	TArray<AActor*> ActorsToIgnore;
+	ActorsToIgnore.Add(this);
+	
+	FHitResult OutHit;
+	bool bHit = UKismetSystemLibrary::SphereTraceSingleForObjects(
+		GetWorld(),
+		Start,
+		End,
+		100.f,
+		ObjectTypes,
+		false,
+		ActorsToIgnore,
+		EDrawDebugTrace::None,
+		OutHit,
+		true
+	);
+	
+	if (bHit && IsValid(OutHit.GetActor()))
+	{
+		SoftTarget = OutHit.GetActor();
+	}
+	else
+	{
+		SoftTarget = nullptr;
+	}
+}
+
+void ADMC_PlayerCharacter::HandleRotationTimelineProgress(float Value)
+{
+	AActor* ActualTarget = IsValid(TargetActor) ? TargetActor.Get() : SoftTarget.Get();
+	
+	if (!ActualTarget) return;
+	
+	FVector TargetLocation = ActualTarget->GetActorLocation();
+	FVector MyLocation = GetActorLocation();
+	
+	FRotator LookAtRot = UKismetMathLibrary::FindLookAtRotation(MyLocation, TargetLocation);
+	FRotator CurrentRot = GetActorRotation();
+	
+	FRotator TargetRot = FRotator(CurrentRot.Pitch, LookAtRot.Yaw, CurrentRot.Roll);
+	FRotator NewRot = FMath::Lerp(CurrentRot, TargetRot, Value);
+    
+	SetActorRotation(NewRot);
+}
+
+void ADMC_PlayerCharacter::RotateToTarget()
+{
+	if (IsValid(TargetActor) || IsValid(SoftTarget))
+	{
+		if (RotationCurve)
+		{
+			FOnTimelineFloat ProgressFunction;
+			ProgressFunction.BindUFunction(this, FName("HandleRotationTimelineProgress"));
+			RotationTimeline.AddInterpFloat(RotationCurve, ProgressFunction);
+			RotationTimeline.SetLooping(false);
+			RotationTimeline.PlayFromStart();
+		}
+	}
 }
 
 void ADMC_PlayerCharacter::StartBuffer(float Amount)

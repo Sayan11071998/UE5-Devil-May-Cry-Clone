@@ -11,7 +11,12 @@ void UNotifyState_RootMotionRotation::NotifyBegin(USkeletalMeshComponent* MeshCo
 	{
 		if (ADMC_PlayerCharacter* PlayerCharacter = Cast<ADMC_PlayerCharacter>(MeshComp->GetOwner()))
 		{
-			PlayerCharacter->GetCharacterMovement()->bAllowPhysicsRotationDuringAnimRootMotion = true;
+			bool bAllowPhysicsRotation = !IsValid(PlayerCharacter->GetSoftTarget()) || !IsValid(PlayerCharacter->GetTargetActor());
+			
+			if (bAllowPhysicsRotation)
+			{
+				PlayerCharacter->GetCharacterMovement()->bAllowPhysicsRotationDuringAnimRootMotion = true;
+			}
 		}
 	}
 }
