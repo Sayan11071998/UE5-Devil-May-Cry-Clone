@@ -8,6 +8,7 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
+#include "Components/DMC_CombatBufferComponent.h"
 #include "Items/DMC_BaseWeapon.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Kismet/KismetMathLibrary.h"
@@ -42,6 +43,8 @@ ADMC_PlayerCharacter::ADMC_PlayerCharacter()
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
 	FollowCamera->bUsePawnControlRotation = false;
 	
+	BufferComponent = CreateDefaultSubobject<UDMC_CombatBufferComponent>(TEXT("CombatBuffer"));
+	
 	CurrentState = EDMC_PlayerState::ECS_Nothing;
 }
 
@@ -56,27 +59,6 @@ void ADMC_PlayerCharacter::BeginPlay()
 void ADMC_PlayerCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	
-	if (bIsBuffering && BufferCurve)
-	{
-		BufferTimeElapsed += DeltaTime;
-		
-		if (BufferTimeElapsed <= BufferDuration)
-		{
-			float Alpha = BufferCurve->GetFloatValue(BufferTimeElapsed);
-			
-			FVector CurrentLocation = GetActorLocation();
-			FVector Forward = GetActorForwardVector();
-			FVector Offset = Forward * CurrentBufferAmount * Alpha * DeltaTime * 60.f;
-			
-			FHitResult Hit;
-			SetActorLocation(CurrentLocation + Offset, true, &Hit);
-		}
-		else
-		{
-			StopBuffer();
-		}
-	}
 	
 	if (bIsTargeting && IsValid(TargetActor))
 	{
@@ -281,8 +263,8 @@ bool ADMC_PlayerCharacter::PerformLightAttack(int32 InAttackIndex)
 		
 		if (L_AttackMontage)
 		{
-			StopBuffer();
-			StartBuffer(LightAttackBufferAmount);
+			BufferComponent->StopBuffer();
+			BufferComponent->StartBuffer(LightAttackBufferAmount);
 			
 			SetState(EDMC_PlayerState::ECS_Attack);
 			SoftLockOn();
@@ -333,8 +315,8 @@ bool ADMC_PlayerCharacter::PerformHeavyAttack(int32 InAttackIndex)
 		
 		if (H_AttackMontage)
 		{
-			StopBuffer();
-			StartBuffer(HeavyAttackBufferAmount);
+			BufferComponent->StopBuffer();
+			BufferComponent->StartBuffer(HeavyAttackBufferAmount);
 			
 			SetState(EDMC_PlayerState::ECS_Attack);
 			SoftLockOn();
@@ -372,8 +354,8 @@ bool ADMC_PlayerCharacter::PerformComboStarter()
 		{
 			ComboExtenderIndex = HeavyAttackIndex;
 			
-			StopBuffer();
-			StartBuffer(StarterAttackBufferAmount);
+			BufferComponent->StopBuffer();
+			BufferComponent->StartBuffer(StarterAttackBufferAmount);
 			
 			bSaveHeavyAttack = false;
 			bSaveLightAttack = false;
@@ -406,8 +388,8 @@ bool ADMC_PlayerCharacter::PerformComboExtender()
 			ResetLightAttackVariables();
 			ResetHeavyAttackVariables();
 
-			StopBuffer();
-			StartBuffer(ExtenderAttackBufferAmount);
+			BufferComponent->StopBuffer();
+			BufferComponent->StartBuffer(ExtenderAttackBufferAmount);
 
 			SetState(EDMC_PlayerState::ECS_Attack);
 			SoftLockOn();
@@ -448,8 +430,8 @@ void ADMC_PlayerCharacter::PerformDodge()
 		SetActorRotation(LastInput.Rotation());
 	}
 	
-	StopBuffer();
-	StartBuffer(DodgeBufferAmount);
+	BufferComponent->StopBuffer();
+	BufferComponent->StartBuffer(DodgeBufferAmount);
 	
 	SetState(EDMC_PlayerState::ECS_Dodge);
 	
@@ -596,18 +578,6 @@ void ADMC_PlayerCharacter::RotateToTarget()
 	}
 }
 
-void ADMC_PlayerCharacter::StartBuffer(float Amount)
-{
-	CurrentBufferAmount = Amount;
-	BufferTimeElapsed = 0.f;
-	bIsBuffering = true;
-}
-
-void ADMC_PlayerCharacter::StopBuffer()
-{
-	bIsBuffering = false;
-}
-
 void ADMC_PlayerCharacter::StopRotation()
 {
 	if (RotationTimeline.IsPlaying())
@@ -730,7 +700,7 @@ void ADMC_PlayerCharacter::ResetState()
 	ResetHeavyAttackVariables();
 	
 	bSaveDodge = false;
-	StopBuffer();
+	BufferComponent->StopBuffer();
 	ComboExtenderIndex = 0;
 	
 	StopRotation();

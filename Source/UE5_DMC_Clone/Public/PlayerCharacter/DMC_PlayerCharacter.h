@@ -13,6 +13,7 @@ class UCameraComponent;
 class UInputMappingContext;
 class UInputAction;
 struct FInputActionValue;
+class UDMC_CombatBufferComponent;
 
 UCLASS()
 class UE5_DMC_CLONE_API ADMC_PlayerCharacter : public ACharacter
@@ -81,10 +82,6 @@ protected:
 	void SoftLockOn();
 	void HandleRotationTimelineProgress(float Value);
 	
-	// Buffer
-	void StartBuffer(float Amount);
-	void StopBuffer();
-	
 	void StopRotation();
 
 private:
@@ -94,6 +91,9 @@ private:
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UCameraComponent> FollowCamera;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UDMC_CombatBufferComponent> BufferComponent;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UInputMappingContext> DefaultMappingContext;
@@ -197,15 +197,6 @@ private:
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat|Dodge", meta = (AllowPrivateAccess = "true"))
 	float DodgeBufferAmount = 20.f;
-	
-	// Buffer
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat|Buffer", meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<UCurveFloat> BufferCurve;
-	
-	bool bIsBuffering = false;
-	float CurrentBufferAmount = 0.f;
-	float BufferTimeElapsed = 0.f;
-	const float BufferDuration = 0.25f;
 	
 	// Lock-on System
 	UPROPERTY()

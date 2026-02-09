@@ -41,18 +41,9 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Combat|Hit Reaction")
 	TMap<EDMC_DamageType, FDMC_HitReactionData> HitReactionMap;
 	
-	// Buffer
-	UPROPERTY(EditDefaultsOnly, Category = "Combat|Buffer")
-	TObjectPtr<UCurveFloat> BufferCurve;
-	
-	bool bIsBuffering = false;
-	float CurrentBufferAmount = 0.f;
-	float BufferTimeElapsed = 0.f;
-	const float BufferDuration = 0.25f;
-	
-	void UpdateBufferLogic(float DeltaTime);
-	
 	void PlayHitReaction(EDMC_DamageType DamageDirection);
-	void StartBuffer(float Amount);
-	void StopBuffer();
+	
+private:
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class UDMC_CombatBufferComponent> BufferComponent;
 };
