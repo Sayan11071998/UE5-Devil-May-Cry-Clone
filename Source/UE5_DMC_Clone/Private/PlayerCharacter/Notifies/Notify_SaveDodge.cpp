@@ -1,5 +1,5 @@
 #include "PlayerCharacter/Notifies/Notify_SaveDodge.h"
-#include "PlayerCharacter/DMC_PlayerCharacter.h"
+#include "Interfaces/DMC_CombatInterface.h"
 
 void UNotify_SaveDodge::Notify(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation,
 	const FAnimNotifyEventReference& EventReference)
@@ -8,8 +8,8 @@ void UNotify_SaveDodge::Notify(USkeletalMeshComponent* MeshComp, UAnimSequenceBa
 	
 	if (!MeshComp || !MeshComp->GetOwner()) return;
 	
-	if (ADMC_PlayerCharacter* PlayerCharacter = Cast<ADMC_PlayerCharacter>(MeshComp->GetOwner()))
+	if (IDMC_CombatInterface* CombatInterface = Cast<IDMC_CombatInterface>(MeshComp->GetOwner()))
 	{
-		PlayerCharacter->SaveDodge();
+		CombatInterface->SaveDodge();
 	}
 }

@@ -1,5 +1,5 @@
 ﻿#include "PlayerCharacter/Notifies/Notify_SaveHeavyAttack.h"
-#include "PlayerCharacter/DMC_PlayerCharacter.h"
+#include "Interfaces/DMC_CombatInterface.h"
 
 void UNotify_SaveHeavyAttack::Notify(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation,
 	const FAnimNotifyEventReference& EventReference)
@@ -8,8 +8,8 @@ void UNotify_SaveHeavyAttack::Notify(USkeletalMeshComponent* MeshComp, UAnimSequ
 	
 	if (!MeshComp || !MeshComp->GetOwner()) return;
 	
-	if (ADMC_PlayerCharacter* PlayerCharacter = Cast<ADMC_PlayerCharacter>(MeshComp->GetOwner()))
+	if (IDMC_CombatInterface* CombatInterface = Cast<IDMC_CombatInterface>(MeshComp->GetOwner()))
 	{
-		PlayerCharacter->SaveHeavyAttack();
+		CombatInterface->SaveHeavyAttack();
 	}
 }

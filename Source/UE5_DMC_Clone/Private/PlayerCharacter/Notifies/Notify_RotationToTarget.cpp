@@ -1,5 +1,5 @@
 #include "PlayerCharacter/Notifies/Notify_RotationToTarget.h"
-#include "PlayerCharacter/DMC_PlayerCharacter.h"
+#include "Interfaces/DMC_CombatInterface.h"
 
 void UNotify_RotationToTarget::Notify(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation,
 	const FAnimNotifyEventReference& EventReference)
@@ -8,8 +8,8 @@ void UNotify_RotationToTarget::Notify(USkeletalMeshComponent* MeshComp, UAnimSeq
 	
 	if (!MeshComp || !MeshComp->GetOwner()) return;
 	
-	if (ADMC_PlayerCharacter* PlayerCharacter = Cast<ADMC_PlayerCharacter>(MeshComp->GetOwner()))
+	if (IDMC_CombatInterface* CombatInterface = Cast<IDMC_CombatInterface>(MeshComp->GetOwner()))
 	{
-		PlayerCharacter->RotateToTarget();
+		CombatInterface->RotateToTarget();
 	}
 }

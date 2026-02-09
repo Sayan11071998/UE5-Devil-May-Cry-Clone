@@ -2,6 +2,8 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "Data/DMC_ComboDataAsset.h"
+#include "Interfaces/DMC_CombatInterface.h"
 #include "DMC_CharacterTypes.h"
 #include "DMC_PlayerCharacter.generated.h"
 
@@ -16,7 +18,7 @@ class UDMC_CombatBufferComponent;
 class UDMC_TargetingComponent;
 
 UCLASS()
-class UE5_DMC_CLONE_API ADMC_PlayerCharacter : public ACharacter
+class UE5_DMC_CLONE_API ADMC_PlayerCharacter : public ACharacter, public IDMC_CombatInterface
 {
 	GENERATED_BODY()
 
@@ -25,7 +27,6 @@ public:
 
 	// Core State Management
 	void SetState(EDMC_PlayerState NewState);
-	void ResetState();
 	void ResetDoubleJump();
 
 	// Combat || Input Interface -> These are called by Input Bindings or Animation Notifies
@@ -33,20 +34,30 @@ public:
 	void HeavyAttack();
 	void Dodge();
 	
-	void SaveLightAttack();
-	void SaveHeavyAttack();
-	void SaveDodge();
+	// Combat - Input Interface implementations
+	virtual void SaveLightAttack() override;
+	virtual void SaveHeavyAttack() override;
+	virtual void SaveDodge() override;
+	
+	virtual void ResetState() override;
+	
+	// Targeting & Rotation implementations
+	virtual void RotateToTarget() override;
+	virtual void SetAllowPhysicsRotation(bool bAllow) override;
+	virtual AActor* GetCombatTarget() const override;
+	virtual AActor* GetSoftTarget() const override;
+	
+	// Weapon Collision implementations
+	virtual void StartWeaponCollision(TSubclassOf<class UDMC_DamageType> DamageType) override;
+	virtual void EndWeaponCollision() override;
 
 	// Combat || Equipment & Collision
 	void EquipWeapon();
-	void StartWeaponCollision();
-	void EndWeaponCollision();
 
 	// Combat || Targeting
 	void LockOn();
 	void StopLockOn();
 	void SoftLockOn();
-	void RotateToTarget();
 	void StopRotation();
 
 	// Damage Configuration
@@ -133,8 +144,12 @@ private:
 	bool bDoubleJump = false;
 
 	// Combat || State & Weapon
-	EDMC_PlayerState CurrentState;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "DMC|Combat", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UDMC_ComboDataAsset> ComboData;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "DMC|Combat", meta = (AllowPrivateAccess = "true"))
+	EDMC_PlayerState CurrentState;
+	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "DMC|Combat", meta = (AllowPrivateAccess = "true"))
 	TSubclassOf<ADMC_BaseWeapon> WeaponClass;
 	
@@ -143,38 +158,6 @@ private:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "DMC|Combat", meta = (AllowPrivateAccess = "true"))
 	FName WeaponSocketName;
-
-	// Combat || Combo Data
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "DMC|Combat|Light", meta = (AllowPrivateAccess = "true"))
-	TArray<TObjectPtr<UAnimMontage>> LightAttackCombo;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "DMC|Combat|Heavy", meta = (AllowPrivateAccess = "true"))
-	TArray<TObjectPtr<UAnimMontage>> HeavyAttackCombo;
-
-	UPROPERTY(EditDefaultsOnly, Category = "DMC|Combat|Combo", meta = (AllowPrivateAccess = "true"))
-	TArray<TObjectPtr<UAnimMontage>> ComboStarterMontages;
-
-	UPROPERTY(EditDefaultsOnly, Category = "DMC|Combat|Combo", meta = (AllowPrivateAccess = "true"))
-	TArray<TObjectPtr<UAnimMontage>> ComboExtenderMontages;
-
-	// Combat || Buffers & Indices
-	UPROPERTY(EditDefaultsOnly, Category = "DMC|Combat|Light", meta = (AllowPrivateAccess = "true"))
-	float LightAttackBufferAmount = 3.f;
-
-	UPROPERTY(EditDefaultsOnly, Category = "DMC|Combat|Heavy", meta = (AllowPrivateAccess = "true"))
-	float HeavyAttackBufferAmount = 3.f;
-
-	UPROPERTY(EditDefaultsOnly, Category = "DMC|Combat|Combo", meta = (AllowPrivateAccess = "true"))
-	float StarterAttackBufferAmount = 3.f;
-
-	UPROPERTY(EditDefaultsOnly, Category = "DMC|Combat|Combo", meta = (AllowPrivateAccess = "true"))
-	float ExtenderAttackBufferAmount = 3.f;
-
-	UPROPERTY(EditDefaultsOnly, Category = "DMC|Combat|Dodge", meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<UAnimMontage> DodgeMontage;
-
-	UPROPERTY(EditDefaultsOnly, Category = "DMC|Combat|Dodge", meta = (AllowPrivateAccess = "true"))
-	float DodgeBufferAmount = 20.f;
 
 	int32 LightAttackIndex = 0;
 	int32 HeavyAttackIndex = 0;
@@ -198,6 +181,5 @@ public:
 
 	// Targeting Getters
 	bool GetIsTargeting() const;
-	TObjectPtr<AActor> GetTargetActor() const;
-	TObjectPtr<AActor> GetSoftTarget() const;
+	AActor* GetTargetActor() const { return GetCombatTarget(); }
 };

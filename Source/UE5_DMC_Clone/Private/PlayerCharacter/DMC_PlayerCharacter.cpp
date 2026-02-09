@@ -98,20 +98,6 @@ void ADMC_PlayerCharacter::SetState(EDMC_PlayerState NewState)
 	}
 }
 
-void ADMC_PlayerCharacter::ResetState()
-{
-	SetState(EDMC_PlayerState::ECS_Nothing);
-	ResetLightAttackVariables();
-	ResetHeavyAttackVariables();
-	
-	bSaveDodge = false;
-	BufferComponent->StopBuffer();
-	ComboExtenderIndex = 0;
-	
-	TargetingComp->StopRotation();
-	TargetingComp->ClearSoftTarget();
-}
-
 void ADMC_PlayerCharacter::ResetDoubleJump()
 {
 	bDoubleJump = false;
@@ -210,11 +196,26 @@ void ADMC_PlayerCharacter::SaveDodge()
 	TryConsumeBufferedInput();
 }
 
+void ADMC_PlayerCharacter::ResetState()
+{
+	SetState(EDMC_PlayerState::ECS_Nothing);
+	ResetLightAttackVariables();
+	ResetHeavyAttackVariables();
+	
+	bSaveDodge = false;
+	BufferComponent->StopBuffer();
+	ComboExtenderIndex = 0;
+	
+	TargetingComp->StopRotation();
+	TargetingComp->ClearSoftTarget();
+}
+
 void ADMC_PlayerCharacter::EquipWeapon()
 {
 	if (!WeaponClass || EquippedWeapon) return;
 	
-	if (UWorld* World = GetWorld())
+	UWorld* World = GetWorld();
+	if (World)
 	{
 		FActorSpawnParameters SpawnParams;
 		SpawnParams.Owner = this;
@@ -229,11 +230,11 @@ void ADMC_PlayerCharacter::EquipWeapon()
 	}
 }
 
-void ADMC_PlayerCharacter::StartWeaponCollision()
+void ADMC_PlayerCharacter::StartWeaponCollision(TSubclassOf<UDMC_DamageType> DamageType)
 {
 	if (EquippedWeapon)
 	{
-		EquippedWeapon->StartCollision(DamageTypeClass);
+		EquippedWeapon->StartCollision(DamageType);
 	}
 }
 
@@ -263,6 +264,11 @@ void ADMC_PlayerCharacter::SoftLockOn()
 void ADMC_PlayerCharacter::RotateToTarget()
 {
 	TargetingComp->RotateToTarget();
+}
+
+void ADMC_PlayerCharacter::SetAllowPhysicsRotation(bool bAllow)
+{
+	GetCharacterMovement()->bAllowPhysicsRotationDuringAnimRootMotion = bAllow;
 }
 
 void ADMC_PlayerCharacter::StopRotation()
@@ -381,12 +387,12 @@ void ADMC_PlayerCharacter::TryConsumeBufferedInput()
 
 bool ADMC_PlayerCharacter::PerformLightAttack(int32 InAttackIndex)
 {
-	if (!LightAttackCombo.IsValidIndex(InAttackIndex)) return false;
+	if (!ComboData || !ComboData->LightAttackCombo.IsValidIndex(InAttackIndex)) return false;
 
-	if (ExecuteAttack(LightAttackCombo[InAttackIndex], LightAttackBufferAmount))
+	if (ExecuteAttack(ComboData->LightAttackCombo[InAttackIndex], ComboData->LightAttackBuffer))
 	{
 		LightAttackIndex++;
-		if (LightAttackIndex >= LightAttackCombo.Num())
+		if (LightAttackIndex >= ComboData->LightAttackCombo.Num())
 		{
 			LightAttackIndex = 0;
 		}
@@ -398,12 +404,12 @@ bool ADMC_PlayerCharacter::PerformLightAttack(int32 InAttackIndex)
 
 bool ADMC_PlayerCharacter::PerformHeavyAttack(int32 InAttackIndex)
 {
-	if (!HeavyAttackCombo.IsValidIndex(InAttackIndex)) return false;
+	if (!ComboData || !ComboData->HeavyAttackCombo.IsValidIndex(InAttackIndex)) return false;
 
-	if (ExecuteAttack(HeavyAttackCombo[InAttackIndex], HeavyAttackBufferAmount))
+	if (ExecuteAttack(ComboData->HeavyAttackCombo[InAttackIndex], ComboData->HeavyAttackBuffer))
 	{
 		HeavyAttackIndex++;
-		if (HeavyAttackIndex >= HeavyAttackCombo.Num())
+		if (HeavyAttackIndex >= ComboData->HeavyAttackCombo.Num())
 		{
 			HeavyAttackIndex = 0;
 		}
@@ -415,13 +421,13 @@ bool ADMC_PlayerCharacter::PerformHeavyAttack(int32 InAttackIndex)
 
 bool ADMC_PlayerCharacter::PerformComboStarter()
 {
-	if (IsBusy() || GetCharacterMovement()->IsFalling()) return false;
+	if (!ComboData || IsBusy() || GetCharacterMovement()->IsFalling()) return false;
 	
 	int32 HL_ComboStarterIndex = HeavyAttackIndex - 1;
 	
-	if (ComboStarterMontages.IsValidIndex(HL_ComboStarterIndex))
+	if (ComboData->ComboStarterMontages.IsValidIndex(HL_ComboStarterIndex))
 	{
-		if (ExecuteAttack(ComboStarterMontages[HL_ComboStarterIndex], StarterAttackBufferAmount))
+		if (ExecuteAttack(ComboData->ComboStarterMontages[HL_ComboStarterIndex], ComboData->StarterAttackBuffer))
 		{
 			ComboExtenderIndex = HeavyAttackIndex;
 			ResetHeavyAttackVariables();
@@ -435,12 +441,12 @@ bool ADMC_PlayerCharacter::PerformComboStarter()
 
 bool ADMC_PlayerCharacter::PerformComboExtender()
 {
-	if (IsBusy() || GetCharacterMovement()->IsFalling()) return false;
+	if (!ComboData || IsBusy() || GetCharacterMovement()->IsFalling()) return false;
 
 	int32 LH_FinisherIndex = ComboExtenderIndex - 1;
-	if (ComboExtenderMontages.IsValidIndex(LH_FinisherIndex))
+	if (ComboData->ComboExtenderMontages.IsValidIndex(LH_FinisherIndex))
 	{
-		if (ExecuteAttack(ComboExtenderMontages[LH_FinisherIndex], ExtenderAttackBufferAmount))
+		if (ExecuteAttack(ComboData->ComboExtenderMontages[LH_FinisherIndex], ComboData->ExtenderAttackBuffer))
 		{
 			ResetLightAttackVariables();
 			ResetHeavyAttackVariables();
@@ -464,13 +470,17 @@ void ADMC_PlayerCharacter::PerformDodge()
 	}
 	
 	BufferComponent->StopBuffer();
-	BufferComponent->StartBuffer(DodgeBufferAmount);
 	
-	SetState(EDMC_PlayerState::ECS_Dodge);
-	
-	if (DodgeMontage)
+	if (ComboData)
 	{
-		PlayAnimMontage(DodgeMontage);
+		BufferComponent->StartBuffer(ComboData->DodgeBufferAmount);
+		
+		SetState(EDMC_PlayerState::ECS_Dodge);
+		
+		if (ComboData->DodgeMontage)
+		{
+			PlayAnimMontage(ComboData->DodgeMontage);
+		}
 	}
 }
 
@@ -491,12 +501,12 @@ bool ADMC_PlayerCharacter::GetIsTargeting() const
 	return TargetingComp ? TargetingComp->IsTargeting() : false;
 }
 
-TObjectPtr<AActor> ADMC_PlayerCharacter::GetTargetActor() const
-{
-	return TargetingComp ? TargetingComp->GetTargetActor() : nullptr;
-}
-
-TObjectPtr<AActor> ADMC_PlayerCharacter::GetSoftTarget() const
+AActor* ADMC_PlayerCharacter::GetSoftTarget() const
 {
 	return TargetingComp ? TargetingComp->GetSoftTarget() : nullptr;
+}
+
+AActor* ADMC_PlayerCharacter::GetCombatTarget() const
+{
+	return TargetingComp ? TargetingComp->GetTargetActor() : nullptr;
 }
