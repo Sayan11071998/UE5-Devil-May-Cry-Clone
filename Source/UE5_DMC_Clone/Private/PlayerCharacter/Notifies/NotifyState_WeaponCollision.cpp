@@ -1,18 +1,16 @@
 #include "PlayerCharacter/Notifies/NotifyState_WeaponCollision.h"
-#include "PlayerCharacter/DMC_PlayerCharacter.h"
+#include "Interfaces/DMC_CombatInterface.h"
 
 void UNotifyState_WeaponCollision::NotifyBegin(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation,
 	float TotalDuration, const FAnimNotifyEventReference& EventReference)
 {
 	Super::NotifyBegin(MeshComp, Animation, TotalDuration, EventReference);
 	
-	if (MeshComp && MeshComp->GetOwner())
+	if (!MeshComp || !MeshComp->GetOwner()) return;
+	
+	if (IDMC_CombatInterface* CombatInterface = Cast<IDMC_CombatInterface>(MeshComp->GetOwner()))
 	{
-		if (ADMC_PlayerCharacter* PlayerCharacter = Cast<ADMC_PlayerCharacter>(MeshComp->GetOwner()))
-		{
-			PlayerCharacter->DamageTypeClass = DamageTypeClass;
-			PlayerCharacter->StartWeaponCollision();
-		}
+		CombatInterface->StartWeaponCollision(DamageTypeClass);
 	}
 }
 
@@ -21,11 +19,10 @@ void UNotifyState_WeaponCollision::NotifyEnd(USkeletalMeshComponent* MeshComp, U
 {
 	Super::NotifyEnd(MeshComp, Animation, EventReference);
 	
-	if (MeshComp && MeshComp->GetOwner())
+	if (!MeshComp || !MeshComp->GetOwner()) return;
+	
+	if (IDMC_CombatInterface* CombatInterface = Cast<IDMC_CombatInterface>(MeshComp->GetOwner()))
 	{
-		if (ADMC_PlayerCharacter* PlayerCharacter = Cast<ADMC_PlayerCharacter>(MeshComp->GetOwner()))
-		{
-			PlayerCharacter->EndWeaponCollision();
-		}
+		CombatInterface->EndWeaponCollision();
 	}
 }

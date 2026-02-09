@@ -19,28 +19,30 @@ public:
 	virtual void NativeUpdateAnimation(float DeltaSeconds) override;
 	// ~ End UAnimInstance interface
 	
-protected:
-	UPROPERTY(BlueprintReadOnly, Category = "Character")
+private:
+	// Reference to the character owning this anim instance and it's components
+	UPROPERTY(BlueprintReadOnly, Category = "Character", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<ADMC_PlayerCharacter> PlayerCharacter;
 	
-	UPROPERTY(BlueprintReadOnly, Category = "Character")
+	UPROPERTY(BlueprintReadOnly, Category = "Character", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UCharacterMovementComponent> PlayerCharacterMovement;
 	
-	UPROPERTY(BlueprintReadOnly, Category = "Movement")
+	// Character Variables
+	UPROPERTY(BlueprintReadOnly, Category = "Movement", meta = (AllowPrivateAccess = "true"))
 	float Speed;
 	
-	UPROPERTY(BlueprintReadOnly, Category = "Movement")
+	UPROPERTY(BlueprintReadOnly, Category = "Movement", meta = (AllowPrivateAccess = "true"))
 	float Direction;
 	
-	UPROPERTY(BlueprintReadOnly, Category = "Movement")
+	UPROPERTY(BlueprintReadOnly, Category = "Movement", meta = (AllowPrivateAccess = "true"))
 	bool bIsFalling;
 	
-	UPROPERTY(BlueprintReadOnly, Category = "Movement")
+	UPROPERTY(BlueprintReadOnly, Category = "Movement", meta = (AllowPrivateAccess = "true"))
 	bool bDoubleJump;
 	
-	UPROPERTY(BlueprintReadOnly, Category = "Movement")
+	UPROPERTY(BlueprintReadOnly, Category = "Movement", meta = (AllowPrivateAccess = "true"))
 	bool bIsTargeting;
-	
-	UPROPERTY(BlueprintReadOnly, Category = "State")
+
+	UPROPERTY(BlueprintReadOnly, Category = "State", meta = (AllowPrivateAccess = "true"))
 	EDMC_PlayerState CurrentState;
 };

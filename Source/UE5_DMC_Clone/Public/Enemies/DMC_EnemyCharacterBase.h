@@ -2,9 +2,20 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "DamageTypes/DMC_DamageType.h"
 #include "DMC_EnemyCharacterBase.generated.h"
 
-enum class EDMC_DamageType : uint8;
+USTRUCT(BlueprintType)
+struct FDMC_HitReactionData
+{
+	GENERATED_BODY()
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TObjectPtr<UAnimMontage> HitReactMontage;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float PushbackAmount = -6.f;
+};
 
 UCLASS()
 class UE5_DMC_CLONE_API ADMC_EnemyCharacterBase : public ACharacter
@@ -15,38 +26,24 @@ public:
 	ADMC_EnemyCharacterBase();
 	
 	// ~ Begin APawn interface
-	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
+	virtual float TakeDamage(
+		float DamageAmount,
+		struct FDamageEvent const& DamageEvent,
+		class AController* EventInstigator,
+		AActor* DamageCauser	
+	) override;
 	// ~ End APawn interface
 	
 protected:
 	virtual void Tick(float DeltaTime) override;
 	
-	// Hit Reaction Montages
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat|Hit Reaction")
-	TObjectPtr<UAnimMontage> HitReactionLeft;
+	// Link a Damage Type to a specific Animation and Pushback amount
+	UPROPERTY(EditDefaultsOnly, Category = "Combat|Hit Reaction")
+	TMap<EDMC_DamageType, FDMC_HitReactionData> HitReactionMap;
 	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat|Hit Reaction")
-	TObjectPtr<UAnimMontage> HitReactionRight;
-	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat|Hit Reaction")
-	TObjectPtr<UAnimMontage> HitReactionMiddle;
-	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat|Hit Reaction")
-	TObjectPtr<UAnimMontage> HitReactionKnockBack;
-	
-	// Buffer
-	UPROPERTY(EditDefaultsOnly, Category = "Combat|Buffer")
-	TObjectPtr<UCurveFloat> BufferCurve;
-	
-	bool bIsBuffering = false;
-	float CurrentBufferAmount = 0.f;
-	float BufferTimeElapsed = 0.f;
-	const float BufferDuration = 0.25f;
-	
-	// Hit Reaction
 	void PlayHitReaction(EDMC_DamageType DamageDirection);
 	
-	// Buffer Play
-	void StartBuffer(float Amount);
-	void StopBuffer();
+private:
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class UDMC_CombatBufferComponent> BufferComponent;
 };

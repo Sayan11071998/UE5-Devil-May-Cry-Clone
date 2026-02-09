@@ -1,22 +1,22 @@
 #include "PlayerCharacter/Notifies/NotifyState_RootMotionRotation.h"
-#include "GameFramework/CharacterMovementComponent.h"
-#include "PlayerCharacter/DMC_PlayerCharacter.h"
+#include "Interfaces/DMC_CombatInterface.h"
 
 void UNotifyState_RootMotionRotation::NotifyBegin(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation,
-                                             float TotalDuration, const FAnimNotifyEventReference& EventReference)
+	float TotalDuration, const FAnimNotifyEventReference& EventReference)
 {
 	Super::NotifyBegin(MeshComp, Animation, TotalDuration, EventReference);
 	
-	if (MeshComp && MeshComp->GetOwner())
+	if (!MeshComp || !MeshComp->GetOwner()) return;
+	
+	if (IDMC_CombatInterface* CombatInterface = Cast<IDMC_CombatInterface>(MeshComp->GetOwner()))
 	{
-		if (ADMC_PlayerCharacter* PlayerCharacter = Cast<ADMC_PlayerCharacter>(MeshComp->GetOwner()))
-		{
-			bool bAllowPhysicsRotation = !IsValid(PlayerCharacter->GetSoftTarget()) || !IsValid(PlayerCharacter->GetTargetActor());
+		bool bAllowPhysicsRotation =
+			!IsValid(CombatInterface->GetSoftTarget()) ||
+			!IsValid(CombatInterface->GetCombatTarget());
 			
-			if (bAllowPhysicsRotation)
-			{
-				PlayerCharacter->GetCharacterMovement()->bAllowPhysicsRotationDuringAnimRootMotion = true;
-			}
+		if (bAllowPhysicsRotation)
+		{
+			CombatInterface->SetAllowPhysicsRotation(true);
 		}
 	}
 }
@@ -26,11 +26,10 @@ void UNotifyState_RootMotionRotation::NotifyEnd(USkeletalMeshComponent* MeshComp
 {
 	Super::NotifyEnd(MeshComp, Animation, EventReference);
 	
-	if (MeshComp && MeshComp->GetOwner())
+	if (!MeshComp || !MeshComp->GetOwner()) return;
+	
+	if (IDMC_CombatInterface* CombatInterface = Cast<IDMC_CombatInterface>(MeshComp->GetOwner()))
 	{
-		if (ADMC_PlayerCharacter* PlayerCharacter = Cast<ADMC_PlayerCharacter>(MeshComp->GetOwner()))
-		{
-			PlayerCharacter->GetCharacterMovement()->bAllowPhysicsRotationDuringAnimRootMotion = false;
-		}
+		CombatInterface->SetAllowPhysicsRotation(false);
 	}
 }
