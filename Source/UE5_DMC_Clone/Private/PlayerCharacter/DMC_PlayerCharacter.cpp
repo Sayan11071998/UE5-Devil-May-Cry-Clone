@@ -51,8 +51,6 @@ ADMC_PlayerCharacter::ADMC_PlayerCharacter()
 void ADMC_PlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	
-	// Automatically Equip Weapon at start
 	EquipWeapon();
 }
 
@@ -65,7 +63,6 @@ void ADMC_PlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 	
-	// Add Input Mapping Context
 	if (APlayerController* PlayerController = Cast<APlayerController>(GetController()))
 	{
 		if (UEnhancedInputLocalPlayerSubsystem* Subsystem =
@@ -75,7 +72,6 @@ void ADMC_PlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 		}
 	}
 	
-	// Set up action bindings
 	if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent))
 	{
 		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ADMC_PlayerCharacter::Move);
@@ -90,44 +86,87 @@ void ADMC_PlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 		EnhancedInputComponent->BindAction(DodgeAction, ETriggerEvent::Started, this, &ADMC_PlayerCharacter::Dodge);
 	
 		EnhancedInputComponent->BindAction(LockOnAction, ETriggerEvent::Started, this, &ADMC_PlayerCharacter::LockOn);
-		EnhancedInputComponent->BindAction(LockOnAction, ETriggerEvent::Started, this, &ADMC_PlayerCharacter::StopLockOn);
+		EnhancedInputComponent->BindAction(LockOnAction, ETriggerEvent::Completed, this, &ADMC_PlayerCharacter::StopLockOn);
 	}
 }
 
-void ADMC_PlayerCharacter::Move(const FInputActionValue& Value)
+void ADMC_PlayerCharacter::SetState(EDMC_PlayerState NewState)
 {
-	FVector2D MovementVector = Value.Get<FVector2D>();
-
-	if (Controller != nullptr)
+	if (CurrentState != NewState)
 	{
-		// Find out which way is forward
-		const FRotator Rotation = Controller->GetControlRotation();
-		const FRotator YawRotation(0, Rotation.Yaw, 0);
-
-		// Fet forward vector
-		const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
-	
-		// Get right vector 
-		const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
-
-		// Add movement 
-		AddMovementInput(ForwardDirection, MovementVector.Y);
-		AddMovementInput(RightDirection, MovementVector.X);
+		CurrentState = NewState;
 	}
 }
 
-void ADMC_PlayerCharacter::Look(const FInputActionValue& Value)
+void ADMC_PlayerCharacter::ResetState()
 {
-	if (TargetingComp->IsTargeting()) return;
+	SetState(EDMC_PlayerState::ECS_Nothing);
+	ResetLightAttackVariables();
+	ResetHeavyAttackVariables();
 	
-	// Input is a Vector2D
-	FVector2D LookAxisVector = Value.Get<FVector2D>();
+	bSaveDodge = false;
+	BufferComponent->StopBuffer();
+	ComboExtenderIndex = 0;
+	
+	TargetingComp->StopRotation();
+	TargetingComp->ClearSoftTarget();
+}
 
-	if (Controller != nullptr)
+void ADMC_PlayerCharacter::ResetDoubleJump()
+{
+	bDoubleJump = false;
+}
+
+void ADMC_PlayerCharacter::LightAttack()
+{
+	bSaveHeavyAttack = false;
+	bSaveDodge = false;
+	
+	if (IsBusy())
 	{
-		// Add yaw and pitch input to controller
-		AddControllerYawInput(LookAxisVector.X);
-		AddControllerPitchInput(LookAxisVector.Y);
+		bSaveLightAttack = true;
+	}
+	else
+	{
+		if (!GetCharacterMovement()->IsFalling())
+		{
+			ResetHeavyAttackVariables();
+			PerformLightAttack(LightAttackIndex);
+		}
+	}
+}
+
+void ADMC_PlayerCharacter::HeavyAttack()
+{
+	bSaveLightAttack = false;
+	bSaveDodge = false;
+	
+	if (IsBusy())
+	{
+		bSaveHeavyAttack = true;
+	}
+	else
+	{
+		if (!GetCharacterMovement()->IsFalling())
+		{
+			ResetLightAttackVariables();
+			PerformHeavyAttack(HeavyAttackIndex);
+		}
+	}
+}
+
+void ADMC_PlayerCharacter::Dodge()
+{
+	if (IsDodging())
+	{
+		bSaveDodge = true;
+	}
+	else
+	{
+		if (!GetCharacterMovement()->IsFalling())
+		{
+			PerformDodge();
+		}
 	}
 }
 
@@ -156,192 +195,53 @@ void ADMC_PlayerCharacter::Jump()
 	}
 }
 
-void ADMC_PlayerCharacter::Landed(const FHitResult& Hit)
+void ADMC_PlayerCharacter::SaveLightAttack()
 {
-	Super::Landed(Hit);
-	
-	if (Hit.GetActor())
-	{
-		UClass* HitActorClass = Hit.GetActor()->GetClass();
-		for (TSubclassOf<AActor> AllowedClass : CanLandClasses)
-		{
-			if (HitActorClass->IsChildOf(AllowedClass))
-			{
-				ResetDoubleJump();
-				break;
-			}
-		}
-	}
+	TryConsumeBufferedInput();
+}
+
+void ADMC_PlayerCharacter::SaveHeavyAttack()
+{
+	TryConsumeBufferedInput();
+}
+
+void ADMC_PlayerCharacter::SaveDodge()
+{
+	TryConsumeBufferedInput();
 }
 
 void ADMC_PlayerCharacter::EquipWeapon()
 {
 	if (!WeaponClass || EquippedWeapon) return;
 	
-	if (WeaponClass)
+	if (UWorld* World = GetWorld())
 	{
-		UWorld* World = GetWorld();
-		if (World)
+		FActorSpawnParameters SpawnParams;
+		SpawnParams.Owner = this;
+		SpawnParams.Instigator = GetInstigator();
+		
+		EquippedWeapon = World->SpawnActor<ADMC_BaseWeapon>(WeaponClass, SpawnParams);
+		
+		if (EquippedWeapon)
 		{
-			FActorSpawnParameters SpawnParams;
-			SpawnParams.Owner = this;
-			SpawnParams.Instigator = GetInstigator();
-			
-			EquippedWeapon = World->SpawnActor<ADMC_BaseWeapon>(WeaponClass, SpawnParams);
-			
-			if (EquippedWeapon)
-			{
-				EquippedWeapon->Equip(GetMesh(), WeaponSocketName, this, this);
-			}
+			EquippedWeapon->Equip(GetMesh(), WeaponSocketName, this, this);
 		}
 	}
 }
 
-void ADMC_PlayerCharacter::LightAttack()
+void ADMC_PlayerCharacter::StartWeaponCollision()
 {
-	bSaveHeavyAttack = false;
-	bSaveDodge = false;
-	
-	if (IsBusy())
+	if (EquippedWeapon)
 	{
-		bSaveLightAttack = true;
-	}
-	else
-	{
-		if (!GetCharacterMovement()->IsFalling())
-		{
-			ResetHeavyAttackVariables();
-			PerformLightAttack(LightAttackIndex);
-		}
+		EquippedWeapon->StartCollision(DamageTypeClass);
 	}
 }
 
-bool ADMC_PlayerCharacter::PerformLightAttack(int32 InAttackIndex)
+void ADMC_PlayerCharacter::EndWeaponCollision()
 {
-	if (!LightAttackCombo.IsValidIndex(InAttackIndex)) return false;
-
-	if (ExecuteAttack(LightAttackCombo[InAttackIndex], LightAttackBufferAmount))
+	if (EquippedWeapon)
 	{
-		LightAttackIndex++;
-		if (LightAttackIndex >= LightAttackCombo.Num())
-		{
-			LightAttackIndex = 0;
-		}
-		return true;
-	}
-	
-	return false;
-}
-
-void ADMC_PlayerCharacter::HeavyAttack()
-{
-	bSaveLightAttack = false;
-	bSaveDodge = false;
-	
-	if (IsBusy())
-	{
-		bSaveHeavyAttack = true;
-	}
-	else
-	{
-		if (!GetCharacterMovement()->IsFalling())
-		{
-			ResetLightAttackVariables();
-			PerformHeavyAttack(HeavyAttackIndex);
-		}
-	}
-}
-
-bool ADMC_PlayerCharacter::PerformHeavyAttack(int32 InAttackIndex)
-{
-	if (!HeavyAttackCombo.IsValidIndex(InAttackIndex)) return false;
-
-	if (ExecuteAttack(HeavyAttackCombo[InAttackIndex], HeavyAttackBufferAmount))
-	{
-		HeavyAttackIndex++;
-		if (HeavyAttackIndex >= HeavyAttackCombo.Num())
-		{
-			HeavyAttackIndex = 0;
-		}
-		return true;
-	}
-	
-	return false;
-}
-
-bool ADMC_PlayerCharacter::PerformComboStarter()
-{
-	if (IsBusy() || GetCharacterMovement()->IsFalling()) return false;
-	
-	int32 HL_ComboStarterIndex = HeavyAttackIndex - 1;
-	
-	if (ComboStarterMontages.IsValidIndex(HL_ComboStarterIndex))
-	{
-		if (ExecuteAttack(ComboStarterMontages[HL_ComboStarterIndex], StarterAttackBufferAmount))
-		{
-			ComboExtenderIndex = HeavyAttackIndex;
-			ResetHeavyAttackVariables();
-			bSaveLightAttack = false;
-			return true;
-		}
-	}
-	
-	return false;
-}
-
-bool ADMC_PlayerCharacter::PerformComboExtender()
-{
-	if (IsBusy() || GetCharacterMovement()->IsFalling()) return false;
-
-	int32 LH_FinisherIndex = ComboExtenderIndex - 1;
-	if (ComboExtenderMontages.IsValidIndex(LH_FinisherIndex))
-	{
-		if (ExecuteAttack(ComboExtenderMontages[LH_FinisherIndex], ExtenderAttackBufferAmount))
-		{
-			ResetLightAttackVariables();
-			ResetHeavyAttackVariables();
-			ComboExtenderIndex = 0;
-			return true;
-		}
-	}
-
-	return false;
-}
-
-void ADMC_PlayerCharacter::Dodge()
-{
-	if (IsDodging())
-	{
-		bSaveDodge = true;
-	}
-	else
-	{
-		if (!GetCharacterMovement()->IsFalling())
-		{
-			PerformDodge();
-		}
-	}
-}
-
-void ADMC_PlayerCharacter::PerformDodge()
-{
-	StopRotation();
-	TargetingComp->ClearSoftTarget();
-	
-	FVector LastInput = GetCharacterMovement()->GetLastInputVector();
-	if (!LastInput.IsNearlyZero())
-	{
-		SetActorRotation(LastInput.Rotation());
-	}
-	
-	BufferComponent->StopBuffer();
-	BufferComponent->StartBuffer(DodgeBufferAmount);
-	
-	SetState(EDMC_PlayerState::ECS_Dodge);
-	
-	if (DodgeMontage)
-	{
-		PlayAnimMontage(DodgeMontage);
+		EquippedWeapon->EndCollision();
 	}
 }
 
@@ -368,6 +268,54 @@ void ADMC_PlayerCharacter::RotateToTarget()
 void ADMC_PlayerCharacter::StopRotation()
 {
 	TargetingComp->StopRotation();
+}
+
+void ADMC_PlayerCharacter::Landed(const FHitResult& Hit)
+{
+	Super::Landed(Hit);
+	
+	if (Hit.GetActor())
+	{
+		UClass* HitActorClass = Hit.GetActor()->GetClass();
+		for (TSubclassOf<AActor> AllowedClass : CanLandClasses)
+		{
+			if (HitActorClass->IsChildOf(AllowedClass))
+			{
+				ResetDoubleJump();
+				break;
+			}
+		}
+	}
+}
+
+void ADMC_PlayerCharacter::Move(const FInputActionValue& Value)
+{
+	FVector2D MovementVector = Value.Get<FVector2D>();
+
+	if (Controller != nullptr)
+	{
+		const FRotator Rotation = Controller->GetControlRotation();
+		const FRotator YawRotation(0, Rotation.Yaw, 0);
+
+		const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
+		const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
+
+		AddMovementInput(ForwardDirection, MovementVector.Y);
+		AddMovementInput(RightDirection, MovementVector.X);
+	}
+}
+
+void ADMC_PlayerCharacter::Look(const FInputActionValue& Value)
+{
+	if (TargetingComp->IsTargeting()) return;
+	
+	FVector2D LookAxisVector = Value.Get<FVector2D>();
+
+	if (Controller != nullptr)
+	{
+		AddControllerYawInput(LookAxisVector.X);
+		AddControllerPitchInput(LookAxisVector.Y);
+	}
 }
 
 bool ADMC_PlayerCharacter::ExecuteAttack(UAnimMontage* Montage, float BufferAmount)
@@ -431,6 +379,113 @@ void ADMC_PlayerCharacter::TryConsumeBufferedInput()
 	}
 }
 
+bool ADMC_PlayerCharacter::PerformLightAttack(int32 InAttackIndex)
+{
+	if (!LightAttackCombo.IsValidIndex(InAttackIndex)) return false;
+
+	if (ExecuteAttack(LightAttackCombo[InAttackIndex], LightAttackBufferAmount))
+	{
+		LightAttackIndex++;
+		if (LightAttackIndex >= LightAttackCombo.Num())
+		{
+			LightAttackIndex = 0;
+		}
+		return true;
+	}
+	
+	return false;
+}
+
+bool ADMC_PlayerCharacter::PerformHeavyAttack(int32 InAttackIndex)
+{
+	if (!HeavyAttackCombo.IsValidIndex(InAttackIndex)) return false;
+
+	if (ExecuteAttack(HeavyAttackCombo[InAttackIndex], HeavyAttackBufferAmount))
+	{
+		HeavyAttackIndex++;
+		if (HeavyAttackIndex >= HeavyAttackCombo.Num())
+		{
+			HeavyAttackIndex = 0;
+		}
+		return true;
+	}
+	
+	return false;
+}
+
+bool ADMC_PlayerCharacter::PerformComboStarter()
+{
+	if (IsBusy() || GetCharacterMovement()->IsFalling()) return false;
+	
+	int32 HL_ComboStarterIndex = HeavyAttackIndex - 1;
+	
+	if (ComboStarterMontages.IsValidIndex(HL_ComboStarterIndex))
+	{
+		if (ExecuteAttack(ComboStarterMontages[HL_ComboStarterIndex], StarterAttackBufferAmount))
+		{
+			ComboExtenderIndex = HeavyAttackIndex;
+			ResetHeavyAttackVariables();
+			bSaveLightAttack = false;
+			return true;
+		}
+	}
+	
+	return false;
+}
+
+bool ADMC_PlayerCharacter::PerformComboExtender()
+{
+	if (IsBusy() || GetCharacterMovement()->IsFalling()) return false;
+
+	int32 LH_FinisherIndex = ComboExtenderIndex - 1;
+	if (ComboExtenderMontages.IsValidIndex(LH_FinisherIndex))
+	{
+		if (ExecuteAttack(ComboExtenderMontages[LH_FinisherIndex], ExtenderAttackBufferAmount))
+		{
+			ResetLightAttackVariables();
+			ResetHeavyAttackVariables();
+			ComboExtenderIndex = 0;
+			return true;
+		}
+	}
+
+	return false;
+}
+
+void ADMC_PlayerCharacter::PerformDodge()
+{
+	StopRotation();
+	TargetingComp->ClearSoftTarget();
+	
+	FVector LastInput = GetCharacterMovement()->GetLastInputVector();
+	if (!LastInput.IsNearlyZero())
+	{
+		SetActorRotation(LastInput.Rotation());
+	}
+	
+	BufferComponent->StopBuffer();
+	BufferComponent->StartBuffer(DodgeBufferAmount);
+	
+	SetState(EDMC_PlayerState::ECS_Dodge);
+	
+	if (DodgeMontage)
+	{
+		PlayAnimMontage(DodgeMontage);
+	}
+}
+
+void ADMC_PlayerCharacter::ResetLightAttackVariables()
+{
+	LightAttackIndex = 0;
+	bSaveLightAttack = false;
+}
+
+void ADMC_PlayerCharacter::ResetHeavyAttackVariables()
+{
+	HeavyAttackIndex = 0;
+	bSaveHeavyAttack = false;
+}
+
 bool ADMC_PlayerCharacter::GetIsTargeting() const
 {
 	return TargetingComp ? TargetingComp->IsTargeting() : false;
@@ -444,74 +499,4 @@ TObjectPtr<AActor> ADMC_PlayerCharacter::GetTargetActor() const
 TObjectPtr<AActor> ADMC_PlayerCharacter::GetSoftTarget() const
 {
 	return TargetingComp ? TargetingComp->GetSoftTarget() : nullptr;
-}
-
-void ADMC_PlayerCharacter::StartWeaponCollision()
-{
-	if (EquippedWeapon)
-	{
-		EquippedWeapon->StartCollision(DamageTypeClass);
-	}
-}
-
-void ADMC_PlayerCharacter::EndWeaponCollision()
-{
-	if (EquippedWeapon)
-	{
-		EquippedWeapon->EndCollision();
-	}
-}
-
-void ADMC_PlayerCharacter::SaveLightAttack()
-{
-	TryConsumeBufferedInput();
-}
-
-void ADMC_PlayerCharacter::SaveHeavyAttack()
-{
-	TryConsumeBufferedInput();
-}
-
-void ADMC_PlayerCharacter::SaveDodge()
-{
-	TryConsumeBufferedInput();
-}
-
-void ADMC_PlayerCharacter::SetState(EDMC_PlayerState NewState)
-{
-	if (CurrentState != NewState)
-	{
-		CurrentState = NewState;
-	}
-}
-
-void ADMC_PlayerCharacter::ResetDoubleJump()
-{
-	bDoubleJump = false;
-}
-
-void ADMC_PlayerCharacter::ResetState()
-{
-	SetState(EDMC_PlayerState::ECS_Nothing);
-	ResetLightAttackVariables();
-	ResetHeavyAttackVariables();
-	
-	bSaveDodge = false;
-	BufferComponent->StopBuffer();
-	ComboExtenderIndex = 0;
-	
-	TargetingComp->StopRotation();
-	TargetingComp->ClearSoftTarget();
-}
-
-void ADMC_PlayerCharacter::ResetLightAttackVariables()
-{
-	LightAttackIndex = 0;
-	bSaveLightAttack = false;
-}
-
-void ADMC_PlayerCharacter::ResetHeavyAttackVariables()
-{
-	HeavyAttackIndex = 0;
-	bSaveHeavyAttack = false;
 }

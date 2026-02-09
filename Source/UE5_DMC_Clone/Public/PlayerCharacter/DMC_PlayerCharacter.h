@@ -23,14 +23,12 @@ class UE5_DMC_CLONE_API ADMC_PlayerCharacter : public ACharacter
 public:
 	ADMC_PlayerCharacter();
 
-	/** --- [ Core State Management ] --- */
+	// Core State Management
 	void SetState(EDMC_PlayerState NewState);
 	void ResetState();
 	void ResetDoubleJump();
 
-	/** --- [ Combat - Input Interface ] --- 
-	 * These are called by Input Bindings or Animation Notifies
-	 */
+	// Combat || Input Interface -> These are called by Input Bindings or Animation Notifies
 	void LightAttack();
 	void HeavyAttack();
 	void Dodge();
@@ -39,36 +37,39 @@ public:
 	void SaveHeavyAttack();
 	void SaveDodge();
 
-	/** --- [ Combat - Equipment & Collision ] --- */
+	// Combat || Equipment & Collision
 	void EquipWeapon();
 	void StartWeaponCollision();
 	void EndWeaponCollision();
 
-	/** --- [ Combat - Targeting ] --- */
+	// Combat || Targeting
 	void LockOn();
 	void StopLockOn();
 	void SoftLockOn();
 	void RotateToTarget();
 	void StopRotation();
 
-	/** --- [ Damage - Configuration ] --- */
+	// Damage Configuration
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "DMC|Combat")
 	TSubclassOf<UDMC_DamageType> DamageTypeClass;
 
 protected:
-	/** --- [ Engine Overrides ] --- */
+	// Engine Overrides
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
+	
+	// ~ Begin ACharacter interface
 	virtual void Jump() override;
 	virtual void Landed(const FHitResult& Hit) override;
+	// ~ End ACharacter interface
 
-	/** --- [ Movement Handlers ] --- */
+	// Movement Handlers
 	void Move(const FInputActionValue& Value);
 	void Look(const FInputActionValue& Value);
 
 private:
-	/** --- [ Internal Implementation - Combat ] --- */
+	// Internal Implementation || Combat
 	bool ExecuteAttack(UAnimMontage* Montage, float BufferAmount);
 	void TryConsumeBufferedInput();
 
@@ -81,7 +82,7 @@ private:
 	void ResetLightAttackVariables();
 	void ResetHeavyAttackVariables();
 
-	/** --- [ Components ] --- */
+	// Components
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "DMC|Camera", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<USpringArmComponent> CameraBoom;
 
@@ -94,7 +95,7 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "DMC|Combat", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UDMC_TargetingComponent> TargetingComp;
 
-	/** --- [ Input Action Config ] --- */
+	// Input Action Config
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "DMC|Input", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UInputMappingContext> DefaultMappingContext;
 
@@ -119,7 +120,7 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "DMC|Input", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UInputAction> LockOnAction;
 
-	/** --- [ Movement - Character Data ] --- */
+	// Movement || Character Data
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "DMC|Movement", meta = (AllowPrivateAccess = "true"))
 	TArray<TSubclassOf<AActor>> CanLandClasses;
 
@@ -131,7 +132,7 @@ private:
 	
 	bool bDoubleJump = false;
 
-	/** --- [ Combat - State & Weapon ] --- */
+	// Combat || State & Weapon
 	EDMC_PlayerState CurrentState;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "DMC|Combat", meta = (AllowPrivateAccess = "true"))
@@ -143,7 +144,7 @@ private:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "DMC|Combat", meta = (AllowPrivateAccess = "true"))
 	FName WeaponSocketName;
 
-	/** --- [ Combat - Combo Data ] --- */
+	// Combat || Combo Data
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "DMC|Combat|Light", meta = (AllowPrivateAccess = "true"))
 	TArray<TObjectPtr<UAnimMontage>> LightAttackCombo;
 
@@ -156,7 +157,7 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "DMC|Combat|Combo", meta = (AllowPrivateAccess = "true"))
 	TArray<TObjectPtr<UAnimMontage>> ComboExtenderMontages;
 
-	/** --- [ Combat - Buffers & Indices ] --- */
+	// Combat || Buffers & Indices
 	UPROPERTY(EditDefaultsOnly, Category = "DMC|Combat|Light", meta = (AllowPrivateAccess = "true"))
 	float LightAttackBufferAmount = 3.f;
 
@@ -184,7 +185,7 @@ private:
 	bool bSaveDodge = false;
 
 public:
-	/** --- [ Specialized Getters ] --- */
+	// Specialized Getters
 	FORCEINLINE TObjectPtr<USpringArmComponent> GetCameraBoom() const { return CameraBoom; }
 	FORCEINLINE TObjectPtr<UCameraComponent> GetFollowCamera() const { return FollowCamera; }
 	FORCEINLINE bool GetDoubleJumpState() const { return bDoubleJump; }
@@ -195,7 +196,7 @@ public:
 	FORCEINLINE bool IsBusy() const { return IsAttacking() || IsDodging(); }
 	FORCEINLINE bool IsStateEqualToAny(const TArray<EDMC_PlayerState>& StatesToCheck) const { return StatesToCheck.Contains(CurrentState); }
 
-	/** --- [ Targeting Getters ] --- */
+	// Targeting Getters
 	bool GetIsTargeting() const;
 	TObjectPtr<AActor> GetTargetActor() const;
 	TObjectPtr<AActor> GetSoftTarget() const;
