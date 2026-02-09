@@ -295,7 +295,7 @@ bool ADMC_PlayerCharacter::PerformComboStarter()
 		if (ExecuteAttack(ComboStarterMontages[HL_ComboStarterIndex], StarterAttackBufferAmount))
 		{
 			ComboExtenderIndex = HeavyAttackIndex;
-			bSaveHeavyAttack = false;
+			ResetHeavyAttackVariables();
 			bSaveLightAttack = false;
 			return true;
 		}
@@ -319,6 +319,7 @@ bool ADMC_PlayerCharacter::PerformComboExtender()
 		{
 			ResetLightAttackVariables();
 			ResetHeavyAttackVariables();
+			ComboExtenderIndex = 0;
 			return true;
 		}
 	}
