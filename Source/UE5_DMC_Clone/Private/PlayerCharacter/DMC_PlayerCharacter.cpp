@@ -9,9 +9,8 @@
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
 #include "Components/DMC_CombatBufferComponent.h"
+#include "Components/DMC_TargetingComponent.h"
 #include "Items/DMC_BaseWeapon.h"
-#include "Kismet/KismetSystemLibrary.h"
-#include "Kismet/KismetMathLibrary.h"
 
 ADMC_PlayerCharacter::ADMC_PlayerCharacter()
 {
@@ -44,6 +43,7 @@ ADMC_PlayerCharacter::ADMC_PlayerCharacter()
 	FollowCamera->bUsePawnControlRotation = false;
 	
 	BufferComponent = CreateDefaultSubobject<UDMC_CombatBufferComponent>(TEXT("CombatBuffer"));
+	TargetingComp = CreateDefaultSubobject<UDMC_TargetingComponent>(TEXT("TargetingComponent"));
 	
 	CurrentState = EDMC_PlayerState::ECS_Nothing;
 }
@@ -59,38 +59,6 @@ void ADMC_PlayerCharacter::BeginPlay()
 void ADMC_PlayerCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	
-	if (bIsTargeting && IsValid(TargetActor))
-	{
-		TArray<EDMC_PlayerState> DodgeState;
-		DodgeState.Add(EDMC_PlayerState::ECS_Dodge);
-		if (!IsStateEqualToAny(DodgeState))
-		{
-			GetCharacterMovement()->bUseControllerDesiredRotation = true;
-			GetCharacterMovement()->bOrientRotationToMovement = false;
-
-			if (AController* PC = GetController())
-			{
-				FRotator CurrentRotation = PC->GetControlRotation(); 
-                
-				FVector TargetLoc = TargetActor->GetActorLocation();
-				FRotator LookAtRotation = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), TargetLoc);
-				FRotator NewRotation = UKismetMathLibrary::RInterpTo(CurrentRotation, LookAtRotation, DeltaTime, 5.0f);
-                
-				PC->SetControlRotation(NewRotation);
-			}
-		}
-		else
-		{
-			GetCharacterMovement()->bUseControllerDesiredRotation = false;
-			GetCharacterMovement()->bOrientRotationToMovement = true;
-		}
-	}
-	
-	if (RotationTimeline.IsPlaying())
-	{
-		RotationTimeline.TickTimeline(DeltaTime);
-	}
 }
 
 void ADMC_PlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -150,7 +118,7 @@ void ADMC_PlayerCharacter::Move(const FInputActionValue& Value)
 
 void ADMC_PlayerCharacter::Look(const FInputActionValue& Value)
 {
-	if (bIsTargeting) return;
+	if (TargetingComp->IsTargeting()) return;
 	
 	// Input is a Vector2D
 	FVector2D LookAxisVector = Value.Get<FVector2D>();
@@ -422,7 +390,7 @@ void ADMC_PlayerCharacter::Dodge()
 void ADMC_PlayerCharacter::PerformDodge()
 {
 	StopRotation();
-	SoftTarget = nullptr;
+	TargetingComp->ClearSoftTarget();
 	
 	FVector LastInput = GetCharacterMovement()->GetLastInputVector();
 	if (!LastInput.IsNearlyZero())
@@ -443,147 +411,42 @@ void ADMC_PlayerCharacter::PerformDodge()
 
 void ADMC_PlayerCharacter::LockOn()
 {
-	bInputHold = true;
-	
-	FVector Start = GetActorLocation();
-	FVector End = Start + (GetFollowCamera()->GetForwardVector() * 1000.f);
-	
-	TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
-	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_Pawn));
-    
-	TArray<AActor*> ActorsToIgnore;
-	ActorsToIgnore.Add(this);
-	
-	FHitResult OutHit;
-	bool bHit = UKismetSystemLibrary::SphereTraceSingleForObjects(
-		GetWorld(),
-		Start,
-		End,
-		150.f,
-		ObjectTypes,
-		false,
-		ActorsToIgnore,
-		EDrawDebugTrace::ForDuration,
-		OutHit,
-		true
-	);
-	
-	if (bHit && IsValid(OutHit.GetActor()))
-	{
-		bIsTargeting = true;
-		TargetActor = OutHit.GetActor();
-		
-		GetCharacterMovement()->bUseControllerDesiredRotation = true;
-		GetCharacterMovement()->bOrientRotationToMovement = false;
-		GetCharacterMovement()->MaxWalkSpeed = 250.f;
-	}
-	else
-	{
-		bIsTargeting = false;
-		TargetActor = nullptr;
-		
-		GetCharacterMovement()->bUseControllerDesiredRotation = false;
-		GetCharacterMovement()->bOrientRotationToMovement = true;
-		GetCharacterMovement()->MaxWalkSpeed = 600.f;
-	}
+	TargetingComp->LockOn();
 }
 
 void ADMC_PlayerCharacter::StopLockOn()
 {
-	bInputHold = false;
-	bIsTargeting = false;
-	TargetActor = nullptr;
-	
-	GetCharacterMovement()->bUseControllerDesiredRotation = false;
-	GetCharacterMovement()->bOrientRotationToMovement = true;
-	GetCharacterMovement()->MaxWalkSpeed = 600.f;
+	TargetingComp->StopLockOn();
 }
 
 void ADMC_PlayerCharacter::SoftLockOn()
 {
-	if (bIsTargeting && IsValid(SoftTarget))
-	{
-		SoftTarget = nullptr;
-		return;
-	}
-	
-	FVector LastInput = GetCharacterMovement()->GetLastInputVector();
-	FVector Start = GetActorLocation();
-	FVector End = Start + (LastInput * 1000.f);
-	
-	TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
-	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_Pawn));
-	
-	TArray<AActor*> ActorsToIgnore;
-	ActorsToIgnore.Add(this);
-	
-	FHitResult OutHit;
-	bool bHit = UKismetSystemLibrary::SphereTraceSingleForObjects(
-		GetWorld(),
-		Start,
-		End,
-		100.f,
-		ObjectTypes,
-		false,
-		ActorsToIgnore,
-		EDrawDebugTrace::None,
-		OutHit,
-		true
-	);
-	
-	if (bHit && IsValid(OutHit.GetActor()))
-	{
-		SoftTarget = OutHit.GetActor();
-	}
-	else
-	{
-		SoftTarget = nullptr;
-	}
-}
-
-void ADMC_PlayerCharacter::HandleRotationTimelineProgress(float Value)
-{
-	AActor* ActualTarget = IsValid(TargetActor) ? TargetActor.Get() : SoftTarget.Get();
-	
-	if (!IsValid(ActualTarget))
-	{
-		StopRotation();
-		return;
-	}
-	
-	FVector TargetLocation = ActualTarget->GetActorLocation();
-	FVector MyLocation = GetActorLocation();
-	
-	FRotator LookAtRot = UKismetMathLibrary::FindLookAtRotation(MyLocation, TargetLocation);
-	FRotator CurrentRot = GetActorRotation();
-	
-	FRotator TargetRot = FRotator(CurrentRot.Pitch, LookAtRot.Yaw, CurrentRot.Roll);
-	FRotator NewRot = FMath::Lerp(CurrentRot, TargetRot, Value);
-    
-	SetActorRotation(NewRot);
+	TargetingComp->SoftLockOn();
 }
 
 void ADMC_PlayerCharacter::RotateToTarget()
 {
-	if (IsValid(TargetActor) || IsValid(SoftTarget))
-	{
-		if (RotationCurve)
-		{
-			FOnTimelineFloat ProgressFunction;
-			ProgressFunction.BindUFunction(this, FName("HandleRotationTimelineProgress"));
-			RotationTimeline.AddInterpFloat(RotationCurve, ProgressFunction);
-			RotationTimeline.SetLooping(false);
-			RotationTimeline.PlayFromStart();
-		}
-	}
+	TargetingComp->RotateToTarget();
 }
 
 void ADMC_PlayerCharacter::StopRotation()
 {
-	if (RotationTimeline.IsPlaying())
-	{
-		RotationTimeline.Stop();
-	}
+	TargetingComp->StopRotation();
+}
+
+bool ADMC_PlayerCharacter::GetIsTargeting() const
+{
+	return TargetingComp ? TargetingComp->IsTargeting() : false;
+}
+
+TObjectPtr<AActor> ADMC_PlayerCharacter::GetTargetActor() const
+{
+	return TargetingComp ? TargetingComp->GetTargetActor() : nullptr;
+}
+
+TObjectPtr<AActor> ADMC_PlayerCharacter::GetSoftTarget() const
+{
+	return TargetingComp ? TargetingComp->GetSoftTarget() : nullptr;
 }
 
 void ADMC_PlayerCharacter::StartWeaponCollision()
@@ -703,8 +566,8 @@ void ADMC_PlayerCharacter::ResetState()
 	BufferComponent->StopBuffer();
 	ComboExtenderIndex = 0;
 	
-	StopRotation();
-	SoftTarget = nullptr;
+	TargetingComp->StopRotation();
+	TargetingComp->ClearSoftTarget();
 }
 
 void ADMC_PlayerCharacter::ResetLightAttackVariables()

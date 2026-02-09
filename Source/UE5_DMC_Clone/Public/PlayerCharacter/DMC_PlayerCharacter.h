@@ -3,7 +3,6 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "DMC_CharacterTypes.h"
-#include "Components/TimelineComponent.h"
 #include "DMC_PlayerCharacter.generated.h"
 
 class UDMC_DamageType;
@@ -14,6 +13,7 @@ class UInputMappingContext;
 class UInputAction;
 struct FInputActionValue;
 class UDMC_CombatBufferComponent;
+class UDMC_TargetingComponent;
 
 UCLASS()
 class UE5_DMC_CLONE_API ADMC_PlayerCharacter : public ACharacter
@@ -39,6 +39,11 @@ public:
 	void EndWeaponCollision();
 	
 	void RotateToTarget();
+	
+	// Lock On
+	bool GetIsTargeting() const;
+	TObjectPtr<AActor> GetTargetActor() const;
+	TObjectPtr<AActor> GetSoftTarget() const;
 	
 	// Damage Class
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Combat")
@@ -80,7 +85,6 @@ protected:
 	
 	// Soft Lock On
 	void SoftLockOn();
-	void HandleRotationTimelineProgress(float Value);
 	
 	void StopRotation();
 
@@ -92,12 +96,15 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UCameraComponent> FollowCamera;
 	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UInputMappingContext> DefaultMappingContext;
+	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UDMC_CombatBufferComponent> BufferComponent;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<UInputMappingContext> DefaultMappingContext;
-
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UDMC_TargetingComponent> TargetingComp;
+	
 	// Input Actions
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UInputAction> MoveAction;
@@ -198,26 +205,6 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat|Dodge", meta = (AllowPrivateAccess = "true"))
 	float DodgeBufferAmount = 20.f;
 	
-	// Lock-on System
-	UPROPERTY()
-	TObjectPtr<AActor> TargetActor;
-	
-	// Soft Lock On
-	UPROPERTY()
-	TObjectPtr<AActor> SoftTarget;
-	
-	UPROPERTY(EditAnywhere, Category = "Combat|Rotation")
-	TObjectPtr<UCurveFloat> RotationCurve;
-	
-	FTimeline RotationTimeline;
-	
-	bool bInputHold;
-	bool bIsTargeting;
-	
-	// Enemy Class
-	UPROPERTY(EditDefaultsOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
-	TSubclassOf<AActor> EnemyClass;
-	
 public:
 	// Components
 	FORCEINLINE TObjectPtr<USpringArmComponent> GetCameraBoom() const { return CameraBoom; }
@@ -229,9 +216,4 @@ public:
 	// State
 	FORCEINLINE EDMC_PlayerState GetState() const { return CurrentState; }
 	FORCEINLINE bool IsStateEqualToAny(const TArray<EDMC_PlayerState>& StatesToCheck) const { return StatesToCheck.Contains(CurrentState); }
-
-	// Lock On
-	FORCEINLINE bool GetIsTargeting() const { return bIsTargeting; }
-	FORCEINLINE AActor* GetTargetActor() const { return TargetActor; }
-	FORCEINLINE AActor* GetSoftTarget() const { return SoftTarget; }
 };
