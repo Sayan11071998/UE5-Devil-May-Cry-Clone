@@ -225,28 +225,16 @@ void ADMC_PlayerCharacter::LightAttack()
 
 bool ADMC_PlayerCharacter::PerformLightAttack(int32 InAttackIndex)
 {
-	if (LightAttackCombo.IsValidIndex(InAttackIndex))
+	if (!LightAttackCombo.IsValidIndex(InAttackIndex)) return false;
+
+	if (ExecuteAttack(LightAttackCombo[InAttackIndex], LightAttackBufferAmount))
 	{
-		UAnimMontage* L_AttackMontage = LightAttackCombo[InAttackIndex];
-		
-		if (L_AttackMontage)
+		LightAttackIndex++;
+		if (LightAttackIndex >= LightAttackCombo.Num())
 		{
-			BufferComponent->StopBuffer();
-			BufferComponent->StartBuffer(LightAttackBufferAmount);
-			
-			SetState(EDMC_PlayerState::ECS_Attack);
-			SoftLockOn();
-			PlayAnimMontage(L_AttackMontage);
-			
-			LightAttackIndex++;
-			
-			if (LightAttackIndex >= LightAttackCombo.Num())
-			{
-				LightAttackIndex = 0;
-			}
-			
-			return true;
+			LightAttackIndex = 0;
 		}
+		return true;
 	}
 	
 	return false;
@@ -277,28 +265,16 @@ void ADMC_PlayerCharacter::HeavyAttack()
 
 bool ADMC_PlayerCharacter::PerformHeavyAttack(int32 InAttackIndex)
 {
-	if (HeavyAttackCombo.IsValidIndex(InAttackIndex))
+	if (!HeavyAttackCombo.IsValidIndex(InAttackIndex)) return false;
+
+	if (ExecuteAttack(HeavyAttackCombo[InAttackIndex], HeavyAttackBufferAmount))
 	{
-		UAnimMontage* H_AttackMontage = HeavyAttackCombo[InAttackIndex];
-		
-		if (H_AttackMontage)
+		HeavyAttackIndex++;
+		if (HeavyAttackIndex >= HeavyAttackCombo.Num())
 		{
-			BufferComponent->StopBuffer();
-			BufferComponent->StartBuffer(HeavyAttackBufferAmount);
-			
-			SetState(EDMC_PlayerState::ECS_Attack);
-			SoftLockOn();
-			PlayAnimMontage(H_AttackMontage);
-			
-			HeavyAttackIndex++;
-			
-			if (HeavyAttackIndex >= HeavyAttackCombo.Num())
-			{
-				HeavyAttackIndex = 0;
-			}
-			
-			return true;
+			HeavyAttackIndex = 0;
 		}
+		return true;
 	}
 	
 	return false;
@@ -316,22 +292,11 @@ bool ADMC_PlayerCharacter::PerformComboStarter()
 	
 	if (ComboStarterMontages.IsValidIndex(HL_ComboStarterIndex))
 	{
-		UAnimMontage* HL_AttackMontage = ComboStarterMontages[HL_ComboStarterIndex];
-		
-		if (HL_AttackMontage)
+		if (ExecuteAttack(ComboStarterMontages[HL_ComboStarterIndex], StarterAttackBufferAmount))
 		{
 			ComboExtenderIndex = HeavyAttackIndex;
-			
-			BufferComponent->StopBuffer();
-			BufferComponent->StartBuffer(StarterAttackBufferAmount);
-			
 			bSaveHeavyAttack = false;
 			bSaveLightAttack = false;
-			
-			SetState(EDMC_PlayerState::ECS_Attack);
-			SoftLockOn();
-			PlayAnimMontage(HL_AttackMontage);
-			
 			return true;
 		}
 	}
@@ -350,18 +315,10 @@ bool ADMC_PlayerCharacter::PerformComboExtender()
 	int32 LH_FinisherIndex = ComboExtenderIndex - 1;
 	if (ComboExtenderMontages.IsValidIndex(LH_FinisherIndex))
 	{
-		UAnimMontage* LH_AttackMontage = ComboExtenderMontages[LH_FinisherIndex];
-		if (LH_AttackMontage)
+		if (ExecuteAttack(ComboExtenderMontages[LH_FinisherIndex], ExtenderAttackBufferAmount))
 		{
 			ResetLightAttackVariables();
 			ResetHeavyAttackVariables();
-
-			BufferComponent->StopBuffer();
-			BufferComponent->StartBuffer(ExtenderAttackBufferAmount);
-
-			SetState(EDMC_PlayerState::ECS_Attack);
-			SoftLockOn();
-			PlayAnimMontage(LH_AttackMontage);
 			return true;
 		}
 	}
@@ -432,6 +389,20 @@ void ADMC_PlayerCharacter::RotateToTarget()
 void ADMC_PlayerCharacter::StopRotation()
 {
 	TargetingComp->StopRotation();
+}
+
+bool ADMC_PlayerCharacter::ExecuteAttack(UAnimMontage* Montage, float BufferAmount)
+{
+	if (!Montage) return false;
+
+	BufferComponent->StopBuffer();
+	BufferComponent->StartBuffer(BufferAmount);
+
+	SetState(EDMC_PlayerState::ECS_Attack);
+	SoftLockOn();
+	PlayAnimMontage(Montage);
+
+	return true;
 }
 
 void ADMC_PlayerCharacter::TryConsumeBufferedInput()

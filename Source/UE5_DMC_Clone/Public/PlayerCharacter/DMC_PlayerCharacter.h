@@ -87,6 +87,8 @@ protected:
 	void SoftLockOn();
 	
 	void StopRotation();
+	
+	bool ExecuteAttack(UAnimMontage* Montage, float BufferAmount);
 
 private:
 	// Camera Settings
