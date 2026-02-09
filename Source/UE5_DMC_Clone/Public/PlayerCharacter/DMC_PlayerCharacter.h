@@ -204,6 +204,8 @@ private:
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat|Dodge", meta = (AllowPrivateAccess = "true"))
 	float DodgeBufferAmount = 20.f;
+
+	void TryConsumeBufferedInput();
 	
 public:
 	// Components

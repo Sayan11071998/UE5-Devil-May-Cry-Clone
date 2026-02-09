@@ -434,6 +434,53 @@ void ADMC_PlayerCharacter::StopRotation()
 	TargetingComp->StopRotation();
 }
 
+void ADMC_PlayerCharacter::TryConsumeBufferedInput()
+{
+	// 1. Dodge has high priority
+	if (bSaveDodge)
+	{
+		bSaveDodge = false;
+		SetState(EDMC_PlayerState::ECS_Nothing);
+		PerformDodge();
+		return;
+	}
+	
+	// 2. Check for Heavy -> Light Combo (Combo Starter)
+	if (bSaveLightAttack && HeavyAttackIndex > 0)
+	{
+		bSaveLightAttack = false;
+		SetState(EDMC_PlayerState::ECS_Nothing);
+		PerformComboStarter();
+		return;
+	}
+	
+	// 3. Check for Light -> Heavy Combo (Combo Extender)
+	if (bSaveHeavyAttack && ComboExtenderIndex > 0)
+	{
+		bSaveHeavyAttack = false;
+		SetState(EDMC_PlayerState::ECS_Nothing);
+		PerformComboExtender();
+		return;
+	}
+	
+	// 4. Regular Attacks
+	if (bSaveLightAttack)
+	{
+		bSaveLightAttack = false;
+		SetState(EDMC_PlayerState::ECS_Nothing);
+		LightAttack();
+		return;
+	}
+	
+	if (bSaveHeavyAttack)
+	{
+		bSaveHeavyAttack = false;
+		SetState(EDMC_PlayerState::ECS_Nothing);
+		HeavyAttack();
+		return;
+	}
+}
+
 bool ADMC_PlayerCharacter::GetIsTargeting() const
 {
 	return TargetingComp ? TargetingComp->IsTargeting() : false;
@@ -467,80 +514,17 @@ void ADMC_PlayerCharacter::EndWeaponCollision()
 
 void ADMC_PlayerCharacter::SaveLightAttack()
 {
-	if (bSaveLightAttack)
-	{
-		bSaveLightAttack = false;
-
-		TArray<EDMC_PlayerState> AttackStates;
-		AttackStates.Add(EDMC_PlayerState::ECS_Attack);
-		
-		if (IsStateEqualToAny(AttackStates))
-		{
-			SetState(EDMC_PlayerState::ECS_Nothing);
-		}
-		
-		LightAttack();
-	}
-	else if (bSaveHeavyAttack && ComboExtenderIndex > 0)
-	{
-		TArray<EDMC_PlayerState> AttackStates;
-		AttackStates.Add(EDMC_PlayerState::ECS_Attack);
-			
-		if (IsStateEqualToAny(AttackStates))
-		{
-			SetState(EDMC_PlayerState::ECS_Nothing);
-		}
-			
-		PerformComboExtender();
-	}
+	TryConsumeBufferedInput();
 }
 
 void ADMC_PlayerCharacter::SaveHeavyAttack()
 {
-	if (bSaveHeavyAttack)
-	{
-		bSaveHeavyAttack = false;
-		
-		TArray<EDMC_PlayerState> AttackStates;
-		AttackStates.Add(EDMC_PlayerState::ECS_Attack);
-		
-		if (IsStateEqualToAny(AttackStates))
-		{
-			SetState(EDMC_PlayerState::ECS_Nothing);
-		}
-		
-		HeavyAttack();
-	}
-	else if (bSaveLightAttack && HeavyAttackIndex > 0)
-	{
-		TArray<EDMC_PlayerState> AttackStates;
-		AttackStates.Add(EDMC_PlayerState::ECS_Attack);
-		
-		if (IsStateEqualToAny(AttackStates))
-		{
-			SetState(EDMC_PlayerState::ECS_Nothing);
-		}
-		
-		PerformComboStarter();
-	}
+	TryConsumeBufferedInput();
 }
 
 void ADMC_PlayerCharacter::SaveDodge()
 {
-	if (bSaveDodge)
-	{
-		bSaveDodge = false;
-		
-		TArray<EDMC_PlayerState> StatesToCheck;
-		StatesToCheck.Add(EDMC_PlayerState::ECS_Dodge);
-		
-		if (IsStateEqualToAny(StatesToCheck))
-		{
-			SetState(EDMC_PlayerState::ECS_Dodge);
-		}
-		
-		PerformDodge();
-	}
+	TryConsumeBufferedInput();
 }
 
 void ADMC_PlayerCharacter::SetState(EDMC_PlayerState NewState)
