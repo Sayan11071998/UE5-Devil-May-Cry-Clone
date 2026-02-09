@@ -207,13 +207,6 @@ private:
 	float BufferTimeElapsed = 0.f;
 	const float BufferDuration = 0.25f;
 	
-	// Weapon Collision
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat|Weapon", meta = (AllowPrivateAccess = "true"))
-	TArray<TObjectPtr<AActor>> AlreadyHitActors;
-	
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat|Weapon", meta = (AllowPrivateAccess = "true"))
-	bool bActiveCollision;
-	
 	// Lock-on System
 	UPROPERTY()
 	TObjectPtr<AActor> TargetActor;
