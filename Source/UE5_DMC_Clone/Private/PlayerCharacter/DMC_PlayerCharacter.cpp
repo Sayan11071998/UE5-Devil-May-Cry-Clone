@@ -133,10 +133,7 @@ void ADMC_PlayerCharacter::Look(const FInputActionValue& Value)
 
 void ADMC_PlayerCharacter::Jump()
 {
-	TArray<EDMC_PlayerState> StatesToCheck;
-	StatesToCheck.Add(EDMC_PlayerState::ECS_Attack);
-	StatesToCheck.Add(EDMC_PlayerState::ECS_Dodge);
-	if (IsStateEqualToAny(StatesToCheck)) return;
+	if (IsBusy()) return;
 	
 	if (GetCharacterMovement()->IsFalling())
 	{
@@ -205,11 +202,7 @@ void ADMC_PlayerCharacter::LightAttack()
 	bSaveHeavyAttack = false;
 	bSaveDodge = false;
 	
-	TArray<EDMC_PlayerState> StatesToCheck;
-	StatesToCheck.Add(EDMC_PlayerState::ECS_Attack);
-	StatesToCheck.Add(EDMC_PlayerState::ECS_Dodge);
-	
-	if (IsStateEqualToAny(StatesToCheck))
+	if (IsBusy())
 	{
 		bSaveLightAttack = true;
 	}
@@ -245,11 +238,7 @@ void ADMC_PlayerCharacter::HeavyAttack()
 	bSaveLightAttack = false;
 	bSaveDodge = false;
 	
-	TArray<EDMC_PlayerState> StatesToCheck;
-	StatesToCheck.Add(EDMC_PlayerState::ECS_Attack);
-	StatesToCheck.Add(EDMC_PlayerState::ECS_Dodge);
-	
-	if (IsStateEqualToAny(StatesToCheck))
+	if (IsBusy())
 	{
 		bSaveHeavyAttack = true;
 	}
@@ -282,11 +271,7 @@ bool ADMC_PlayerCharacter::PerformHeavyAttack(int32 InAttackIndex)
 
 bool ADMC_PlayerCharacter::PerformComboStarter()
 {
-	TArray<EDMC_PlayerState> StatesToCheck;
-	StatesToCheck.Add(EDMC_PlayerState::ECS_Attack);
-	StatesToCheck.Add(EDMC_PlayerState::ECS_Dodge);
-	
-	if (IsStateEqualToAny(StatesToCheck) || GetCharacterMovement()->IsFalling()) return false;
+	if (IsBusy() || GetCharacterMovement()->IsFalling()) return false;
 	
 	int32 HL_ComboStarterIndex = HeavyAttackIndex - 1;
 	
@@ -306,11 +291,7 @@ bool ADMC_PlayerCharacter::PerformComboStarter()
 
 bool ADMC_PlayerCharacter::PerformComboExtender()
 {
-	TArray<EDMC_PlayerState> StatesToCheck;
-	StatesToCheck.Add(EDMC_PlayerState::ECS_Attack);
-	StatesToCheck.Add(EDMC_PlayerState::ECS_Dodge);
-	
-	if (IsStateEqualToAny(StatesToCheck) || GetCharacterMovement()->IsFalling()) return false;
+	if (IsBusy() || GetCharacterMovement()->IsFalling()) return false;
 
 	int32 LH_FinisherIndex = ComboExtenderIndex - 1;
 	if (ComboExtenderMontages.IsValidIndex(LH_FinisherIndex))
@@ -329,10 +310,7 @@ bool ADMC_PlayerCharacter::PerformComboExtender()
 
 void ADMC_PlayerCharacter::Dodge()
 {
-	TArray<EDMC_PlayerState> StatesToCheck;
-	StatesToCheck.Add(EDMC_PlayerState::ECS_Dodge);
-	
-	if (IsStateEqualToAny(StatesToCheck))
+	if (IsDodging())
 	{
 		bSaveDodge = true;
 	}

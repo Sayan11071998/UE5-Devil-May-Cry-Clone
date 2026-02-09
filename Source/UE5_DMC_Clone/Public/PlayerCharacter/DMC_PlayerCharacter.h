@@ -219,5 +219,8 @@ public:
 	
 	// State
 	FORCEINLINE EDMC_PlayerState GetState() const { return CurrentState; }
+	FORCEINLINE bool IsAttacking() const { return CurrentState == EDMC_PlayerState::ECS_Attack; }
+	FORCEINLINE bool IsDodging() const { return CurrentState == EDMC_PlayerState::ECS_Dodge; }
+	FORCEINLINE bool IsBusy() const { return IsAttacking() || IsDodging(); }
 	FORCEINLINE bool IsStateEqualToAny(const TArray<EDMC_PlayerState>& StatesToCheck) const { return StatesToCheck.Contains(CurrentState); }
 };
