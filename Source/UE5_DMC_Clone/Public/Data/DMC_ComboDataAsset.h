@@ -21,6 +21,9 @@ public:
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Combos|Special")
 	TArray<TObjectPtr<UAnimMontage>> ComboExtenderMontages;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Combos|Launch")
+	TObjectPtr<UAnimMontage> LaunchAttackMontage;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Buffers")
 	float LightAttackBuffer = 3.f;
@@ -33,6 +36,9 @@ public:
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Buffers")
 	float ExtenderAttackBuffer = 3.f;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Buffers")
+	float LaunchBuffer = 3.f;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Dodge")
 	TObjectPtr<UAnimMontage> DodgeMontage;
