@@ -21,6 +21,9 @@ public:
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Combos|Special")
 	TArray<TObjectPtr<UAnimMontage>> ComboExtenderMontages;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Combos|Aerial")
+	TArray<TObjectPtr<UAnimMontage>> AerialAttackCombo;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Buffers")
 	float LightAttackBuffer = 3.f;

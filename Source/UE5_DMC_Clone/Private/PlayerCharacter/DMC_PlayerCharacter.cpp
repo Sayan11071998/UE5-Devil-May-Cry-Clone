@@ -96,6 +96,7 @@ void ADMC_PlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 		
 		EnhancedInputComponent->BindAction(LightAttackAction, ETriggerEvent::Started, this, &ADMC_PlayerCharacter::LightAttackPressed);
 		EnhancedInputComponent->BindAction(LightAttackAction, ETriggerEvent::Completed, this, &ADMC_PlayerCharacter::LightAttackReleased);
+		
 		EnhancedInputComponent->BindAction(HeavyAttackAction, ETriggerEvent::Started, this, &ADMC_PlayerCharacter::HeavyAttack);
 		
 		EnhancedInputComponent->BindAction(DodgeAction, ETriggerEvent::Started, this, &ADMC_PlayerCharacter::Dodge);
@@ -116,6 +117,7 @@ void ADMC_PlayerCharacter::SetState(EDMC_PlayerState NewState)
 void ADMC_PlayerCharacter::ResetDoubleJump()
 {
 	bDoubleJump = false;
+	bLaunched = false;
 }
 
 void ADMC_PlayerCharacter::LightAttackPressed()
@@ -145,17 +147,27 @@ void ADMC_PlayerCharacter::LightAttackReleased()
 
 void ADMC_PlayerCharacter::LightAttack()
 {
-	// This represents the "Light Attack Event" in Blueprint
-	// We'll use !IsFalling() as the "Can Attack" check seen in the screenshot
-	if (!GetCharacterMovement()->IsFalling() && !IsBusy())
+	if (!GetCharacterMovement()->IsFalling() && !GetCharacterMovement()->IsFlying() && !IsBusy())
 	{
 		if (CanLaunch())
 		{
+			return;
 		}
 		else
 		{
 			ResetHeavyAttackVariables();
 			PerformLightAttack(LightAttackIndex);
+		}
+	}
+	else
+	{
+		if (bLaunched)
+		{
+			if (!IsBusy())
+			{
+				GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Flying);
+				PerformAerialAttack(AerialAttackIndex);
+			}
 		}
 	}
 }
@@ -236,9 +248,15 @@ void ADMC_PlayerCharacter::SaveDodge()
 
 void ADMC_PlayerCharacter::ResetState()
 {
+	if (GetCharacterMovement()->IsFlying())
+	{
+		GetCharacterMovement()->SetMovementMode(MOVE_Falling);
+	}
+	
 	SetState(EDMC_PlayerState::ECS_Nothing);
 	ResetLightAttackVariables();
 	ResetHeavyAttackVariables();
+	ResetAerialAttackIndex();
 	
 	bSaveDodge = false;
 	BufferComponent->StopBuffer();
@@ -253,6 +271,8 @@ void ADMC_PlayerCharacter::LaunchCharacterUp()
 	// Launch player smoothly with Timeline if button is held
 	if (bLightInputHeld && ComboData && ComboData->LaunchUpCurve)
 	{
+		bLaunched = true;
+		
 		LaunchStartLocation = GetActorLocation();
 		LaunchTargetLocation = LaunchStartLocation + FVector(0.f, 0.f, ComboData->LaunchUpDistance);
 		
@@ -515,6 +535,26 @@ bool ADMC_PlayerCharacter::PerformComboExtender()
 	return false;
 }
 
+bool ADMC_PlayerCharacter::PerformAerialAttack(int32 InAttackIndex)
+{
+	if (!ComboData || !ComboData->AerialAttackCombo.IsValidIndex(InAttackIndex)) return false;
+	
+	if (BufferComponent)
+	{
+		BufferComponent->StopBuffer();
+	}
+	
+	SetState(EDMC_PlayerState::ECS_Attack);
+	PlayAnimMontage(ComboData->AerialAttackCombo[InAttackIndex]);
+	
+	AerialAttackIndex++;
+	if (AerialAttackIndex >= ComboData->AerialAttackCombo.Num())
+	{
+		AerialAttackIndex = 0;
+	}
+	return true;
+}
+
 void ADMC_PlayerCharacter::PerformDodge()
 {
 	StopRotation();
@@ -553,12 +593,19 @@ void ADMC_PlayerCharacter::ResetHeavyAttackVariables()
 	bSaveHeavyAttack = false;
 }
 
+void ADMC_PlayerCharacter::ResetAerialAttackIndex()
+{
+	AerialAttackIndex = 0;
+	bLaunched = false;
+}
+
 bool ADMC_PlayerCharacter::CanLaunch()
 {
 	if (GetIsTargeting() && CurrentMovementInput.Y <= -0.7f)
 	{
 		if (ComboData->LaunchAttackMontage)
 		{
+			SetState(EDMC_PlayerState::ECS_Attack);
 			PlayAnimMontage(ComboData->LaunchAttackMontage);
 		}
 		return true;

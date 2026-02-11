@@ -95,10 +95,12 @@ private:
 	bool PerformHeavyAttack(int32 InAttackIndex);
 	bool PerformComboStarter();
 	bool PerformComboExtender();
+	bool PerformAerialAttack(int32 InAttackIndex);
 	void PerformDodge();
 
 	void ResetLightAttackVariables();
 	void ResetHeavyAttackVariables();
+	void ResetAerialAttackIndex();
 
 	// Input Handlers
 	void LightAttackPressed();
@@ -185,6 +187,10 @@ private:
 	bool bSaveLightAttack = false;
 	bool bSaveHeavyAttack = false;
 	bool bSaveDodge = false;
+	
+	// Aerial Attack
+	bool bLaunched = false;
+	int32 AerialAttackIndex = 0;
 
 public:
 	// Specialized Getters
