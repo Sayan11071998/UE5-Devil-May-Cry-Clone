@@ -1,5 +1,5 @@
 #include "PlayerCharacter/Notifies/Notify_LaunchCharacter.h"
-#include "Interfaces/DMC_CombatInterface.h"
+#include "PlayerCharacter/DMC_PlayerCharacter.h"
 
 void UNotify_LaunchCharacter::Notify(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation,
                                      const FAnimNotifyEventReference& EventReference)
@@ -8,8 +8,8 @@ void UNotify_LaunchCharacter::Notify(USkeletalMeshComponent* MeshComp, UAnimSequ
 	
 	if (!MeshComp || !MeshComp->GetOwner()) return;
 	
-	if (IDMC_CombatInterface* CombatInterface = Cast<IDMC_CombatInterface>(MeshComp->GetOwner()))
+	if (ADMC_PlayerCharacter* PlayerCharacter = Cast<ADMC_PlayerCharacter>(MeshComp->GetOwner()))
 	{
-		CombatInterface->LaunchCharacterUp();
+		PlayerCharacter->LaunchCharacterUp();
 	}
 }

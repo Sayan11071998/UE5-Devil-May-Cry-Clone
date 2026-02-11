@@ -103,7 +103,7 @@ private:
 	// Input Handlers
 	void LightAttackPressed();
 	void LightAttackReleased();
-	bool CanLaunch() const;
+	bool CanLaunch();
 
 	// Timeline variables
 	FTimeline UpwardTimeline;

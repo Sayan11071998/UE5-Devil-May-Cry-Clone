@@ -121,7 +121,21 @@ void ADMC_PlayerCharacter::ResetDoubleJump()
 void ADMC_PlayerCharacter::LightAttackPressed()
 {
 	bLightInputHeld = true;
-	LightAttack();
+	bSaveDodge = false;
+	bSaveHeavyAttack = false;
+
+	TArray<EDMC_PlayerState> StatesToCheck;
+	StatesToCheck.Add(EDMC_PlayerState::ECS_Attack);
+	StatesToCheck.Add(EDMC_PlayerState::ECS_Dodge);
+
+	if (IsStateEqualToAny(StatesToCheck))
+	{
+		bSaveLightAttack = true;
+	}
+	else
+	{
+		LightAttack();
+	}
 }
 
 void ADMC_PlayerCharacter::LightAttackReleased()
@@ -131,23 +145,15 @@ void ADMC_PlayerCharacter::LightAttackReleased()
 
 void ADMC_PlayerCharacter::LightAttack()
 {
-	bSaveHeavyAttack = false;
-	bSaveDodge = false;
-	
-	if (IsBusy())
+	// This represents the "Light Attack Event" in Blueprint
+	// We'll use !IsFalling() as the "Can Attack" check seen in the screenshot
+	if (!GetCharacterMovement()->IsFalling() && !IsBusy())
 	{
-		bSaveLightAttack = true;
-	}
-	else
-	{
-		if (!GetCharacterMovement()->IsFalling())
+		if (CanLaunch())
 		{
-			if (CanLaunch())
-			{
-				ExecuteAttack(ComboData->LaunchAttackMontage, ComboData->LaunchBuffer);
-				return;
-			}
-
+		}
+		else
+		{
 			ResetHeavyAttackVariables();
 			PerformLightAttack(LightAttackIndex);
 		}
@@ -244,15 +250,6 @@ void ADMC_PlayerCharacter::ResetState()
 
 void ADMC_PlayerCharacter::LaunchCharacterUp()
 {
-	// Launch the target first (if any) - Instant lift
-	if (AActor* Target = GetCombatTarget())
-	{
-		if (ACharacter* TargetCharacter = Cast<ACharacter>(Target))
-		{
-			TargetCharacter->LaunchCharacter(FVector(0.f, 0.f, 1200.f), false, true);
-		}
-	}
-
 	// Launch player smoothly with Timeline if button is held
 	if (bLightInputHeld && ComboData && ComboData->LaunchUpCurve)
 	{
@@ -556,9 +553,17 @@ void ADMC_PlayerCharacter::ResetHeavyAttackVariables()
 	bSaveHeavyAttack = false;
 }
 
-bool ADMC_PlayerCharacter::CanLaunch() const
+bool ADMC_PlayerCharacter::CanLaunch()
 {
-	return GetIsTargeting() && CurrentMovementInput.Y <= -0.7f;
+	if (GetIsTargeting() && CurrentMovementInput.Y <= -0.7f)
+	{
+		if (ComboData->LaunchAttackMontage)
+		{
+			PlayAnimMontage(ComboData->LaunchAttackMontage);
+		}
+		return true;
+	}
+	return false;
 }
 
 bool ADMC_PlayerCharacter::GetIsTargeting() const
