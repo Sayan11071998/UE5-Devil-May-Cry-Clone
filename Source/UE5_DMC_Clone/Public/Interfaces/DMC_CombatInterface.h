@@ -32,4 +32,7 @@ public:
 	// Weapon Collision
 	virtual void StartWeaponCollision(TSubclassOf<class UDMC_DamageType> DamageType) = 0;
 	virtual void EndWeaponCollision() = 0;
+
+	// Specialized Combat Actions
+	virtual void LaunchCharacterUp() = 0;
 };

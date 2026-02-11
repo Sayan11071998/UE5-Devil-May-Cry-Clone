@@ -5,6 +5,7 @@
 #include "Data/DMC_ComboDataAsset.h"
 #include "Interfaces/DMC_CombatInterface.h"
 #include "DMC_CharacterTypes.h"
+#include "Components/TimelineComponent.h"
 #include "DMC_PlayerCharacter.generated.h"
 
 class UDMC_DamageType;
@@ -40,6 +41,8 @@ public:
 	virtual void SaveDodge() override;
 	
 	virtual void ResetState() override;
+	
+	virtual void LaunchCharacterUp() override;
 	
 	// Targeting & Rotation implementations
 	virtual void RotateToTarget() override;
@@ -79,6 +82,10 @@ protected:
 	void Move(const FInputActionValue& Value);
 	void Look(const FInputActionValue& Value);
 
+	// Timeline Update
+	UFUNCTION()
+	void HandleUpwardMovement(float Value);
+
 private:
 	// Internal Implementation || Combat
 	bool ExecuteAttack(UAnimMontage* Montage, float BufferAmount);
@@ -92,6 +99,16 @@ private:
 
 	void ResetLightAttackVariables();
 	void ResetHeavyAttackVariables();
+
+	// Input Handlers
+	void LightAttackPressed();
+	void LightAttackReleased();
+	bool CanLaunch();
+
+	// Timeline variables
+	FTimeline UpwardTimeline;
+	FVector LaunchStartLocation;
+	FVector LaunchTargetLocation;
 
 	// Components
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "DMC|Camera", meta = (AllowPrivateAccess = "true"))
@@ -141,7 +158,9 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "DMC|Movement", meta = (AllowPrivateAccess = "true"))
 	float DoubleJumpLaunchVelocity = 800.f;
 	
+	FVector2D CurrentMovementInput;
 	bool bDoubleJump = false;
+	bool bLightInputHeld = false;
 
 	// Combat || State & Weapon
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "DMC|Combat", meta = (AllowPrivateAccess = "true"))

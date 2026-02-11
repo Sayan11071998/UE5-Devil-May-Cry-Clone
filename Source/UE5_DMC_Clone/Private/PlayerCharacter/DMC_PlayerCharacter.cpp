@@ -52,11 +52,25 @@ void ADMC_PlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 	EquipWeapon();
+
+	// Setup Upward Timeline
+	if (ComboData && ComboData->LaunchUpCurve)
+	{
+		FOnTimelineFloat ProgressFunction;
+		ProgressFunction.BindUFunction(this, FName("HandleUpwardMovement"));
+		UpwardTimeline.AddInterpFloat(ComboData->LaunchUpCurve, ProgressFunction);
+		UpwardTimeline.SetLooping(false);
+	}
 }
 
 void ADMC_PlayerCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	if (UpwardTimeline.IsPlaying())
+	{
+		UpwardTimeline.TickTimeline(DeltaTime);
+	}
 }
 
 void ADMC_PlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -80,7 +94,8 @@ void ADMC_PlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ADMC_PlayerCharacter::Jump);
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
 		
-		EnhancedInputComponent->BindAction(LightAttackAction, ETriggerEvent::Started, this, &ADMC_PlayerCharacter::LightAttack);
+		EnhancedInputComponent->BindAction(LightAttackAction, ETriggerEvent::Started, this, &ADMC_PlayerCharacter::LightAttackPressed);
+		EnhancedInputComponent->BindAction(LightAttackAction, ETriggerEvent::Completed, this, &ADMC_PlayerCharacter::LightAttackReleased);
 		EnhancedInputComponent->BindAction(HeavyAttackAction, ETriggerEvent::Started, this, &ADMC_PlayerCharacter::HeavyAttack);
 		
 		EnhancedInputComponent->BindAction(DodgeAction, ETriggerEvent::Started, this, &ADMC_PlayerCharacter::Dodge);
@@ -103,18 +118,41 @@ void ADMC_PlayerCharacter::ResetDoubleJump()
 	bDoubleJump = false;
 }
 
-void ADMC_PlayerCharacter::LightAttack()
+void ADMC_PlayerCharacter::LightAttackPressed()
 {
-	bSaveHeavyAttack = false;
+	bLightInputHeld = true;
 	bSaveDodge = false;
-	
-	if (IsBusy())
+	bSaveHeavyAttack = false;
+
+	TArray<EDMC_PlayerState> StatesToCheck;
+	StatesToCheck.Add(EDMC_PlayerState::ECS_Attack);
+	StatesToCheck.Add(EDMC_PlayerState::ECS_Dodge);
+
+	if (IsStateEqualToAny(StatesToCheck))
 	{
 		bSaveLightAttack = true;
 	}
 	else
 	{
-		if (!GetCharacterMovement()->IsFalling())
+		LightAttack();
+	}
+}
+
+void ADMC_PlayerCharacter::LightAttackReleased()
+{
+	bLightInputHeld = false;
+}
+
+void ADMC_PlayerCharacter::LightAttack()
+{
+	// This represents the "Light Attack Event" in Blueprint
+	// We'll use !IsFalling() as the "Can Attack" check seen in the screenshot
+	if (!GetCharacterMovement()->IsFalling() && !IsBusy())
+	{
+		if (CanLaunch())
+		{
+		}
+		else
 		{
 			ResetHeavyAttackVariables();
 			PerformLightAttack(LightAttackIndex);
@@ -210,6 +248,24 @@ void ADMC_PlayerCharacter::ResetState()
 	TargetingComp->ClearSoftTarget();
 }
 
+void ADMC_PlayerCharacter::LaunchCharacterUp()
+{
+	// Launch player smoothly with Timeline if button is held
+	if (bLightInputHeld && ComboData && ComboData->LaunchUpCurve)
+	{
+		LaunchStartLocation = GetActorLocation();
+		LaunchTargetLocation = LaunchStartLocation + FVector(0.f, 0.f, ComboData->LaunchUpDistance);
+		
+		UpwardTimeline.PlayFromStart();
+	}
+}
+
+void ADMC_PlayerCharacter::HandleUpwardMovement(float Value)
+{
+	FVector NewLocation = FMath::Lerp(LaunchStartLocation, LaunchTargetLocation, Value);
+	SetActorLocation(NewLocation, true);
+}
+
 void ADMC_PlayerCharacter::EquipWeapon()
 {
 	if (!WeaponClass || EquippedWeapon) return;
@@ -297,6 +353,7 @@ void ADMC_PlayerCharacter::Landed(const FHitResult& Hit)
 void ADMC_PlayerCharacter::Move(const FInputActionValue& Value)
 {
 	FVector2D MovementVector = Value.Get<FVector2D>();
+	CurrentMovementInput = MovementVector;
 
 	if (Controller != nullptr)
 	{
@@ -494,6 +551,19 @@ void ADMC_PlayerCharacter::ResetHeavyAttackVariables()
 {
 	HeavyAttackIndex = 0;
 	bSaveHeavyAttack = false;
+}
+
+bool ADMC_PlayerCharacter::CanLaunch()
+{
+	if (GetIsTargeting() && CurrentMovementInput.Y <= -0.7f)
+	{
+		if (ComboData->LaunchAttackMontage)
+		{
+			PlayAnimMontage(ComboData->LaunchAttackMontage);
+		}
+		return true;
+	}
+	return false;
 }
 
 bool ADMC_PlayerCharacter::GetIsTargeting() const

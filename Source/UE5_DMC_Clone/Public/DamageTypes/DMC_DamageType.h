@@ -12,7 +12,8 @@ enum class EDMC_DamageType : uint8
 	EDT_Left       UMETA(DisplayName = "Left"),
 	EDT_Right      UMETA(DisplayName = "Right"),
 	EDT_Middle     UMETA(DisplayName = "Middle"),
-	EDT_KnockBack  UMETA(DisplayName = "KnockBack")
+	EDT_KnockBack  UMETA(DisplayName = "KnockBack"),
+	EDT_LaunchAttack UMETA(DisplayName = "LaunchAttack")
 };
 
 UCLASS()
