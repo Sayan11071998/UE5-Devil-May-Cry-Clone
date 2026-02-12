@@ -248,9 +248,10 @@ void ADMC_PlayerCharacter::SaveDodge()
 
 void ADMC_PlayerCharacter::ResetState()
 {
-	if (GetCharacterMovement()->IsFlying())
+	if (GetCharacterMovement()->IsFlying() || GetCharacterMovement()->GravityScale < 1.f)
 	{
 		GetCharacterMovement()->SetMovementMode(MOVE_Falling);
+		GetCharacterMovement()->GravityScale = 1.0f;
 	}
 	
 	SetState(EDMC_PlayerState::ECS_Nothing);
@@ -544,6 +545,11 @@ bool ADMC_PlayerCharacter::PerformAerialAttack(int32 InAttackIndex)
 		BufferComponent->StopBuffer();
 		BufferComponent->StartBuffer(ComboData->AerialAttackBuffer);
 	}
+
+	// Kill vertical velocity and gravity to stay suspended
+	GetCharacterMovement()->Velocity.Z = 0.f;
+	GetCharacterMovement()->GravityScale = 0.f;
+	GetCharacterMovement()->SetMovementMode(MOVE_Flying);
 	
 	SetState(EDMC_PlayerState::ECS_Attack);
 	PlayAnimMontage(ComboData->AerialAttackCombo[InAttackIndex]);

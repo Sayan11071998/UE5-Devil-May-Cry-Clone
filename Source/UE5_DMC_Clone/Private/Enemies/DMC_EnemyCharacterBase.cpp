@@ -10,6 +10,8 @@ ADMC_EnemyCharacterBase::ADMC_EnemyCharacterBase()
 	PrimaryActorTick.bCanEverTick = true;
 	
 	BufferComponent = CreateDefaultSubobject<UDMC_CombatBufferComponent>(TEXT("CombatBuffer"));
+
+	GetCharacterMovement()->BrakingDecelerationFlying = 5000.f;
 }
 
 void ADMC_EnemyCharacterBase::BeginPlay()
@@ -63,6 +65,7 @@ float ADMC_EnemyCharacterBase::TakeDamage(float DamageAmount, struct FDamageEven
 void ADMC_EnemyCharacterBase::EnemyReset()
 {
 	GetCharacterMovement()->SetMovementMode(MOVE_Falling);
+	GetCharacterMovement()->GravityScale = 1.0f;
 }
 
 void ADMC_EnemyCharacterBase::PlayHitReaction(EDMC_DamageType DamageDirection)
