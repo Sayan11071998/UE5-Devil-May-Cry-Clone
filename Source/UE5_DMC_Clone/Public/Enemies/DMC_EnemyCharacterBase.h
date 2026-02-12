@@ -15,6 +15,9 @@ struct FDMC_HitReactionData
 	TObjectPtr<UAnimMontage> HitReactMontage;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TObjectPtr<UAnimMontage> AirHitReactMontage;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float PushbackAmount = -6.f;
 };
 
@@ -34,6 +37,8 @@ public:
 		AActor* DamageCauser	
 	) override;
 	// ~ End APawn interface
+	
+	void EnemyReset();
 	
 protected:
 	virtual void BeginPlay() override;

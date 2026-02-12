@@ -3,6 +3,7 @@
 #include "Engine/DamageEvents.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Components/DMC_CombatBufferComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 ADMC_EnemyCharacterBase::ADMC_EnemyCharacterBase()
 {
@@ -59,10 +60,21 @@ float ADMC_EnemyCharacterBase::TakeDamage(float DamageAmount, struct FDamageEven
 	return ActualDamage;
 }
 
+void ADMC_EnemyCharacterBase::EnemyReset()
+{
+	GetCharacterMovement()->SetMovementMode(MOVE_Falling);
+}
+
 void ADMC_EnemyCharacterBase::PlayHitReaction(EDMC_DamageType DamageDirection)
 {
 	if (DamageDirection == EDMC_DamageType::EDT_LaunchAttack)
 	{
+		const FDMC_HitReactionData& Data = HitReactionMap[DamageDirection];
+		if (Data.HitReactMontage)
+		{
+			PlayAnimMontage(Data.HitReactMontage);
+		}
+		
 		LaunchHitReaction();
 		return;
 	}
@@ -71,12 +83,28 @@ void ADMC_EnemyCharacterBase::PlayHitReaction(EDMC_DamageType DamageDirection)
 	{
 		const FDMC_HitReactionData& Data = HitReactionMap[DamageDirection];
 		
+		bool bIsInAir = GetCharacterMovement()->IsFalling() || GetCharacterMovement()->IsFlying();
+		
+		if (bIsInAir)
+		{
+			GetCharacterMovement()->SetMovementMode(MOVE_Flying);
+			
+			UAnimMontage* MontageToPlay = Data.AirHitReactMontage ? Data.AirHitReactMontage.Get() : Data.HitReactMontage.Get();
+			if (MontageToPlay)
+			{
+				PlayAnimMontage(MontageToPlay);
+			}
+		}
+		else
+		{
+			if (Data.HitReactMontage)
+			{
+				PlayAnimMontage(Data.HitReactMontage);
+			}
+		}
+		
 		BufferComponent->StopBuffer();
 		BufferComponent->StartBuffer(Data.PushbackAmount);
-		if (Data.HitReactMontage)
-		{
-			PlayAnimMontage(Data.HitReactMontage);
-		}
 	}
 }
 
