@@ -542,6 +542,7 @@ bool ADMC_PlayerCharacter::PerformAerialAttack(int32 InAttackIndex)
 	if (BufferComponent)
 	{
 		BufferComponent->StopBuffer();
+		BufferComponent->StartBuffer(ComboData->AerialAttackBuffer);
 	}
 	
 	SetState(EDMC_PlayerState::ECS_Attack);
@@ -605,6 +606,9 @@ bool ADMC_PlayerCharacter::CanLaunch()
 	{
 		if (ComboData->LaunchAttackMontage)
 		{
+			BufferComponent->StopBuffer();
+			BufferComponent->StartBuffer(ComboData->LaunchBuffer);
+			
 			SetState(EDMC_PlayerState::ECS_Attack);
 			PlayAnimMontage(ComboData->LaunchAttackMontage);
 		}

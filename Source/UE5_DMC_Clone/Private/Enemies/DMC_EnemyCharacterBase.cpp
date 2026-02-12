@@ -69,19 +69,20 @@ void ADMC_EnemyCharacterBase::PlayHitReaction(EDMC_DamageType DamageDirection)
 {
 	if (DamageDirection == EDMC_DamageType::EDT_LaunchAttack)
 	{
-		const FDMC_HitReactionData& Data = HitReactionMap[DamageDirection];
-		if (Data.HitReactMontage)
+		const FDMC_HitReactionData* DataPtr = HitReactionMap.Find(DamageDirection);
+		if (DataPtr && DataPtr->HitReactMontage)
 		{
-			PlayAnimMontage(Data.HitReactMontage);
+			PlayAnimMontage(DataPtr->HitReactMontage);
 		}
 		
 		LaunchHitReaction();
 		return;
 	}
 	
-	if (HitReactionMap.Contains(DamageDirection))
+	const FDMC_HitReactionData* DataPtr = HitReactionMap.Find(DamageDirection);
+	if (DataPtr)
 	{
-		const FDMC_HitReactionData& Data = HitReactionMap[DamageDirection];
+		const FDMC_HitReactionData& Data = *DataPtr;
 		
 		bool bIsInAir = GetCharacterMovement()->IsFalling() || GetCharacterMovement()->IsFlying();
 		
@@ -103,8 +104,17 @@ void ADMC_EnemyCharacterBase::PlayHitReaction(EDMC_DamageType DamageDirection)
 			}
 		}
 		
+		// Clear velocity to prevent "drift" when in air or during movement mode changes
+		GetCharacterMovement()->Velocity = FVector::ZeroVector;
+		GetCharacterMovement()->StopMovementImmediately();
+
 		BufferComponent->StopBuffer();
-		BufferComponent->StartBuffer(Data.PushbackAmount);
+
+		// Only apply pushback if NOT in the air to keep the enemy pinned for air combos
+		if (!bIsInAir)
+		{
+			BufferComponent->StartBuffer(Data.PushbackAmount);
+		}
 	}
 }
 

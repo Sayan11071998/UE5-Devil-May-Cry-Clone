@@ -37,6 +37,9 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "Buffers")
 	float ExtenderAttackBuffer = 3.f;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Buffers")
+	float AerialAttackBuffer = 1.f;
+
 	UPROPERTY(EditDefaultsOnly, Category = "Dodge")
 	TObjectPtr<UAnimMontage> DodgeMontage;
 
