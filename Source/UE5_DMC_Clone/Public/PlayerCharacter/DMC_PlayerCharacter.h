@@ -90,6 +90,7 @@ private:
 	bool PerformComboExtender();
 	bool SpecialAttack();
 	void PerformDodge();
+	void FinisherAttack();
 
 	void ResetLightAttackVariables();
 	void ResetHeavyAttackVariables();
@@ -131,6 +132,9 @@ private:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "DMC|Input", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UInputAction> LockOnAction;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "DMC|Input", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UInputAction> FinisherAttackAction;
 
 	// Movement || Character Data
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "DMC|Movement", meta = (AllowPrivateAccess = "true"))

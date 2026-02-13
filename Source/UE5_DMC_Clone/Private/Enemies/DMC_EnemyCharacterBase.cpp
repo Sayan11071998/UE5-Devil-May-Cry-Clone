@@ -1,4 +1,6 @@
 #include "Enemies/DMC_EnemyCharacterBase.h"
+
+#include "Components/CapsuleComponent.h"
 #include "DamageTypes/DMC_DamageType.h"
 #include "Engine/DamageEvents.h"
 #include "Kismet/KismetMathLibrary.h"
@@ -19,6 +21,8 @@ void ADMC_EnemyCharacterBase::Tick(float DeltaTime)
 float ADMC_EnemyCharacterBase::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent,
 	class AController* EventInstigator, AActor* DamageCauser)
 {
+	if (bDead) return 0.f;
+	
 	float ActualDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
 	
 	if (DamageCauser)
@@ -39,6 +43,25 @@ float ADMC_EnemyCharacterBase::TakeDamage(float DamageAmount, struct FDamageEven
 	}
 	
 	return ActualDamage;
+}
+
+void ADMC_EnemyCharacterBase::Finished(AActor* PlayerAttacker)
+{
+	bDead = true;
+	
+	if (PlayerAttacker)
+	{
+		FRotator LookAtRot = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), PlayerAttacker->GetActorLocation());
+		SetActorRotation(FRotator(0.f, LookAtRot.Yaw, 0.f));
+	}
+
+	if (FinishedMontage)
+	{
+		PlayAnimMontage(FinishedMontage);
+	}
+	
+	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 }
 
 void ADMC_EnemyCharacterBase::PlayHitReaction(EDMC_DamageType DamageDirection)
