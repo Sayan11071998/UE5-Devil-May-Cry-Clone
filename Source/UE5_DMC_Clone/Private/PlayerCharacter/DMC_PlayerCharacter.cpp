@@ -12,6 +12,7 @@
 #include "Components/DMC_TargetingComponent.h"
 #include "Enemies/DMC_EnemyCharacterBase.h"
 #include "Items/DMC_BaseWeapon.h"
+#include "Kismet/KismetMathLibrary.h"
 
 ADMC_PlayerCharacter::ADMC_PlayerCharacter()
 {
@@ -526,6 +527,12 @@ void ADMC_PlayerCharacter::PerformDodge()
 
 void ADMC_PlayerCharacter::FinisherAttack()
 {
+	TArray<EDMC_PlayerState> StatesToIgnore;
+	StatesToIgnore.Add(EDMC_PlayerState::ECS_Dodge);
+	StatesToIgnore.Add(EDMC_PlayerState::ECS_Finisher);
+	
+	if (IsStateEqualToAny(StatesToIgnore)) return;
+
 	if (GetIsTargeting() && GetTargetActor())
 	{
 		AActor* Target = GetTargetActor();
@@ -535,16 +542,28 @@ void ADMC_PlayerCharacter::FinisherAttack()
 		{
 			if (ADMC_EnemyCharacterBase* Enemy = Cast<ADMC_EnemyCharacterBase>(Target))
 			{
+				if (TargetingComp)
+				{
+					TargetingComp->StopRotation();
+				}
+				if (BufferComponent)
+				{
+					BufferComponent->StopBuffer();
+				}
 				Enemy->Finished(this);
-				
-				SetState(EDMC_PlayerState::ECS_Finisher);
-                
-				FRotator LookAtRot = FRotationMatrix::MakeFromX(Target->GetActorLocation() - GetActorLocation()).Rotator();
-				SetActorRotation(FRotator(0.f, LookAtRot.Yaw, 0.f));
 
+				FRotator LookAtRot = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), Target->GetActorLocation());
+				SetActorRotation(FRotator(0.f, LookAtRot.Yaw, 0.f));
+				SetState(EDMC_PlayerState::ECS_Finisher);
+				
 				if (ComboData->FinisherAttackMontage)
 				{
 					PlayAnimMontage(ComboData->FinisherAttackMontage);
+				}
+
+				if (TargetingComp)
+				{
+					TargetingComp->StopLockOn();
 				}
 			}
 		}

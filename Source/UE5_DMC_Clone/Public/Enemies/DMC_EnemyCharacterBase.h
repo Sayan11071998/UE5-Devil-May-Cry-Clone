@@ -53,4 +53,7 @@ private:
 	TObjectPtr<class UDMC_CombatBufferComponent> BufferComponent;
 	
 	bool bDead = false;
+	
+public:
+	FORCEINLINE bool IsDead() const { return bDead; }
 };

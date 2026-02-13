@@ -1,5 +1,6 @@
 #include "Components/DMC_TargetingComponent.h"
 #include "Camera/CameraComponent.h"
+#include "Enemies/DMC_EnemyCharacterBase.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/KismetSystemLibrary.h"
@@ -116,7 +117,6 @@ void UDMC_TargetingComponent::SoftLockOn()
 	if (!Owner || (bIsTargeting && IsValid(SoftTarget))) return;
 	
 	FVector LastInput = Owner->GetCharacterMovement()->GetLastInputVector();
-	
 	if (LastInput.IsNearlyZero()) return;
 	
 	FVector Start = Owner->GetActorLocation();
@@ -142,7 +142,26 @@ void UDMC_TargetingComponent::SoftLockOn()
 		true	
 	);
 	
-	SoftTarget = bHit ? OutHit.GetActor() : nullptr;
+	if (bHit && IsValid(OutHit.GetActor()))
+	{
+		AActor* HitActor = OutHit.GetActor();
+		if (ADMC_EnemyCharacterBase* Enemy = Cast<ADMC_EnemyCharacterBase>(HitActor))
+		{
+			if (!Enemy->IsDead())
+			{
+				SoftTarget = Enemy;
+				bIsTargeting = true;
+			}
+			else
+			{
+				SoftTarget = nullptr;
+			}
+		}
+	}
+	else
+	{
+		SoftTarget = nullptr;
+	}
 }
 
 void UDMC_TargetingComponent::RotateToTarget()
