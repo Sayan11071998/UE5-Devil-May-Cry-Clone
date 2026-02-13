@@ -11,27 +11,9 @@ ADMC_EnemyCharacterBase::ADMC_EnemyCharacterBase()
 	BufferComponent = CreateDefaultSubobject<UDMC_CombatBufferComponent>(TEXT("CombatBuffer"));
 }
 
-void ADMC_EnemyCharacterBase::BeginPlay()
-{
-	Super::BeginPlay();
-	
-	if (LaunchCurve)
-	{
-		FOnTimelineFloat ProgressFunction;
-		ProgressFunction.BindUFunction(this, FName("HandleLaunchTimelineProgress"));
-		LaunchTimeline.AddInterpFloat(LaunchCurve, ProgressFunction);
-		LaunchTimeline.SetLooping(false);
-	}
-}
-
 void ADMC_EnemyCharacterBase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	
-	if (LaunchTimeline.IsPlaying())
-	{
-		LaunchTimeline.TickTimeline(DeltaTime);
-	}
 }
 
 float ADMC_EnemyCharacterBase::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent,
@@ -61,12 +43,6 @@ float ADMC_EnemyCharacterBase::TakeDamage(float DamageAmount, struct FDamageEven
 
 void ADMC_EnemyCharacterBase::PlayHitReaction(EDMC_DamageType DamageDirection)
 {
-	if (DamageDirection == EDMC_DamageType::EDT_LaunchAttack)
-	{
-		LaunchHitReaction();
-		return;
-	}
-	
 	if (HitReactionMap.Contains(DamageDirection))
 	{
 		const FDMC_HitReactionData& Data = HitReactionMap[DamageDirection];
@@ -78,21 +54,4 @@ void ADMC_EnemyCharacterBase::PlayHitReaction(EDMC_DamageType DamageDirection)
 			PlayAnimMontage(Data.HitReactMontage);
 		}
 	}
-}
-
-void ADMC_EnemyCharacterBase::LaunchHitReaction()
-{
-	LaunchStartLocation = GetActorLocation();
-	LaunchTargetLocation = LaunchStartLocation + FVector(0.f, 0.f, 400.f);
-    
-	if (LaunchCurve)
-	{
-		LaunchTimeline.PlayFromStart();
-	}
-}
-
-void ADMC_EnemyCharacterBase::HandleLaunchTimelineProgress(float Value)
-{
-	FVector NewLocation = FMath::Lerp(LaunchStartLocation, LaunchTargetLocation, Value);
-	SetActorLocation(NewLocation, true);
 }
