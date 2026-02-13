@@ -2,7 +2,6 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
-#include "Components/TimelineComponent.h"
 #include "DamageTypes/DMC_DamageType.h"
 #include "DMC_EnemyCharacterBase.generated.h"
 
@@ -13,9 +12,6 @@ struct FDMC_HitReactionData
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TObjectPtr<UAnimMontage> HitReactMontage;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TObjectPtr<UAnimMontage> AirHitReactMontage;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float PushbackAmount = -6.f;
@@ -38,10 +34,7 @@ public:
 	) override;
 	// ~ End APawn interface
 	
-	void EnemyReset();
-	
 protected:
-	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
 	
 	// Link a Damage Type to a specific Animation and Pushback amount
@@ -50,19 +43,7 @@ protected:
 	
 	void PlayHitReaction(EDMC_DamageType DamageDirection);
 	
-	void LaunchHitReaction();
-	
-	UFUNCTION()
-	void HandleLaunchTimelineProgress(float Value);
-	
-	UPROPERTY(EditDefaultsOnly, Category = "Combat|Hit Reaction")
-	TObjectPtr<UCurveFloat> LaunchCurve;
-	
 private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UDMC_CombatBufferComponent> BufferComponent;
-	
-	FTimeline LaunchTimeline;
-	FVector LaunchStartLocation;
-	FVector LaunchTargetLocation;
 };

@@ -1,6 +1,4 @@
 #include "Components/DMC_CombatBufferComponent.h"
-#include "GameFramework/Character.h"
-#include "GameFramework/CharacterMovementComponent.h"
 
 UDMC_CombatBufferComponent::UDMC_CombatBufferComponent()
 {
@@ -43,15 +41,6 @@ void UDMC_CombatBufferComponent::StartBuffer(float Amount)
 	BufferTimeElapsed = 0.f;
 	bIsBuffering = true;
 	
-	if (AActor* Owner = GetOwner())
-	{
-		if (ACharacter* Character = Cast<ACharacter>(Owner))
-		{
-			Character->GetCharacterMovement()->Velocity = FVector::ZeroVector;
-			Character->GetCharacterMovement()->StopMovementImmediately();
-		}
-	}
-
 	SetComponentTickEnabled(true);
 }
 

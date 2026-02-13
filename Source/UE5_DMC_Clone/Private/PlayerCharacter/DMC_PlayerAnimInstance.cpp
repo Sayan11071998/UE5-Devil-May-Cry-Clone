@@ -34,7 +34,7 @@ void UDMC_PlayerAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 	Direction = UKismetAnimationLibrary::CalculateDirection(Velocity, PlayerCharacter->GetActorRotation());
 	
 	// Update state flags for the AnimGraph
-	bIsFalling = PlayerCharacterMovement->IsFalling() || PlayerCharacterMovement->IsFlying();
+	bIsFalling = PlayerCharacterMovement->IsFalling();
 	bDoubleJump = PlayerCharacter->GetDoubleJumpState();
 	bIsTargeting = PlayerCharacter->GetIsTargeting();
 	CurrentState = PlayerCharacter->GetState();
