@@ -27,6 +27,9 @@ public:
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Attack|SpecialAttacks")
 	TObjectPtr<UAnimMontage> DodgeAttackMontage;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Attack|SpecialAttacks")
+	TObjectPtr<UAnimMontage> FinisherAttackMontage;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Buffers")
 	float LightAttackBuffer = 3.f;
@@ -48,4 +51,7 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Dodge")
 	float DodgeBufferAmount = 20.f;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Dodge")
+	float FinisherAttackDistance = 100.f;
 };

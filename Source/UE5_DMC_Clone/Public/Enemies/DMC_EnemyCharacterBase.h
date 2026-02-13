@@ -34,6 +34,8 @@ public:
 	) override;
 	// ~ End APawn interface
 	
+	void Finished(AActor* PlayerAttacker);
+	
 protected:
 	virtual void Tick(float DeltaTime) override;
 	
@@ -44,6 +46,11 @@ protected:
 	void PlayHitReaction(EDMC_DamageType DamageDirection);
 	
 private:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UAnimMontage> FinishedMontage;
+	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UDMC_CombatBufferComponent> BufferComponent;
+	
+	bool bDead = false;
 };

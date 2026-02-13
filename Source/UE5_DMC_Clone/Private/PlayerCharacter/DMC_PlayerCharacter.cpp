@@ -10,6 +10,7 @@
 #include "InputActionValue.h"
 #include "Components/DMC_CombatBufferComponent.h"
 #include "Components/DMC_TargetingComponent.h"
+#include "Enemies/DMC_EnemyCharacterBase.h"
 #include "Items/DMC_BaseWeapon.h"
 
 ADMC_PlayerCharacter::ADMC_PlayerCharacter()
@@ -82,6 +83,7 @@ void ADMC_PlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 		
 		EnhancedInputComponent->BindAction(LightAttackAction, ETriggerEvent::Started, this, &ADMC_PlayerCharacter::LightAttack);
 		EnhancedInputComponent->BindAction(HeavyAttackAction, ETriggerEvent::Started, this, &ADMC_PlayerCharacter::HeavyAttack);
+		EnhancedInputComponent->BindAction(FinisherAttackAction, ETriggerEvent::Started, this, &ADMC_PlayerCharacter::FinisherAttack);
 		
 		EnhancedInputComponent->BindAction(DodgeAction, ETriggerEvent::Started, this, &ADMC_PlayerCharacter::Dodge);
 	
@@ -150,7 +152,7 @@ void ADMC_PlayerCharacter::HeavyAttack()
 
 void ADMC_PlayerCharacter::Dodge()
 {
-	if (IsDodging())
+	if (IsDodging() || CurrentState == EDMC_PlayerState::ECS_Finisher)
 	{
 		bSaveDodge = true;
 	}
@@ -165,7 +167,7 @@ void ADMC_PlayerCharacter::Dodge()
 
 void ADMC_PlayerCharacter::Jump()
 {
-	if (IsBusy()) return;
+	if (IsBusy() || CurrentState == EDMC_PlayerState::ECS_Finisher) return;
 	
 	if (GetCharacterMovement()->IsFalling())
 	{
@@ -518,6 +520,33 @@ void ADMC_PlayerCharacter::PerformDodge()
 		if (ComboData->DodgeMontage)
 		{
 			PlayAnimMontage(ComboData->DodgeMontage);
+		}
+	}
+}
+
+void ADMC_PlayerCharacter::FinisherAttack()
+{
+	if (GetIsTargeting() && GetTargetActor())
+	{
+		AActor* Target = GetTargetActor();
+		
+		float Distance = GetDistanceTo(Target);
+		if (ComboData && Distance <= ComboData->FinisherAttackDistance)
+		{
+			if (ADMC_EnemyCharacterBase* Enemy = Cast<ADMC_EnemyCharacterBase>(Target))
+			{
+				Enemy->Finished(this);
+				
+				SetState(EDMC_PlayerState::ECS_Finisher);
+                
+				FRotator LookAtRot = FRotationMatrix::MakeFromX(Target->GetActorLocation() - GetActorLocation()).Rotator();
+				SetActorRotation(FRotator(0.f, LookAtRot.Yaw, 0.f));
+
+				if (ComboData->FinisherAttackMontage)
+				{
+					PlayAnimMontage(ComboData->FinisherAttackMontage);
+				}
+			}
 		}
 	}
 }
