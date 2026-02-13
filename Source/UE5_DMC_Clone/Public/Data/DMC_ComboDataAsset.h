@@ -10,17 +10,20 @@ class UE5_DMC_CLONE_API UDMC_ComboDataAsset : public UDataAsset
 	GENERATED_BODY()
 	
 public:
-	UPROPERTY(EditDefaultsOnly, Category = "Combos|Light")
+	UPROPERTY(EditDefaultsOnly, Category = "Attack|Combos|Light")
 	TArray<TObjectPtr<UAnimMontage>> LightAttackCombo;
 	
-	UPROPERTY(EditDefaultsOnly, Category = "Combos|Heavy")
+	UPROPERTY(EditDefaultsOnly, Category = "Attack|Combos|Heavy")
 	TArray<TObjectPtr<UAnimMontage>> HeavyAttackCombo;
 	
-	UPROPERTY(EditDefaultsOnly, Category = "Combos|Special")
+	UPROPERTY(EditDefaultsOnly, Category = "Attack|Combos|Special")
 	TArray<TObjectPtr<UAnimMontage>> ComboStarterMontages;
 	
-	UPROPERTY(EditDefaultsOnly, Category = "Combos|Special")
+	UPROPERTY(EditDefaultsOnly, Category = "Attack|Combos|Special")
 	TArray<TObjectPtr<UAnimMontage>> ComboExtenderMontages;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Attack|Stinger")
+	TObjectPtr<UAnimMontage> StingerAttackMontage;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Buffers")
 	float LightAttackBuffer = 3.f;
@@ -33,6 +36,9 @@ public:
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Buffers")
 	float ExtenderAttackBuffer = 3.f;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Buffers")
+	float StingerAttackBuffer = 25.f;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Dodge")
 	TObjectPtr<UAnimMontage> DodgeMontage;

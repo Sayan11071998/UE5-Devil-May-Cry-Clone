@@ -105,6 +105,8 @@ void ADMC_PlayerCharacter::ResetDoubleJump()
 
 void ADMC_PlayerCharacter::LightAttack()
 {
+	if (SpecialAttack()) return;
+	
 	bSaveHeavyAttack = false;
 	bSaveDodge = false;
 	
@@ -455,6 +457,24 @@ bool ADMC_PlayerCharacter::PerformComboExtender()
 		}
 	}
 
+	return false;
+}
+
+bool ADMC_PlayerCharacter::SpecialAttack()
+{
+	if (IsBusy() || GetCharacterMovement()->IsFalling()) return false;
+	
+	if (GetIsTargeting() && GetTargetActor())
+	{
+		if (GetCharacterMovement()->GetLastInputVector().Size() > 0.7f)
+		{
+			RotateToTarget();
+			if (ComboData && ComboData->StingerAttackMontage)
+			{
+				return ExecuteAttack(ComboData->StingerAttackMontage, ComboData->StingerAttackBuffer);
+			}
+		}
+	}
 	return false;
 }
 

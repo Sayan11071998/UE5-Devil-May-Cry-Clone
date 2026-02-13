@@ -88,6 +88,7 @@ private:
 	bool PerformHeavyAttack(int32 InAttackIndex);
 	bool PerformComboStarter();
 	bool PerformComboExtender();
+	bool SpecialAttack();
 	void PerformDodge();
 
 	void ResetLightAttackVariables();
