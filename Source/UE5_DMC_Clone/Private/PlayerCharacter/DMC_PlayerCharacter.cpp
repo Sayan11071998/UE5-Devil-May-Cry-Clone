@@ -462,6 +462,8 @@ bool ADMC_PlayerCharacter::PerformComboExtender()
 
 bool ADMC_PlayerCharacter::SpecialAttack()
 {
+	if (IsBusy() || GetCharacterMovement()->IsFalling()) return false;
+	
 	if (GetIsTargeting() && GetTargetActor())
 	{
 		if (GetCharacterMovement()->GetLastInputVector().Size() > 0.7f)
@@ -469,7 +471,7 @@ bool ADMC_PlayerCharacter::SpecialAttack()
 			RotateToTarget();
 			if (ComboData && ComboData->StingerAttackMontage)
 			{
-				return ExecuteAttack(ComboData->StingerAttackMontage, 25.0f);
+				return ExecuteAttack(ComboData->StingerAttackMontage, ComboData->StingerAttackBuffer);
 			}
 		}
 	}
