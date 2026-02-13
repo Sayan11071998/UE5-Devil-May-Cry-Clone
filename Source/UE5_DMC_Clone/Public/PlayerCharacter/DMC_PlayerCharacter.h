@@ -166,6 +166,7 @@ private:
 
 	bool bSaveLightAttack = false;
 	bool bSaveHeavyAttack = false;
+	bool bDodgeAttackEnabled = false;
 	bool bSaveDodge = false;
 
 public:

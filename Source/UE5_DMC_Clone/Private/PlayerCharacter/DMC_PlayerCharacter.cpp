@@ -105,17 +105,22 @@ void ADMC_PlayerCharacter::ResetDoubleJump()
 
 void ADMC_PlayerCharacter::LightAttack()
 {
-	if (SpecialAttack()) return;
-	
-	bSaveHeavyAttack = false;
 	bSaveDodge = false;
-	
-	if (IsBusy())
+	bSaveHeavyAttack = false;
+
+	if (CurrentState == EDMC_PlayerState::ECS_Dodge)
+	{
+		bDodgeAttackEnabled = true;
+	}
+
+	if (IsBusy()) 
 	{
 		bSaveLightAttack = true;
 	}
 	else
 	{
+		if (SpecialAttack()) return;
+
 		if (!GetCharacterMovement()->IsFalling())
 		{
 			ResetHeavyAttackVariables();
@@ -462,11 +467,23 @@ bool ADMC_PlayerCharacter::PerformComboExtender()
 
 bool ADMC_PlayerCharacter::SpecialAttack()
 {
-	if (IsBusy() || GetCharacterMovement()->IsFalling()) return false;
-	
 	if (GetIsTargeting() && GetTargetActor())
 	{
-		if (GetCharacterMovement()->GetLastInputVector().Size() > 0.7f)
+		if (bDodgeAttackEnabled)
+		{
+			bDodgeAttackEnabled = false;
+			SetState(EDMC_PlayerState::ECS_Attack);
+			RotateToTarget();
+			if (ComboData && ComboData->DodgeAttackMontage)
+			{
+				PlayAnimMontage(ComboData->DodgeAttackMontage);
+				return true;
+			}
+		}
+		
+		if (IsBusy() || GetCharacterMovement()->IsFalling()) return false;
+		
+		if (GetCharacterMovement()->GetLastInputVector().Size() > 0.1f)
 		{
 			RotateToTarget();
 			if (ComboData && ComboData->StingerAttackMontage)
@@ -475,6 +492,7 @@ bool ADMC_PlayerCharacter::SpecialAttack()
 			}
 		}
 	}
+	
 	return false;
 }
 
@@ -508,6 +526,7 @@ void ADMC_PlayerCharacter::ResetLightAttackVariables()
 {
 	LightAttackIndex = 0;
 	bSaveLightAttack = false;
+	bDodgeAttackEnabled = false;
 }
 
 void ADMC_PlayerCharacter::ResetHeavyAttackVariables()
