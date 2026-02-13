@@ -22,8 +22,11 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "Attack|Combos|Special")
 	TArray<TObjectPtr<UAnimMontage>> ComboExtenderMontages;
 	
-	UPROPERTY(EditDefaultsOnly, Category = "Attack|Stinger")
+	UPROPERTY(EditDefaultsOnly, Category = "Attack|SpecialAttacks")
 	TObjectPtr<UAnimMontage> StingerAttackMontage;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Attack|SpecialAttacks")
+	TObjectPtr<UAnimMontage> DodgeAttackMontage;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Buffers")
 	float LightAttackBuffer = 3.f;
