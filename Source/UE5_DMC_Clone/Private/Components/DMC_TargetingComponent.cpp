@@ -159,7 +159,6 @@ void UDMC_TargetingComponent::SoftLockOn()
 			if (!Enemy->IsDead())
 			{
 				SoftTarget = Enemy;
-				bIsTargeting = true;
 			}
 			else
 			{

@@ -323,7 +323,7 @@ void ADMC_PlayerCharacter::Move(const FInputActionValue& Value)
 
 void ADMC_PlayerCharacter::Look(const FInputActionValue& Value)
 {
-	if (TargetingComp->IsTargeting()) return;
+	if (TargetingComp->GetTargetActor()) return;
 	
 	FVector2D LookAxisVector = Value.Get<FVector2D>();
 
