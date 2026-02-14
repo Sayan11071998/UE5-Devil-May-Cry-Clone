@@ -10,6 +10,8 @@ ADMC_EnemyCharacterBase::ADMC_EnemyCharacterBase()
 {
 	PrimaryActorTick.bCanEverTick = true;
 	
+	Health = MaxHealth;
+	
 	BufferComponent = CreateDefaultSubobject<UDMC_CombatBufferComponent>(TEXT("CombatBuffer"));
 }
 
@@ -22,27 +24,32 @@ float ADMC_EnemyCharacterBase::TakeDamage(float DamageAmount, struct FDamageEven
 	class AController* EventInstigator, AActor* DamageCauser)
 {
 	if (bDead) return 0.f;
-	
-	float ActualDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
-	
+
 	if (DamageCauser)
 	{
-		FRotator CurrentRotation = GetActorRotation();
 		FRotator LookAtRotation = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), DamageCauser->GetActorLocation());
-		FRotator NewRotation = FRotator(CurrentRotation.Pitch, LookAtRotation.Yaw, CurrentRotation.Roll);
-		SetActorRotation(NewRotation);
+		SetActorRotation(FRotator(0.f, LookAtRotation.Yaw, 0.f));
 	}
-	
-	if (DamageEvent.DamageTypeClass)
+
+	Health = FMath::Clamp(Health - DamageAmount, 0.f, MaxHealth);
+
+	if (Health <= 0.f)
 	{
-		UDMC_DamageType* DamageTypeObject = Cast<UDMC_DamageType>(DamageEvent.DamageTypeClass->GetDefaultObject());
-		if (DamageTypeObject)
+		Death();
+	}
+	else
+	{
+		if (DamageEvent.DamageTypeClass)
 		{
-			PlayHitReaction(DamageTypeObject->DamageType);
+			UDMC_DamageType* DamageTypeObject = Cast<UDMC_DamageType>(DamageEvent.DamageTypeClass->GetDefaultObject());
+			if (DamageTypeObject)
+			{
+				PlayHitReaction(DamageTypeObject->DamageType);
+			}
 		}
 	}
 	
-	return ActualDamage;
+	return DamageAmount;
 }
 
 void ADMC_EnemyCharacterBase::Finished(AActor* PlayerAttacker)
@@ -77,4 +84,18 @@ void ADMC_EnemyCharacterBase::PlayHitReaction(EDMC_DamageType DamageDirection)
 			PlayAnimMontage(Data.HitReactMontage);
 		}
 	}
+}
+
+void ADMC_EnemyCharacterBase::Death()
+{
+	if (bDead) return;
+	bDead = true;
+	
+	if (DeathMontage)
+	{
+		PlayAnimMontage(DeathMontage);
+	}
+	
+	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 }
