@@ -22,6 +22,15 @@ void UDMC_TargetingComponent::TickComponent(float DeltaTime, ELevelTick TickType
 	
 	if (bIsTargeting && IsValid(TargetActor))
 	{
+		if (ADMC_EnemyCharacterBase* Enemy = Cast<ADMC_EnemyCharacterBase>(TargetActor))
+		{
+			if (Enemy->IsDead())
+			{
+				StopLockOn();
+				return;
+			}
+		}
+		
 		TArray<EDMC_PlayerState> DodgeState;
 		DodgeState.Add(EDMC_PlayerState::ECS_Dodge);
 		
