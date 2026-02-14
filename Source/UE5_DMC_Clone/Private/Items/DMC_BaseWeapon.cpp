@@ -90,7 +90,7 @@ void ADMC_BaseWeapon::HandleCollisionTracing()
 					AlreadyHitActors.AddUnique(HitActor);
 					UGameplayStatics::ApplyDamage(
 						HitActor,
-						1.f,
+						KatanaDamageAmount,
 						GetInstigatorController(),
 						GetOwner(),
 						CurrentDamageType

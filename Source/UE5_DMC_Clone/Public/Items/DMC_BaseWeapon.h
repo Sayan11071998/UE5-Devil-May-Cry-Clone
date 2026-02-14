@@ -39,6 +39,9 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Combat")
 	float TraceRadius = 20.f;
 	
+	UPROPERTY(EditDefaultsOnly, Category = "Combat")
+	float KatanaDamageAmount = 20.f;
+	
 private:
 	bool bIsCollisionActive = false;
 	

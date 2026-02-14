@@ -47,12 +47,23 @@ protected:
 	
 private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat", meta = (AllowPrivateAccess = "true"))
+	float Health = 100.f;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat", meta = (AllowPrivateAccess = "true"))
+	float MaxHealth = 100.f;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UAnimMontage> FinishedMontage;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UAnimMontage> DeathMontage;
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UDMC_CombatBufferComponent> BufferComponent;
 	
 	bool bDead = false;
+	
+	void Death();
 	
 public:
 	FORCEINLINE bool IsDead() const { return bDead; }
