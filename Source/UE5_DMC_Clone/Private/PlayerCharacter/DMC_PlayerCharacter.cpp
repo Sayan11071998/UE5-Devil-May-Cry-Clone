@@ -488,6 +488,8 @@ bool ADMC_PlayerCharacter::SpecialAttack()
 		
 		if (GetCharacterMovement()->GetLastInputVector().Size() > 0.1f)
 		{
+			ResetLightAttackVariables();
+			ResetHeavyAttackVariables();
 			RotateToTarget();
 			if (ComboData && ComboData->StingerAttackMontage)
 			{
