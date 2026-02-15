@@ -2,6 +2,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "DamageTypes/DMC_DamageType.h"
+#include "NiagaraComponent.h"
 
 ADMC_BaseWeapon::ADMC_BaseWeapon()
 {
@@ -13,6 +14,10 @@ ADMC_BaseWeapon::ADMC_BaseWeapon()
 	WeaponMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	WeaponMesh->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
 	RootComponent = WeaponMesh;
+	
+	TrailComponent = CreateDefaultSubobject<UNiagaraComponent>(TEXT("TrailComponent"));
+	TrailComponent->SetupAttachment(WeaponMesh);
+	TrailComponent->bAutoActivate = false;
 }
 
 void ADMC_BaseWeapon::Tick(float DeltaSeconds)
@@ -43,6 +48,7 @@ void ADMC_BaseWeapon::StartCollision(TSubclassOf<class UDMC_DamageType> DamageTy
 	bIsCollisionActive = true;
 	
 	SetActorTickEnabled(true);
+	ToggleTrail(true);
 }
 
 void ADMC_BaseWeapon::EndCollision()
@@ -50,6 +56,22 @@ void ADMC_BaseWeapon::EndCollision()
 	bIsCollisionActive = false;
 	
 	SetActorTickEnabled(false);
+	ToggleTrail(false);
+}
+
+void ADMC_BaseWeapon::ToggleTrail(bool bActivate)
+{
+	if (!TrailComponent || !TrailSystem) return;
+	
+	if (bActivate)
+	{
+		TrailComponent->SetAsset(TrailSystem);
+		TrailComponent->Activate();
+	}
+	else
+	{
+		TrailComponent->Deactivate();
+	}
 }
 
 void ADMC_BaseWeapon::HandleCollisionTracing()
@@ -88,9 +110,11 @@ void ADMC_BaseWeapon::HandleCollisionTracing()
 				if (IsValid(HitActor) && !AlreadyHitActors.Contains(HitActor))
 				{
 					AlreadyHitActors.AddUnique(HitActor);
-					UGameplayStatics::ApplyDamage(
+					UGameplayStatics::ApplyPointDamage(
 						HitActor,
 						KatanaDamageAmount,
+						Hit.ImpactNormal,
+						Hit,
 						GetInstigatorController(),
 						GetOwner(),
 						CurrentDamageType

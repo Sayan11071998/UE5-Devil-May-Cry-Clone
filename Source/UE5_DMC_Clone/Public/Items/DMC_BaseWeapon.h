@@ -4,6 +4,9 @@
 #include "GameFramework/Actor.h"
 #include "DMC_BaseWeapon.generated.h"
 
+class UNiagaraComponent;
+class UNiagaraSystem;
+
 UCLASS()
 class UE5_DMC_CLONE_API ADMC_BaseWeapon : public AActor
 {
@@ -41,6 +44,14 @@ protected:
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Combat")
 	float KatanaDamageAmount = 20.f;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Combat|VFX")
+	TObjectPtr<UNiagaraSystem> TrailSystem;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat|VFX")
+	TObjectPtr<UNiagaraComponent> TrailComponent;
+
+	void ToggleTrail(bool bActivate);
 	
 private:
 	bool bIsCollisionActive = false;

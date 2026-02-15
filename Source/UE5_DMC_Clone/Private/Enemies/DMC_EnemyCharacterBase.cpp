@@ -1,5 +1,5 @@
 #include "Enemies/DMC_EnemyCharacterBase.h"
-
+#include "NiagaraFunctionLibrary.h"
 #include "Components/CapsuleComponent.h"
 #include "DamageTypes/DMC_DamageType.h"
 #include "Engine/DamageEvents.h"
@@ -24,6 +24,12 @@ float ADMC_EnemyCharacterBase::TakeDamage(float DamageAmount, struct FDamageEven
 	class AController* EventInstigator, AActor* DamageCauser)
 {
 	if (bDead) return 0.f;
+	
+	if (DamageEvent.IsOfType(FPointDamageEvent::ClassID))
+	{
+		const FPointDamageEvent* PointDamageEvent = static_cast<const FPointDamageEvent*>(&DamageEvent);
+		SpawnHitFX(DamageCauser, PointDamageEvent->HitInfo);
+	}
 
 	if (DamageCauser)
 	{
@@ -69,6 +75,17 @@ void ADMC_EnemyCharacterBase::Finished(AActor* PlayerAttacker)
 	
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+}
+
+void ADMC_EnemyCharacterBase::SpawnHitFX(AActor* DamageCauser, const FHitResult& HitResult)
+{
+	if (!HitVFX || !DamageCauser) return;
+	
+	FRotator YawRot = UKismetMathLibrary::FindLookAtRotation(DamageCauser->GetActorLocation(), GetActorLocation());
+	FRotator TiltRot = UKismetMathLibrary::FindLookAtRotation(HitResult.ImpactPoint, HitResult.TraceEnd);
+	FRotator FinalRot = FRotator(TiltRot.Pitch, YawRot.Yaw + 90.f, TiltRot.Roll); 
+	
+	UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), HitVFX, HitResult.ImpactPoint, FinalRot);
 }
 
 void ADMC_EnemyCharacterBase::PlayHitReaction(EDMC_DamageType DamageDirection)
