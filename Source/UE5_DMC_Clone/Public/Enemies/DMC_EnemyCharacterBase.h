@@ -36,7 +36,7 @@ public:
 	
 	void Finished(AActor* PlayerAttacker);
 	
-	void SpawnHitFX(AActor* DamageCauser, const FVector& ImpactPoint);
+	void SpawnHitFX(AActor* DamageCauser, const FHitResult& HitResult);
 	
 protected:
 	virtual void Tick(float DeltaTime) override;

@@ -28,7 +28,7 @@ float ADMC_EnemyCharacterBase::TakeDamage(float DamageAmount, struct FDamageEven
 	if (DamageEvent.IsOfType(FPointDamageEvent::ClassID))
 	{
 		const FPointDamageEvent* PointDamageEvent = static_cast<const FPointDamageEvent*>(&DamageEvent);
-		SpawnHitFX(DamageCauser, PointDamageEvent->HitInfo.ImpactPoint);
+		SpawnHitFX(DamageCauser, PointDamageEvent->HitInfo);
 	}
 
 	if (DamageCauser)
@@ -77,14 +77,15 @@ void ADMC_EnemyCharacterBase::Finished(AActor* PlayerAttacker)
 	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 }
 
-void ADMC_EnemyCharacterBase::SpawnHitFX(AActor* DamageCauser, const FVector& ImpactPoint)
+void ADMC_EnemyCharacterBase::SpawnHitFX(AActor* DamageCauser, const FHitResult& HitResult)
 {
 	if (!HitVFX || !DamageCauser) return;
 	
-	FRotator LookAtRot = UKismetMathLibrary::FindLookAtRotation(DamageCauser->GetActorLocation(), GetActorLocation());
-	LookAtRot.Yaw += 90.f;
-    
-	UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), HitVFX, ImpactPoint, LookAtRot);
+	FRotator YawRot = UKismetMathLibrary::FindLookAtRotation(DamageCauser->GetActorLocation(), GetActorLocation());
+	FRotator TiltRot = UKismetMathLibrary::FindLookAtRotation(HitResult.ImpactPoint, HitResult.TraceEnd);
+	FRotator FinalRot = FRotator(TiltRot.Pitch, YawRot.Yaw + 90.f, TiltRot.Roll); 
+	
+	UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), HitVFX, HitResult.ImpactPoint, FinalRot);
 }
 
 void ADMC_EnemyCharacterBase::PlayHitReaction(EDMC_DamageType DamageDirection)
