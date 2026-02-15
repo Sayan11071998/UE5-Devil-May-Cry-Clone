@@ -36,6 +36,8 @@ public:
 	
 	void Finished(AActor* PlayerAttacker);
 	
+	void SpawnHitFX(AActor* DamageCauser, const FVector& ImpactPoint);
+	
 protected:
 	virtual void Tick(float DeltaTime) override;
 	
@@ -60,6 +62,9 @@ private:
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UDMC_CombatBufferComponent> BufferComponent;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat|VFX", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class UNiagaraSystem> HitVFX;
 	
 	bool bDead = false;
 	

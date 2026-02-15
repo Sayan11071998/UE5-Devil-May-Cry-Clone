@@ -3,7 +3,6 @@
 #include "Kismet/KismetSystemLibrary.h"
 #include "DamageTypes/DMC_DamageType.h"
 #include "NiagaraComponent.h"
-#include "NiagaraFunctionLibrary.h"
 
 ADMC_BaseWeapon::ADMC_BaseWeapon()
 {
@@ -111,9 +110,11 @@ void ADMC_BaseWeapon::HandleCollisionTracing()
 				if (IsValid(HitActor) && !AlreadyHitActors.Contains(HitActor))
 				{
 					AlreadyHitActors.AddUnique(HitActor);
-					UGameplayStatics::ApplyDamage(
+					UGameplayStatics::ApplyPointDamage(
 						HitActor,
 						KatanaDamageAmount,
+						Hit.ImpactNormal,
+						Hit,
 						GetInstigatorController(),
 						GetOwner(),
 						CurrentDamageType
