@@ -33,6 +33,9 @@ public:
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Attack|SpecialAttacks")
 	TObjectPtr<UAnimMontage> ChargeAttackMontage;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Attack|Special")
+	TObjectPtr<UAnimMontage> RageMontage;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Combat|Buffers")
 	float LightAttackBuffer = 3.f;
@@ -60,4 +63,11 @@ public:
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Combat|Finisher")
 	float FinisherAttackDistance = 100.f;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Effects|Rage")
+	TObjectPtr<UParticleSystem> RageParticles_1;
+	UPROPERTY(EditDefaultsOnly, Category = "Effects|Rage")
+	TObjectPtr<UParticleSystem> RageParticles_2;
+	UPROPERTY(EditDefaultsOnly, Category = "Effects|Rage")
+	TObjectPtr<UMaterialInterface> RageOverlayMaterial;
 };

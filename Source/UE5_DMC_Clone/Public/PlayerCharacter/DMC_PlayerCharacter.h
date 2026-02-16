@@ -90,16 +90,22 @@ private:
 	bool PerformHeavyAttack(int32 InAttackIndex);
 	bool PerformComboStarter();
 	bool PerformComboExtender();
-	void PerformChargeAttack();
 	bool SpecialAttack();
 	void PerformDodge();
 	void FinisherAttack();
+	
+	void Rage();
+	void RageStage2();
+	void RageStage3();
+	void RageStage4();
 	
 	void LightAttackReleased();
 	void OnChargeTimerFinished();
 
 	void ResetLightAttackVariables();
 	void ResetHeavyAttackVariables();
+	
+	FTimerHandle RageTimerHandle;
 
 	// Components
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "DMC|Camera", meta = (AllowPrivateAccess = "true"))
@@ -107,6 +113,9 @@ private:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "DMC|Camera", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UCameraComponent> FollowCamera;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "DMC|Combat", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<USceneComponent> Scene;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "DMC|Combat", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UDMC_CombatBufferComponent> BufferComponent;
@@ -141,6 +150,9 @@ private:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "DMC|Input", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UInputAction> FinisherAttackAction;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "DMC|Input", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UInputAction> RageAction;
 
 	// Movement || Character Data
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "DMC|Movement", meta = (AllowPrivateAccess = "true"))
@@ -169,6 +181,9 @@ private:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "DMC|Combat", meta = (AllowPrivateAccess = "true"))
 	FName WeaponSocketName;
+	
+	UPROPERTY()
+	TObjectPtr<UParticleSystemComponent> ActiveRageEmitter;
 
 	int32 LightAttackIndex = 0;
 	int32 HeavyAttackIndex = 0;
