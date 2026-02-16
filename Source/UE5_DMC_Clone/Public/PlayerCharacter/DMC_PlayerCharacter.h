@@ -78,6 +78,8 @@ protected:
 	// Movement Handlers
 	void Move(const FInputActionValue& Value);
 	void Look(const FInputActionValue& Value);
+	
+	FTimerHandle ChargeTimerHandle;
 
 private:
 	// Internal Implementation || Combat
@@ -88,9 +90,13 @@ private:
 	bool PerformHeavyAttack(int32 InAttackIndex);
 	bool PerformComboStarter();
 	bool PerformComboExtender();
+	void PerformChargeAttack();
 	bool SpecialAttack();
 	void PerformDodge();
 	void FinisherAttack();
+	
+	void LightAttackReleased();
+	void OnChargeTimerFinished();
 
 	void ResetLightAttackVariables();
 	void ResetHeavyAttackVariables();
@@ -172,6 +178,7 @@ private:
 	bool bSaveHeavyAttack = false;
 	bool bDodgeAttackEnabled = false;
 	bool bSaveDodge = false;
+	bool bPerformChargeAttack = false;
 
 public:
 	// Specialized Getters

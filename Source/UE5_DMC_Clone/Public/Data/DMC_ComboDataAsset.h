@@ -30,28 +30,34 @@ public:
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Attack|SpecialAttacks")
 	TObjectPtr<UAnimMontage> FinisherAttackMontage;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Attack|SpecialAttacks")
+	TObjectPtr<UAnimMontage> ChargeAttackMontage;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Buffers")
+	UPROPERTY(EditDefaultsOnly, Category = "Combat|Buffers")
 	float LightAttackBuffer = 3.f;
 	
-	UPROPERTY(EditDefaultsOnly, Category = "Buffers")
+	UPROPERTY(EditDefaultsOnly, Category = "Combat|Buffers")
 	float HeavyAttackBuffer = 3.f;
 	
-	UPROPERTY(EditDefaultsOnly, Category = "Buffers")
+	UPROPERTY(EditDefaultsOnly, Category = "Combat|Buffers")
 	float StarterAttackBuffer = 3.f;
 	
-	UPROPERTY(EditDefaultsOnly, Category = "Buffers")
+	UPROPERTY(EditDefaultsOnly, Category = "Combat|Buffers")
 	float ExtenderAttackBuffer = 3.f;
 	
-	UPROPERTY(EditDefaultsOnly, Category = "Buffers")
+	UPROPERTY(EditDefaultsOnly, Category = "Combat|Buffers")
 	float StingerAttackBuffer = 25.f;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Dodge")
-	TObjectPtr<UAnimMontage> DodgeMontage;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Dodge")
-	float DodgeBufferAmount = 20.f;
 	
-	UPROPERTY(EditDefaultsOnly, Category = "Dodge")
+	UPROPERTY(EditDefaultsOnly, Category = "Combat|Buffers")
+	float ChargedBufferAmount = 5.f;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Combat|Buffers")
+	float DodgeBufferAmount = 20.f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Combat|Dodge")
+	TObjectPtr<UAnimMontage> DodgeMontage;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Combat|Finisher")
 	float FinisherAttackDistance = 100.f;
 };
