@@ -13,6 +13,7 @@
 #include "Enemies/DMC_EnemyCharacterBase.h"
 #include "Items/DMC_BaseWeapon.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "TimerManager.h"
 
 ADMC_PlayerCharacter::ADMC_PlayerCharacter()
 {
@@ -83,6 +84,7 @@ void ADMC_PlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
 		
 		EnhancedInputComponent->BindAction(LightAttackAction, ETriggerEvent::Started, this, &ADMC_PlayerCharacter::LightAttack);
+		EnhancedInputComponent->BindAction(LightAttackAction, ETriggerEvent::Completed, this, &ADMC_PlayerCharacter::LightAttackReleased);
 		EnhancedInputComponent->BindAction(HeavyAttackAction, ETriggerEvent::Started, this, &ADMC_PlayerCharacter::HeavyAttack);
 		EnhancedInputComponent->BindAction(FinisherAttackAction, ETriggerEvent::Started, this, &ADMC_PlayerCharacter::FinisherAttack);
 		
@@ -130,6 +132,8 @@ void ADMC_PlayerCharacter::LightAttack()
 			PerformLightAttack(LightAttackIndex);
 		}
 	}
+	
+	GetWorldTimerManager().SetTimer(ChargeTimerHandle, this, &ADMC_PlayerCharacter::OnChargeTimerFinished, 0.5f, false);
 }
 
 void ADMC_PlayerCharacter::HeavyAttack()
@@ -468,33 +472,64 @@ bool ADMC_PlayerCharacter::PerformComboExtender()
 	return false;
 }
 
+void ADMC_PlayerCharacter::PerformChargeAttack()
+{
+}
+
 bool ADMC_PlayerCharacter::SpecialAttack()
 {
-	if (GetIsTargeting() && GetTargetActor())
+	if (bPerformChargeAttack)
 	{
-		if (bDodgeAttackEnabled)
+		SetState(EDMC_PlayerState::ECS_Attack);
+		ResetLightAttackVariables();
+		ResetHeavyAttackVariables();
+		RotateToTarget();
+		
+		if (BufferComponent)
 		{
-			bDodgeAttackEnabled = false;
-			SetState(EDMC_PlayerState::ECS_Attack);
-			RotateToTarget();
-			if (ComboData && ComboData->DodgeAttackMontage)
-			{
-				PlayAnimMontage(ComboData->DodgeAttackMontage);
-				return true;
-			}
+			BufferComponent->StopBuffer();
+			BufferComponent->StartBuffer(ComboData ? ComboData->ChargedBufferAmount : 5.0f);
 		}
 		
-		if (IsBusy() || GetCharacterMovement()->IsFalling()) return false;
-		
-		if (GetCharacterMovement()->GetLastInputVector().Size() > 0.1f)
+		if (ComboData && ComboData->ChargeAttackMontage)
 		{
+			PlayAnimMontage(ComboData->ChargeAttackMontage);
+			return true;
+		}
+	}
+
+	if (GetIsTargeting() && GetTargetActor())
+	{
+		if (IsBusy() || GetCharacterMovement()->IsFalling()) return false;
+
+		FVector LastInput = GetCharacterMovement()->GetLastInputVector();
+		float ForwardValue = FVector::DotProduct(GetActorForwardVector(), LastInput.GetSafeNormal());
+
+		if (ForwardValue > 0.1f)
+		{
+			SetState(EDMC_PlayerState::ECS_Attack);
 			ResetLightAttackVariables();
 			ResetHeavyAttackVariables();
 			RotateToTarget();
+			
+			if (BufferComponent)
+			{
+				BufferComponent->StopBuffer();
+				BufferComponent->StartBuffer(ComboData ? ComboData->StingerAttackBuffer : 25.0f);
+			}
+			
 			if (ComboData && ComboData->StingerAttackMontage)
 			{
-				return ExecuteAttack(ComboData->StingerAttackMontage, ComboData->StingerAttackBuffer);
+				PlayAnimMontage(ComboData->StingerAttackMontage);
+				return true;
 			}
+		}
+		else if (ForwardValue < -0.1f)
+		{
+			RotateToTarget();
+			SetState(EDMC_PlayerState::ECS_Attack);
+			
+			return true;
 		}
 	}
 	
@@ -504,6 +539,7 @@ bool ADMC_PlayerCharacter::SpecialAttack()
 void ADMC_PlayerCharacter::PerformDodge()
 {
 	StopRotation();
+	bPerformChargeAttack = false;
 	TargetingComp->ClearSoftTarget();
 	
 	FVector LastInput = GetCharacterMovement()->GetLastInputVector();
@@ -572,11 +608,38 @@ void ADMC_PlayerCharacter::FinisherAttack()
 	}
 }
 
+void ADMC_PlayerCharacter::LightAttackReleased()
+{
+	GetWorldTimerManager().ClearTimer(ChargeTimerHandle);
+	if (bPerformChargeAttack)
+	{
+		SpecialAttack();
+		bPerformChargeAttack = false;
+	}
+}
+
+void ADMC_PlayerCharacter::OnChargeTimerFinished()
+{
+	TArray<EDMC_PlayerState> IgnoreStates;
+	IgnoreStates.Add(EDMC_PlayerState::ECS_Dodge);
+	IgnoreStates.Add(EDMC_PlayerState::ECS_Finisher);
+    
+	bool bValidState = !IsStateEqualToAny(IgnoreStates) && 
+					  !GetCharacterMovement()->IsFalling() && 
+					  !GetCharacterMovement()->IsFlying();
+	if (bValidState)
+	{
+		bPerformChargeAttack = true;
+		bSaveLightAttack = false;
+	}
+}
+
 void ADMC_PlayerCharacter::ResetLightAttackVariables()
 {
 	LightAttackIndex = 0;
 	bSaveLightAttack = false;
 	bDodgeAttackEnabled = false;
+	bPerformChargeAttack = false;
 }
 
 void ADMC_PlayerCharacter::ResetHeavyAttackVariables()
