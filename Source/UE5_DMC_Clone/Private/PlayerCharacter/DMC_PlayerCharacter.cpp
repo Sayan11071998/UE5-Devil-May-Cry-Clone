@@ -65,6 +65,11 @@ void ADMC_PlayerCharacter::BeginPlay()
 void ADMC_PlayerCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+	
+	if (ActiveRageEmitter)
+	{
+		ActiveRageEmitter->SetWorldLocation(Scene->GetComponentLocation());
+	}
 }
 
 void ADMC_PlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -99,6 +104,7 @@ void ADMC_PlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 		EnhancedInputComponent->BindAction(LockOnAction, ETriggerEvent::Completed, this, &ADMC_PlayerCharacter::StopLockOn);
 		
 		EnhancedInputComponent->BindAction(RageAction, ETriggerEvent::Started, this, &ADMC_PlayerCharacter::Rage);
+		EnhancedInputComponent->BindAction(StopRageAction, ETriggerEvent::Started, this, &ADMC_PlayerCharacter::StopRage);
 	}
 }
 
@@ -615,21 +621,24 @@ void ADMC_PlayerCharacter::Rage()
 {
 	if (!ComboData || !ComboData->RageMontage) return;
 
-	SetState(EDMC_PlayerState::ECS_GeneralActions);
-	PlayAnimMontage(ComboData->RageMontage);
-
-	if (ComboData->RageParticles_1 && Scene)
+	if (!GetCharacterMovement()->IsFalling() && !GetCharacterMovement()->IsFlying())
 	{
-		ActiveRageEmitter = UGameplayStatics::SpawnEmitterAtLocation(
-			GetWorld(),
-			ComboData->RageParticles_1,
-			Scene->GetComponentLocation(),
-			GetActorRotation(),
-			FVector(1.6f)
-		);
-	}
+		SetState(EDMC_PlayerState::ECS_GeneralActions);
+		PlayAnimMontage(ComboData->RageMontage);
 
-	GetWorldTimerManager().SetTimer(RageTimerHandle, this, &ADMC_PlayerCharacter::RageStage2, 1.1f, false);
+		if (ComboData->RageParticles_1 && Scene)
+		{
+			ActiveRageEmitter = UGameplayStatics::SpawnEmitterAtLocation(
+				GetWorld(),
+				ComboData->RageParticles_1,
+				Scene->GetComponentLocation(),
+				GetActorRotation(),
+				FVector(1.6f)
+			);
+		}
+
+		GetWorldTimerManager().SetTimer(RageTimerHandle, this, &ADMC_PlayerCharacter::RageStage2, 1.0f, false);
+	}
 }
 
 void ADMC_PlayerCharacter::RageStage2()
@@ -658,6 +667,29 @@ void ADMC_PlayerCharacter::RageStage3()
 	GetWorldTimerManager().SetTimer(RageTimerHandle, this, &ADMC_PlayerCharacter::RageStage4, 3.1f, false);
 }
 
+void ADMC_PlayerCharacter::RageMode()
+{
+	if (!ComboData) return;
+
+	CustomTimeDilation = ComboData->RageTimeDilation;
+	KatanaDamage = ComboData->RageDamageMultiplier;
+
+	GetWorldTimerManager().SetTimer(DurationTimerHandle, this, &ADMC_PlayerCharacter::StopRage, ComboData->RageDuration, false);
+}
+
+void ADMC_PlayerCharacter::StopRage()
+{
+	GetWorldTimerManager().ClearTimer(DurationTimerHandle);
+
+	CustomTimeDilation = 1.0f;
+	KatanaDamage = 1.0f;
+
+	if (GetMesh())
+	{
+		GetMesh()->SetOverlayMaterial(nullptr);
+	}
+}
+
 void ADMC_PlayerCharacter::RageStage4()
 {
 	if (ActiveRageEmitter)
@@ -665,6 +697,8 @@ void ADMC_PlayerCharacter::RageStage4()
 		ActiveRageEmitter->DestroyComponent();
 		ActiveRageEmitter = nullptr;
 	}
+
+	RageMode();
 }
 
 void ADMC_PlayerCharacter::LightAttackReleased()

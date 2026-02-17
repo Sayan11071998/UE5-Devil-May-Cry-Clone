@@ -63,6 +63,9 @@ public:
 	// Damage Configuration
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "DMC|Combat")
 	TSubclassOf<UDMC_DamageType> DamageTypeClass;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "DMC|Combat", meta = (AllowPrivateAccess = "true"))
+	float KatanaDamage = 1.0f;
 
 protected:
 	// Engine Overrides
@@ -98,6 +101,9 @@ private:
 	void RageStage2();
 	void RageStage3();
 	void RageStage4();
+	
+	void RageMode();
+	void StopRage();
 	
 	void LightAttackReleased();
 	void OnChargeTimerFinished();
@@ -154,6 +160,9 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "DMC|Input", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UInputAction> RageAction;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "DMC|Input", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UInputAction> StopRageAction;
+
 	// Movement || Character Data
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "DMC|Movement", meta = (AllowPrivateAccess = "true"))
 	TArray<TSubclassOf<AActor>> CanLandClasses;
@@ -195,6 +204,10 @@ private:
 	bool bSaveDodge = false;
 	bool bPerformChargeAttack = false;
 
+	
+
+	FTimerHandle DurationTimerHandle;
+
 public:
 	// Specialized Getters
 	FORCEINLINE TObjectPtr<USpringArmComponent> GetCameraBoom() const { return CameraBoom; }
@@ -203,8 +216,9 @@ public:
 	FORCEINLINE EDMC_PlayerState GetState() const { return CurrentState; }
 
 	FORCEINLINE bool IsAttacking() const { return CurrentState == EDMC_PlayerState::ECS_Attack; }
-	FORCEINLINE bool IsDodging() const { return CurrentState == EDMC_PlayerState::ECS_Dodge; }
-	FORCEINLINE bool IsBusy() const { return IsAttacking() || IsDodging(); }
+	FORCEINLINE bool IsDodging() const { return CurrentState == EDMC_PlayerState::ECS_Dodge || CurrentState == EDMC_PlayerState::ECS_GeneralActions; }
+	FORCEINLINE bool IsRaging() const { return CurrentState == EDMC_PlayerState::ECS_GeneralActions; }
+	FORCEINLINE bool IsBusy() const { return IsAttacking() || IsDodging() || IsRaging(); }
 	FORCEINLINE bool IsStateEqualToAny(const TArray<EDMC_PlayerState>& StatesToCheck) const { return StatesToCheck.Contains(CurrentState); }
 
 	// Targeting Getters

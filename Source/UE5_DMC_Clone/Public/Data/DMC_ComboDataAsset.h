@@ -70,4 +70,13 @@ public:
 	TObjectPtr<UParticleSystem> RageParticles_2;
 	UPROPERTY(EditDefaultsOnly, Category = "Effects|Rage")
 	TObjectPtr<UMaterialInterface> RageOverlayMaterial;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Combat|Rage")
+	float RageTimeDilation = 1.15f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Combat|Rage")
+	float RageDamageMultiplier = 5.0f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Combat|Rage")
+	float RageDuration = 10.0f;
 };
