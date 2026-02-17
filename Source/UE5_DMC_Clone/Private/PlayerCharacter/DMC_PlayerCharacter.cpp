@@ -619,10 +619,11 @@ void ADMC_PlayerCharacter::FinisherAttack()
 
 void ADMC_PlayerCharacter::Rage()
 {
-	if (!ComboData || !ComboData->RageMontage) return;
+	if (bRageActive || !ComboData || !ComboData->RageMontage) return;
 
 	if (!GetCharacterMovement()->IsFalling() && !GetCharacterMovement()->IsFlying())
 	{
+		bRageActive = true;
 		SetState(EDMC_PlayerState::ECS_GeneralActions);
 		PlayAnimMontage(ComboData->RageMontage);
 
@@ -664,7 +665,7 @@ void ADMC_PlayerCharacter::RageStage3()
 		GetMesh()->SetOverlayMaterial(ComboData->RageOverlayMaterial);
 	}
 
-	GetWorldTimerManager().SetTimer(RageTimerHandle, this, &ADMC_PlayerCharacter::RageStage4, 3.1f, false);
+	GetWorldTimerManager().SetTimer(RageTimerHandle, this, &ADMC_PlayerCharacter::RageStage4, 0.1f, false);
 }
 
 void ADMC_PlayerCharacter::RageMode()
@@ -683,6 +684,7 @@ void ADMC_PlayerCharacter::StopRage()
 
 	CustomTimeDilation = 1.0f;
 	KatanaDamage = 1.0f;
+	bRageActive = false;
 
 	if (GetMesh())
 	{

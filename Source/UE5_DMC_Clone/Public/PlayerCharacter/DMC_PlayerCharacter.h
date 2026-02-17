@@ -203,8 +203,7 @@ private:
 	bool bDodgeAttackEnabled = false;
 	bool bSaveDodge = false;
 	bool bPerformChargeAttack = false;
-
-	
+	bool bRageActive = false;
 
 	FTimerHandle DurationTimerHandle;
 
