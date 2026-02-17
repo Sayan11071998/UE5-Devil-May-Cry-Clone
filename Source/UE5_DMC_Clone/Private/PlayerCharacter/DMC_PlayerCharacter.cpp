@@ -414,12 +414,16 @@ void ADMC_PlayerCharacter::TryConsumeBufferedInput()
 
 bool ADMC_PlayerCharacter::PerformLightAttack(int32 InAttackIndex)
 {
-	if (!ComboData || !ComboData->LightAttackCombo.IsValidIndex(InAttackIndex)) return false;
+	if (!ComboData) return false;
 
-	if (ExecuteAttack(ComboData->LightAttackCombo[InAttackIndex], ComboData->LightAttackBuffer))
+	const TArray<TObjectPtr<UAnimMontage>>& CurrentCombo = bRageActive ? ComboData->LightAttackRageCombo : ComboData->LightAttackCombo;
+
+	if (!CurrentCombo.IsValidIndex(InAttackIndex)) return false;
+
+	if (ExecuteAttack(CurrentCombo[InAttackIndex], ComboData->LightAttackBuffer))
 	{
 		LightAttackIndex++;
-		if (LightAttackIndex >= ComboData->LightAttackCombo.Num())
+		if (LightAttackIndex >= CurrentCombo.Num())
 		{
 			LightAttackIndex = 0;
 		}
@@ -623,7 +627,6 @@ void ADMC_PlayerCharacter::Rage()
 
 	if (!GetCharacterMovement()->IsFalling() && !GetCharacterMovement()->IsFlying())
 	{
-		bRageActive = true;
 		SetState(EDMC_PlayerState::ECS_GeneralActions);
 		PlayAnimMontage(ComboData->RageMontage);
 
@@ -674,6 +677,11 @@ void ADMC_PlayerCharacter::RageMode()
 
 	CustomTimeDilation = ComboData->RageTimeDilation;
 	KatanaDamage = ComboData->RageDamageMultiplier;
+	bRageActive = true;
+
+	ResetLightAttackVariables();
+	ResetHeavyAttackVariables();
+	ComboExtenderIndex = 0;
 
 	GetWorldTimerManager().SetTimer(DurationTimerHandle, this, &ADMC_PlayerCharacter::StopRage, ComboData->RageDuration, false);
 }
@@ -685,6 +693,10 @@ void ADMC_PlayerCharacter::StopRage()
 	CustomTimeDilation = 1.0f;
 	KatanaDamage = 1.0f;
 	bRageActive = false;
+
+	ResetLightAttackVariables();
+	ResetHeavyAttackVariables();
+	ComboExtenderIndex = 0;
 
 	if (GetMesh())
 	{
