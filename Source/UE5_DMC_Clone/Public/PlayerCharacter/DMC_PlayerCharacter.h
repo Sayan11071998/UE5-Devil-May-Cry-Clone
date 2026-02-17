@@ -63,6 +63,9 @@ public:
 	// Damage Configuration
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "DMC|Combat")
 	TSubclassOf<UDMC_DamageType> DamageTypeClass;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "DMC|Combat", meta = (AllowPrivateAccess = "true"))
+	float KatanaDamage = 1.0f;
 
 protected:
 	// Engine Overrides
@@ -90,16 +93,25 @@ private:
 	bool PerformHeavyAttack(int32 InAttackIndex);
 	bool PerformComboStarter();
 	bool PerformComboExtender();
-	void PerformChargeAttack();
 	bool SpecialAttack();
 	void PerformDodge();
 	void FinisherAttack();
+	
+	void Rage();
+	void RageStage2();
+	void RageStage3();
+	void RageStage4();
+	
+	void RageMode();
+	void StopRage();
 	
 	void LightAttackReleased();
 	void OnChargeTimerFinished();
 
 	void ResetLightAttackVariables();
 	void ResetHeavyAttackVariables();
+	
+	FTimerHandle RageTimerHandle;
 
 	// Components
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "DMC|Camera", meta = (AllowPrivateAccess = "true"))
@@ -107,6 +119,9 @@ private:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "DMC|Camera", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UCameraComponent> FollowCamera;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "DMC|Combat", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<USceneComponent> Scene;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "DMC|Combat", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UDMC_CombatBufferComponent> BufferComponent;
@@ -141,6 +156,12 @@ private:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "DMC|Input", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UInputAction> FinisherAttackAction;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "DMC|Input", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UInputAction> RageAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "DMC|Input", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UInputAction> StopRageAction;
 
 	// Movement || Character Data
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "DMC|Movement", meta = (AllowPrivateAccess = "true"))
@@ -169,6 +190,9 @@ private:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "DMC|Combat", meta = (AllowPrivateAccess = "true"))
 	FName WeaponSocketName;
+	
+	UPROPERTY()
+	TObjectPtr<UParticleSystemComponent> ActiveRageEmitter;
 
 	int32 LightAttackIndex = 0;
 	int32 HeavyAttackIndex = 0;
@@ -179,6 +203,9 @@ private:
 	bool bDodgeAttackEnabled = false;
 	bool bSaveDodge = false;
 	bool bPerformChargeAttack = false;
+	bool bRageActive = false;
+
+	FTimerHandle DurationTimerHandle;
 
 public:
 	// Specialized Getters
@@ -188,8 +215,9 @@ public:
 	FORCEINLINE EDMC_PlayerState GetState() const { return CurrentState; }
 
 	FORCEINLINE bool IsAttacking() const { return CurrentState == EDMC_PlayerState::ECS_Attack; }
-	FORCEINLINE bool IsDodging() const { return CurrentState == EDMC_PlayerState::ECS_Dodge; }
-	FORCEINLINE bool IsBusy() const { return IsAttacking() || IsDodging(); }
+	FORCEINLINE bool IsDodging() const { return CurrentState == EDMC_PlayerState::ECS_Dodge || CurrentState == EDMC_PlayerState::ECS_GeneralActions; }
+	FORCEINLINE bool IsRaging() const { return CurrentState == EDMC_PlayerState::ECS_GeneralActions; }
+	FORCEINLINE bool IsBusy() const { return IsAttacking() || IsDodging() || IsRaging(); }
 	FORCEINLINE bool IsStateEqualToAny(const TArray<EDMC_PlayerState>& StatesToCheck) const { return StatesToCheck.Contains(CurrentState); }
 
 	// Targeting Getters
