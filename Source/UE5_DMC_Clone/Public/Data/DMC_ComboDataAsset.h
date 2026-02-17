@@ -12,6 +12,9 @@ class UE5_DMC_CLONE_API UDMC_ComboDataAsset : public UDataAsset
 public:
 	UPROPERTY(EditDefaultsOnly, Category = "Attack|Combos|Light")
 	TArray<TObjectPtr<UAnimMontage>> LightAttackCombo;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Attack|Combos|Light")
+	TArray<TObjectPtr<UAnimMontage>> LightAttackRageCombo;
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Attack|Combos|Heavy")
 	TArray<TObjectPtr<UAnimMontage>> HeavyAttackCombo;
