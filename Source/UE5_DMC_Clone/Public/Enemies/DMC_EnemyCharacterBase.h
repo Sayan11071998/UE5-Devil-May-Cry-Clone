@@ -72,4 +72,6 @@ private:
 	
 public:
 	FORCEINLINE bool IsDead() const { return bDead; }
+	FORCEINLINE float GetHealth() const { return Health; }
+	FORCEINLINE float GetMaxHealth() const { return MaxHealth; }
 };

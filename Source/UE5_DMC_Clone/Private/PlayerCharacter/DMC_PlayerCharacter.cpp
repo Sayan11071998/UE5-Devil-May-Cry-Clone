@@ -124,6 +124,7 @@ void ADMC_PlayerCharacter::ResetDoubleJump()
 void ADMC_PlayerCharacter::LightAttack()
 {
 	bSaveDodge = false;
+	ComboExtenderIndex = 0;
 	bSaveHeavyAttack = false;
 
 	if (CurrentState == EDMC_PlayerState::ECS_Dodge)
@@ -593,6 +594,8 @@ void ADMC_PlayerCharacter::FinisherAttack()
 		{
 			if (ADMC_EnemyCharacterBase* Enemy = Cast<ADMC_EnemyCharacterBase>(Target))
 			{
+				if (Enemy->GetHealth() / Enemy->GetMaxHealth() > 0.1f) return;
+
 				if (TargetingComp)
 				{
 					TargetingComp->StopRotation();
@@ -688,6 +691,8 @@ void ADMC_PlayerCharacter::RageMode()
 
 void ADMC_PlayerCharacter::StopRage()
 {
+	if (!bRageActive) return;
+	
 	GetWorldTimerManager().ClearTimer(DurationTimerHandle);
 
 	CustomTimeDilation = 1.0f;
