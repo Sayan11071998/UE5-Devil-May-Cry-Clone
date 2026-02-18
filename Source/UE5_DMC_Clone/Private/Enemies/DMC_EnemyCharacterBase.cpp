@@ -5,6 +5,7 @@
 #include "Engine/DamageEvents.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Components/DMC_CombatBufferComponent.h"
+#include "UI/DMC_EnemyHealthBar.h"
 
 ADMC_EnemyCharacterBase::ADMC_EnemyCharacterBase()
 {
@@ -13,6 +14,23 @@ ADMC_EnemyCharacterBase::ADMC_EnemyCharacterBase()
 	Health = MaxHealth;
 	
 	BufferComponent = CreateDefaultSubobject<UDMC_CombatBufferComponent>(TEXT("CombatBuffer"));
+
+	HealthBarWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("HealthBarWidget"));
+	HealthBarWidget->SetupAttachment(GetMesh());
+}
+
+void ADMC_EnemyCharacterBase::BeginPlay()
+{
+	Super::BeginPlay();
+
+	if (HealthBarWidget)
+	{
+		if (UDMC_EnemyHealthBar* HealthBar = Cast<UDMC_EnemyHealthBar>(HealthBarWidget->GetUserWidgetObject()))
+		{
+			HealthBar->SetOwnerActor(this);
+			HealthBar->SetHealthPercent(Health / MaxHealth);
+		}
+	}
 }
 
 void ADMC_EnemyCharacterBase::Tick(float DeltaTime)
@@ -38,6 +56,14 @@ float ADMC_EnemyCharacterBase::TakeDamage(float DamageAmount, struct FDamageEven
 	}
 
 	Health = FMath::Clamp(Health - DamageAmount, 0.f, MaxHealth);
+
+	if (HealthBarWidget)
+	{
+		if (UDMC_EnemyHealthBar* HealthBar = Cast<UDMC_EnemyHealthBar>(HealthBarWidget->GetUserWidgetObject()))
+		{
+			HealthBar->SetHealthPercent(Health / MaxHealth);
+		}
+	}
 
 	if (Health <= 0.f)
 	{

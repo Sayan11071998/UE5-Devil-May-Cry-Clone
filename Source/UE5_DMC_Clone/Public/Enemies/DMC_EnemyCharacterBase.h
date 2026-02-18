@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "DamageTypes/DMC_DamageType.h"
+#include "Components/WidgetComponent.h"
 #include "DMC_EnemyCharacterBase.generated.h"
 
 USTRUCT(BlueprintType)
@@ -39,6 +40,7 @@ public:
 	void SpawnHitFX(AActor* DamageCauser, const FHitResult& HitResult);
 	
 protected:
+	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
 	
 	// Link a Damage Type to a specific Animation and Pushback amount
@@ -65,6 +67,9 @@ private:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat|VFX", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UNiagaraSystem> HitVFX;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "UI", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UWidgetComponent> HealthBarWidget;
 	
 	bool bDead = false;
 	
