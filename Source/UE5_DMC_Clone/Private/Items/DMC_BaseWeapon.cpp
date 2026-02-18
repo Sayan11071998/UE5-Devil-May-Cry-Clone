@@ -116,6 +116,7 @@ void ADMC_BaseWeapon::HandleCollisionTracing()
 					if (ADMC_PlayerCharacter* Character = Cast<ADMC_PlayerCharacter>(GetOwner()))
 					{
 						FinalDamage *= Character->KatanaDamage;
+						Character->HitStop();
 					}
 
 					UGameplayStatics::ApplyPointDamage(

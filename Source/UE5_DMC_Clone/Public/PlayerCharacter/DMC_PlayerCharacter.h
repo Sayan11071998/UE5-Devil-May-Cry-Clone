@@ -28,6 +28,12 @@ public:
 	// Core State Management
 	void SetState(EDMC_PlayerState NewState);
 	void ResetDoubleJump();
+	
+	UFUNCTION(BlueprintCallable, Category = "DMC|Combat")
+	void EnableHitStop(bool bInEnable) { bHitStopEnabled = bInEnable; }
+	
+	UFUNCTION(BlueprintCallable, Category = "DMC|Combat")
+	void HitStop();
 
 	// Combat || Input Interface -> These are called by Input Bindings or Animation Notifies
 	void LightAttack();
@@ -206,6 +212,15 @@ private:
 	bool bRageActive = false;
 
 	FTimerHandle DurationTimerHandle;
+	FTimerHandle HitStopTimerHandle;
+
+	UPROPERTY(EditDefaultsOnly, Category = "DMC|Combat")
+	float HitStopTime = 0.05f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "DMC|Combat")
+	float HitStopTimeDilation = 0.01f;
+
+	bool bHitStopEnabled = false;
 
 public:
 	// Specialized Getters
