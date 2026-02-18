@@ -16,7 +16,10 @@ public class UE5_DMC_Clone : ModuleRules
 			"InputCore",
 			"EnhancedInput",
 			"AnimGraphRuntime",
-			"Niagara"
+			"Niagara",
+			"UMG",
+			"Slate",
+			"SlateCore"
 		});
 	}
 }
