@@ -15,6 +15,7 @@ class UInputMappingContext;
 class UInputAction;
 struct FInputActionValue;
 class UDMC_CombatBufferComponent;
+class UDMC_RageComponent;
 class UDMC_TargetingComponent;
 
 UCLASS()
@@ -73,22 +74,34 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "DMC|Combat", meta = (AllowPrivateAccess = "true"))
 	float KatanaDamage = 1.0f;
 
+	// Public Methods for Components
+	void ResetLightAttackVariables();
+	void ResetHeavyAttackVariables();
+
+	FORCEINLINE class UDMC_ComboDataAsset* GetComboData() const { return ComboData; }
+	FORCEINLINE class UDMC_RageComponent* GetRageComp() const { return RageComp; }
+
 protected:
 	// Engine Overrides
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
 	
-	// ~ Begin ACharacter interface
 	virtual void Jump() override;
 	virtual void Landed(const FHitResult& Hit) override;
-	// ~ End ACharacter interface
 
 	// Movement Handlers
 	void Move(const FInputActionValue& Value);
 	void Look(const FInputActionValue& Value);
 	
 	FTimerHandle ChargeTimerHandle;
+
+	// Components in Protected for Blueprint Access
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	TObjectPtr<UDMC_RageComponent> RageComp;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	TObjectPtr<UDMC_TargetingComponent> TargetingComp;
 
 private:
 	// Internal Implementation || Combat
@@ -103,21 +116,12 @@ private:
 	void PerformDodge();
 	void FinisherAttack();
 	
+	// Rage delegated to component
 	void Rage();
-	void RageStage2();
-	void RageStage3();
-	void RageStage4();
-	
-	void RageMode();
 	void StopRage();
 	
 	void LightAttackReleased();
 	void OnChargeTimerFinished();
-
-	void ResetLightAttackVariables();
-	void ResetHeavyAttackVariables();
-	
-	FTimerHandle RageTimerHandle;
 
 	// Components
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "DMC|Camera", meta = (AllowPrivateAccess = "true"))
@@ -131,9 +135,6 @@ private:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "DMC|Combat", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UDMC_CombatBufferComponent> BufferComponent;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "DMC|Combat", meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<UDMC_TargetingComponent> TargetingComp;
 
 	// Input Action Config
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "DMC|Input", meta = (AllowPrivateAccess = "true"))
@@ -181,7 +182,7 @@ private:
 	
 	bool bDoubleJump = false;
 
-	// Combat || State & Weapon
+	// Combat || State
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "DMC|Combat", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UDMC_ComboDataAsset> ComboData;
 
@@ -196,9 +197,6 @@ private:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "DMC|Combat", meta = (AllowPrivateAccess = "true"))
 	FName WeaponSocketName;
-	
-	UPROPERTY()
-	TObjectPtr<UParticleSystemComponent> ActiveRageEmitter;
 
 	int32 LightAttackIndex = 0;
 	int32 HeavyAttackIndex = 0;
@@ -206,9 +204,10 @@ private:
 
 	bool bDodgeAttackEnabled = false;
 	bool bPerformChargeAttack = false;
-	bool bRageActive = false;
 
-	FTimerHandle DurationTimerHandle;
+	UPROPERTY(EditDefaultsOnly, Category = "Combat")
+	float DamageMultiplier = 1.0f;
+
 	FTimerHandle HitStopTimerHandle;
 
 	UPROPERTY(EditDefaultsOnly, Category = "DMC|Combat")
@@ -228,7 +227,7 @@ public:
 
 	FORCEINLINE bool IsAttacking() const { return CurrentState == EDMC_PlayerState::ECS_Attack; }
 	FORCEINLINE bool IsDodging() const { return CurrentState == EDMC_PlayerState::ECS_Dodge || CurrentState == EDMC_PlayerState::ECS_GeneralActions; }
-	FORCEINLINE bool IsRaging() const { return CurrentState == EDMC_PlayerState::ECS_GeneralActions; }
+	FORCEINLINE bool IsRaging() const;
 	FORCEINLINE bool IsBusy() const { return IsAttacking() || IsDodging() || IsRaging(); }
 	FORCEINLINE bool IsStateEqualToAny(const TArray<EDMC_PlayerState>& StatesToCheck) const { return StatesToCheck.Contains(CurrentState); }
 

@@ -10,6 +10,7 @@
 #include "InputActionValue.h"
 #include "Components/DMC_CombatBufferComponent.h"
 #include "Components/DMC_TargetingComponent.h"
+#include "Components/DMC_RageComponent.h"
 #include "Enemies/DMC_EnemyCharacterBase.h"
 #include "Items/DMC_BaseWeapon.h"
 #include "Kismet/KismetMathLibrary.h"
@@ -50,8 +51,9 @@ ADMC_PlayerCharacter::ADMC_PlayerCharacter()
 	Scene = CreateDefaultSubobject<USceneComponent>(TEXT("Scene"));
 	Scene->SetupAttachment(RootComponent);
 	
-	BufferComponent = CreateDefaultSubobject<UDMC_CombatBufferComponent>(TEXT("CombatBuffer"));
-	TargetingComp = CreateDefaultSubobject<UDMC_TargetingComponent>(TEXT("TargetingComponent"));
+	BufferComponent = CreateDefaultSubobject<UDMC_CombatBufferComponent>(TEXT("BufferComponent"));
+	RageComp = CreateDefaultSubobject<UDMC_RageComponent>(TEXT("RageComp"));
+	TargetingComp = CreateDefaultSubobject<UDMC_TargetingComponent>(TEXT("TargetingComp"));
 	
 	CurrentState = EDMC_PlayerState::ECS_Nothing;
 }
@@ -65,11 +67,6 @@ void ADMC_PlayerCharacter::BeginPlay()
 void ADMC_PlayerCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	
-	if (ActiveRageEmitter)
-	{
-		ActiveRageEmitter->SetWorldLocation(Scene->GetComponentLocation());
-	}
 }
 
 void ADMC_PlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -231,6 +228,11 @@ void ADMC_PlayerCharacter::ResetState()
 	bHitStopEnabled = false;
 }
 
+bool ADMC_PlayerCharacter::IsRaging() const
+{
+	return RageComp ? RageComp->IsRageActive() : false;
+}
+
 void ADMC_PlayerCharacter::HitStop()
 {
 	if (!bHitStopEnabled) return;
@@ -239,7 +241,8 @@ void ADMC_PlayerCharacter::HitStop()
 
 	GetWorldTimerManager().SetTimer(HitStopTimerHandle, FTimerDelegate::CreateLambda([this]()
 	{
-		CustomTimeDilation = bRageActive && ComboData ? ComboData->RageTimeDilation : 1.0f;
+		const bool bIsRageActive = RageComp ? RageComp->IsRageActive() : false;
+		CustomTimeDilation = bIsRageActive && ComboData ? ComboData->RageTimeDilation : 1.0f;
 	}), HitStopTime, false);
 }
 
@@ -414,7 +417,8 @@ bool ADMC_PlayerCharacter::PerformLightAttack(int32 InAttackIndex)
 {
 	if (!ComboData) return false;
 
-	const TArray<TObjectPtr<UAnimMontage>>& CurrentCombo = bRageActive ? ComboData->LightAttackRageCombo : ComboData->LightAttackCombo;
+	const bool bIsRageActive = RageComp ? RageComp->IsRageActive() : false;
+	const TArray<TObjectPtr<UAnimMontage>>& CurrentCombo = bIsRageActive ? ComboData->LightAttackRageCombo : ComboData->LightAttackCombo;
 
 	if (!CurrentCombo.IsValidIndex(InAttackIndex)) return false;
 
@@ -626,99 +630,21 @@ void ADMC_PlayerCharacter::FinisherAttack()
 
 void ADMC_PlayerCharacter::Rage()
 {
-	if (bRageActive || !ComboData || !ComboData->RageMontage) return;
-
-	if (!GetCharacterMovement()->IsFalling() && !GetCharacterMovement()->IsFlying())
+	if (RageComp)
 	{
-		SetState(EDMC_PlayerState::ECS_GeneralActions);
-		PlayAnimMontage(ComboData->RageMontage);
-
-		if (ComboData->RageParticles_1 && Scene)
-		{
-			ActiveRageEmitter = UGameplayStatics::SpawnEmitterAtLocation(
-				GetWorld(),
-				ComboData->RageParticles_1,
-				Scene->GetComponentLocation(),
-				GetActorRotation(),
-				FVector(1.6f)
-			);
-		}
-
-		GetWorldTimerManager().SetTimer(RageTimerHandle, this, &ADMC_PlayerCharacter::RageStage2, 1.0f, false);
+		RageComp->StartRage();
 	}
-}
-
-void ADMC_PlayerCharacter::RageStage2()
-{
-	if (ComboData && ComboData->RageParticles_2 && Scene)
-	{
-		UGameplayStatics::SpawnEmitterAtLocation(
-			GetWorld(),
-			ComboData->RageParticles_2,
-			Scene->GetComponentLocation(),
-			GetActorRotation(),
-			FVector(1.0f)
-		);
-	}
-
-	GetWorldTimerManager().SetTimer(RageTimerHandle, this, &ADMC_PlayerCharacter::RageStage3, 0.4f, false);
-}
-
-void ADMC_PlayerCharacter::RageStage3()
-{
-	if (ComboData && ComboData->RageOverlayMaterial)
-	{
-		GetMesh()->SetOverlayMaterial(ComboData->RageOverlayMaterial);
-	}
-
-	GetWorldTimerManager().SetTimer(RageTimerHandle, this, &ADMC_PlayerCharacter::RageStage4, 0.1f, false);
-}
-
-void ADMC_PlayerCharacter::RageMode()
-{
-	if (!ComboData) return;
-
-	CustomTimeDilation = ComboData->RageTimeDilation;
-	KatanaDamage = ComboData->RageDamageMultiplier;
-	bRageActive = true;
-
-	ResetLightAttackVariables();
-	ResetHeavyAttackVariables();
-	ComboExtenderIndex = 0;
-
-	GetWorldTimerManager().SetTimer(DurationTimerHandle, this, &ADMC_PlayerCharacter::StopRage, ComboData->RageDuration, false);
 }
 
 void ADMC_PlayerCharacter::StopRage()
 {
-	if (!bRageActive) return;
-	
-	GetWorldTimerManager().ClearTimer(DurationTimerHandle);
-
-	CustomTimeDilation = 1.0f;
-	KatanaDamage = 1.0f;
-	bRageActive = false;
-
-	ResetLightAttackVariables();
-	ResetHeavyAttackVariables();
-	ComboExtenderIndex = 0;
-
-	if (GetMesh())
+	if (RageComp)
 	{
-		GetMesh()->SetOverlayMaterial(nullptr);
+		RageComp->StopRage();
 	}
 }
 
-void ADMC_PlayerCharacter::RageStage4()
-{
-	if (ActiveRageEmitter)
-	{
-		ActiveRageEmitter->DestroyComponent();
-		ActiveRageEmitter = nullptr;
-	}
-
-	RageMode();
-}
+// RageStage4 and other internal sequence functions removed (now in RageComponent)
 
 void ADMC_PlayerCharacter::LightAttackReleased()
 {
