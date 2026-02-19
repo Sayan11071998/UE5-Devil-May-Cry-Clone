@@ -204,10 +204,7 @@ private:
 	int32 HeavyAttackIndex = 0;
 	int32 ComboExtenderIndex = 0;
 
-	bool bSaveLightAttack = false;
-	bool bSaveHeavyAttack = false;
 	bool bDodgeAttackEnabled = false;
-	bool bSaveDodge = false;
 	bool bPerformChargeAttack = false;
 	bool bRageActive = false;
 

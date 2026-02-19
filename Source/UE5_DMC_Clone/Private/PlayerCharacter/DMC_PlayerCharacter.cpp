@@ -123,10 +123,6 @@ void ADMC_PlayerCharacter::ResetDoubleJump()
 
 void ADMC_PlayerCharacter::LightAttack()
 {
-	bSaveDodge = false;
-	ComboExtenderIndex = 0;
-	bSaveHeavyAttack = false;
-
 	if (CurrentState == EDMC_PlayerState::ECS_Dodge)
 	{
 		bDodgeAttackEnabled = true;
@@ -134,7 +130,7 @@ void ADMC_PlayerCharacter::LightAttack()
 
 	if (IsBusy()) 
 	{
-		bSaveLightAttack = true;
+		BufferComponent->BufferInput(EDMC_BufferedInput::EBI_LightAttack);
 	}
 	else
 	{
@@ -153,12 +149,9 @@ void ADMC_PlayerCharacter::LightAttack()
 
 void ADMC_PlayerCharacter::HeavyAttack()
 {
-	bSaveLightAttack = false;
-	bSaveDodge = false;
-	
 	if (IsBusy())
 	{
-		bSaveHeavyAttack = true;
+		BufferComponent->BufferInput(EDMC_BufferedInput::EBI_HeavyAttack);
 	}
 	else
 	{
@@ -174,7 +167,7 @@ void ADMC_PlayerCharacter::Dodge()
 {
 	if (IsDodging() || CurrentState == EDMC_PlayerState::ECS_Finisher)
 	{
-		bSaveDodge = true;
+		BufferComponent->BufferInput(EDMC_BufferedInput::EBI_Dodge);
 	}
 	else
 	{
@@ -228,10 +221,7 @@ void ADMC_PlayerCharacter::SaveDodge()
 void ADMC_PlayerCharacter::ResetState()
 {
 	SetState(EDMC_PlayerState::ECS_Nothing);
-	ResetLightAttackVariables();
-	ResetHeavyAttackVariables();
-	
-	bSaveDodge = false;
+	BufferComponent->ClearInputBuffer();
 	BufferComponent->StopBuffer();
 	ComboExtenderIndex = 0;
 	
@@ -385,48 +375,38 @@ bool ADMC_PlayerCharacter::ExecuteAttack(UAnimMontage* Montage, float BufferAmou
 
 void ADMC_PlayerCharacter::TryConsumeBufferedInput()
 {
-	// 1. Dodge has high priority
-	if (bSaveDodge)
+	if (!BufferComponent || !BufferComponent->HasBufferedInput()) return;
+
+	EDMC_BufferedInput Input = BufferComponent->PopInput();
+	SetState(EDMC_PlayerState::ECS_Nothing);
+
+	switch (Input)
 	{
-		bSaveDodge = false;
-		SetState(EDMC_PlayerState::ECS_Nothing);
+	case EDMC_BufferedInput::EBI_Dodge:
 		PerformDodge();
-		return;
-	}
-	
-	// 2. Check for Heavy -> Light Combo (Combo Starter)
-	if (bSaveLightAttack && HeavyAttackIndex > 0)
-	{
-		bSaveLightAttack = false;
-		SetState(EDMC_PlayerState::ECS_Nothing);
-		PerformComboStarter();
-		return;
-	}
-	
-	// 3. Check for Light -> Heavy Combo (Combo Extender)
-	if (bSaveHeavyAttack && ComboExtenderIndex > 0)
-	{
-		bSaveHeavyAttack = false;
-		SetState(EDMC_PlayerState::ECS_Nothing);
-		PerformComboExtender();
-		return;
-	}
-	
-	// 4. Regular Attacks
-	if (bSaveLightAttack)
-	{
-		bSaveLightAttack = false;
-		SetState(EDMC_PlayerState::ECS_Nothing);
-		LightAttack();
-		return;
-	}
-	
-	if (bSaveHeavyAttack)
-	{
-		bSaveHeavyAttack = false;
-		SetState(EDMC_PlayerState::ECS_Nothing);
-		HeavyAttack();
-		return;
+		break;
+	case EDMC_BufferedInput::EBI_LightAttack:
+		if (HeavyAttackIndex > 0)
+		{
+			PerformComboStarter();
+		}
+		else
+		{
+			LightAttack();
+		}
+		break;
+	case EDMC_BufferedInput::EBI_HeavyAttack:
+		if (ComboExtenderIndex > 0)
+		{
+			PerformComboExtender();
+		}
+		else
+		{
+			HeavyAttack();
+		}
+		break;
+	default:
+		break;
 	}
 }
 
@@ -480,7 +460,6 @@ bool ADMC_PlayerCharacter::PerformComboStarter()
 		{
 			ComboExtenderIndex = HeavyAttackIndex;
 			ResetHeavyAttackVariables();
-			bSaveLightAttack = false;
 			return true;
 		}
 	}
@@ -763,14 +742,12 @@ void ADMC_PlayerCharacter::OnChargeTimerFinished()
 	if (bValidState)
 	{
 		bPerformChargeAttack = true;
-		bSaveLightAttack = false;
 	}
 }
 
 void ADMC_PlayerCharacter::ResetLightAttackVariables()
 {
 	LightAttackIndex = 0;
-	bSaveLightAttack = false;
 	bDodgeAttackEnabled = false;
 	bPerformChargeAttack = false;
 }
@@ -778,7 +755,6 @@ void ADMC_PlayerCharacter::ResetLightAttackVariables()
 void ADMC_PlayerCharacter::ResetHeavyAttackVariables()
 {
 	HeavyAttackIndex = 0;
-	bSaveHeavyAttack = false;
 }
 
 bool ADMC_PlayerCharacter::GetIsTargeting() const

@@ -50,3 +50,10 @@ void UDMC_CombatBufferComponent::StopBuffer()
 	
 	SetComponentTickEnabled(false);
 }
+
+EDMC_BufferedInput UDMC_CombatBufferComponent::PopInput()
+{
+	EDMC_BufferedInput Input = CurrentBufferedInput;
+	CurrentBufferedInput = EDMC_BufferedInput::EBI_None;
+	return Input;
+}

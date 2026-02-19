@@ -5,6 +5,15 @@
 #include "DMC_CombatBufferComponent.generated.h"
 
 
+UENUM(BlueprintType)
+enum class EDMC_BufferedInput : uint8
+{
+	EBI_None UMETA(DisplayName = "None"),
+	EBI_LightAttack UMETA(DisplayName = "Light Attack"),
+	EBI_HeavyAttack UMETA(DisplayName = "Heavy Attack"),
+	EBI_Dodge UMETA(DisplayName = "Dodge")
+};
+
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class UE5_DMC_CLONE_API UDMC_CombatBufferComponent : public UActorComponent
 {
@@ -14,9 +23,15 @@ public:
 	UDMC_CombatBufferComponent();
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	
-	// Starts/Stops the movement lunge/knockback
+	// Movement Buffer (Lunges/Knockbacks)
 	void StartBuffer(float Amount);
 	void StopBuffer();
+
+	// Input Buffer (Buffered Commands)
+	void BufferInput(EDMC_BufferedInput InputType) { CurrentBufferedInput = InputType; }
+	EDMC_BufferedInput PopInput();
+	void ClearInputBuffer() { CurrentBufferedInput = EDMC_BufferedInput::EBI_None; }
+	bool HasBufferedInput() const { return CurrentBufferedInput != EDMC_BufferedInput::EBI_None; }
 
 protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Combat|Buffer")
@@ -27,4 +42,6 @@ private:
 	float CurrentBufferAmount = 0.f;
 	float BufferTimeElapsed = 0.f;
 	const float BufferDuration = 0.25f;
+
+	EDMC_BufferedInput CurrentBufferedInput = EDMC_BufferedInput::EBI_None;
 };
