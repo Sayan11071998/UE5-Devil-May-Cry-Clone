@@ -17,6 +17,8 @@ struct FInputActionValue;
 class UDMC_CombatBufferComponent;
 class UDMC_RageComponent;
 class UDMC_TargetingComponent;
+class UDMC_FinisherComponent;
+class UDMC_CombatComponent;
 
 UCLASS()
 class UE5_DMC_CLONE_API ADMC_PlayerCharacter : public ACharacter, public IDMC_CombatInterface
@@ -80,6 +82,9 @@ public:
 
 	FORCEINLINE class UDMC_ComboDataAsset* GetComboData() const { return ComboData; }
 	FORCEINLINE class UDMC_RageComponent* GetRageComp() const { return RageComp; }
+	FORCEINLINE class UDMC_TargetingComponent* GetTargetingComp() const { return TargetingComp; }
+	FORCEINLINE class UDMC_CombatBufferComponent* GetBufferComponent() const { return BufferComponent; }
+	FORCEINLINE class UDMC_CombatComponent* GetCombatComp() const { return CombatComp; }
 
 protected:
 	// Engine Overrides
@@ -102,6 +107,12 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	TObjectPtr<UDMC_TargetingComponent> TargetingComp;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	TObjectPtr<UDMC_FinisherComponent> FinisherComp;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	TObjectPtr<UDMC_CombatComponent> CombatComp;
 
 private:
 	// Internal Implementation || Combat
@@ -198,10 +209,6 @@ private:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "DMC|Combat", meta = (AllowPrivateAccess = "true"))
 	FName WeaponSocketName;
 
-	int32 LightAttackIndex = 0;
-	int32 HeavyAttackIndex = 0;
-	int32 ComboExtenderIndex = 0;
-
 	bool bDodgeAttackEnabled = false;
 	bool bPerformChargeAttack = false;
 
@@ -228,7 +235,7 @@ public:
 	FORCEINLINE bool IsAttacking() const { return CurrentState == EDMC_PlayerState::ECS_Attack; }
 	FORCEINLINE bool IsDodging() const { return CurrentState == EDMC_PlayerState::ECS_Dodge || CurrentState == EDMC_PlayerState::ECS_GeneralActions; }
 	FORCEINLINE bool IsRaging() const;
-	FORCEINLINE bool IsBusy() const { return IsAttacking() || IsDodging() || IsRaging(); }
+	FORCEINLINE bool IsBusy() const { return IsAttacking() || IsDodging(); }
 	FORCEINLINE bool IsStateEqualToAny(const TArray<EDMC_PlayerState>& StatesToCheck) const { return StatesToCheck.Contains(CurrentState); }
 
 	// Targeting Getters

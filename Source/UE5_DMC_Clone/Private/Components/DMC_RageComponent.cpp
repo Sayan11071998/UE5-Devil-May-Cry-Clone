@@ -102,6 +102,7 @@ void UDMC_RageComponent::EnterRageMode()
 	Player->KatanaDamage = ComboData->RageDamageMultiplier;
 	bRageActive = true;
 
+	Player->SetState(EDMC_PlayerState::ECS_Nothing);
 	Player->ResetLightAttackVariables();
 	Player->ResetHeavyAttackVariables();
 	// Note: ComboExtenderIndex reset is handled in character logic or reset methods

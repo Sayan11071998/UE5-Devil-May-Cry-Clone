@@ -9,6 +9,8 @@
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
 #include "Components/DMC_CombatBufferComponent.h"
+#include "Components/DMC_FinisherComponent.h"
+#include "Components/DMC_CombatComponent.h"
 #include "Components/DMC_TargetingComponent.h"
 #include "Components/DMC_RageComponent.h"
 #include "Enemies/DMC_EnemyCharacterBase.h"
@@ -54,6 +56,8 @@ ADMC_PlayerCharacter::ADMC_PlayerCharacter()
 	BufferComponent = CreateDefaultSubobject<UDMC_CombatBufferComponent>(TEXT("BufferComponent"));
 	RageComp = CreateDefaultSubobject<UDMC_RageComponent>(TEXT("RageComp"));
 	TargetingComp = CreateDefaultSubobject<UDMC_TargetingComponent>(TEXT("TargetingComp"));
+	FinisherComp = CreateDefaultSubobject<UDMC_FinisherComponent>(TEXT("FinisherComp"));
+	CombatComp = CreateDefaultSubobject<UDMC_CombatComponent>(TEXT("CombatComp"));
 	
 	CurrentState = EDMC_PlayerState::ECS_Nothing;
 }
@@ -125,20 +129,9 @@ void ADMC_PlayerCharacter::LightAttack()
 		bDodgeAttackEnabled = true;
 	}
 
-	if (IsBusy()) 
+	if (CombatComp)
 	{
-		BufferComponent->BufferInput(EDMC_BufferedInput::EBI_LightAttack);
-	}
-	else
-	{
-		bHitStopEnabled = false;
-		if (SpecialAttack()) return;
-
-		if (!GetCharacterMovement()->IsFalling())
-		{
-			ResetHeavyAttackVariables();
-			PerformLightAttack(LightAttackIndex);
-		}
+		CombatComp->PerformLightAttack();
 	}
 	
 	GetWorldTimerManager().SetTimer(ChargeTimerHandle, this, &ADMC_PlayerCharacter::OnChargeTimerFinished, 0.5f, false);
@@ -146,17 +139,9 @@ void ADMC_PlayerCharacter::LightAttack()
 
 void ADMC_PlayerCharacter::HeavyAttack()
 {
-	if (IsBusy())
+	if (CombatComp)
 	{
-		BufferComponent->BufferInput(EDMC_BufferedInput::EBI_HeavyAttack);
-	}
-	else
-	{
-		if (!GetCharacterMovement()->IsFalling())
-		{
-			ResetLightAttackVariables();
-			PerformHeavyAttack(HeavyAttackIndex);
-		}
+		CombatComp->PerformHeavyAttack();
 	}
 }
 
@@ -202,17 +187,17 @@ void ADMC_PlayerCharacter::Jump()
 
 void ADMC_PlayerCharacter::SaveLightAttack()
 {
-	TryConsumeBufferedInput();
+	if (CombatComp) CombatComp->TryConsumeBufferedInput();
 }
 
 void ADMC_PlayerCharacter::SaveHeavyAttack()
 {
-	TryConsumeBufferedInput();
+	if (CombatComp) CombatComp->TryConsumeBufferedInput();
 }
 
 void ADMC_PlayerCharacter::SaveDodge()
 {
-	TryConsumeBufferedInput();
+	if (CombatComp) CombatComp->TryConsumeBufferedInput();
 }
 
 void ADMC_PlayerCharacter::ResetState()
@@ -220,7 +205,12 @@ void ADMC_PlayerCharacter::ResetState()
 	SetState(EDMC_PlayerState::ECS_Nothing);
 	BufferComponent->ClearInputBuffer();
 	BufferComponent->StopBuffer();
-	ComboExtenderIndex = 0;
+	
+	if (CombatComp)
+	{
+		CombatComp->ResetLightCombo();
+		CombatComp->ResetHeavyCombo();
+	}
 	
 	TargetingComp->StopRotation();
 	TargetingComp->ClearSoftTarget();
@@ -362,137 +352,9 @@ void ADMC_PlayerCharacter::Look(const FInputActionValue& Value)
 	}
 }
 
-bool ADMC_PlayerCharacter::ExecuteAttack(UAnimMontage* Montage, float BufferAmount)
-{
-	if (!Montage) return false;
-
-	BufferComponent->StopBuffer();
-	BufferComponent->StartBuffer(BufferAmount);
-
-	SetState(EDMC_PlayerState::ECS_Attack);
-	SoftLockOn();
-	PlayAnimMontage(Montage);
-
-	return true;
-}
-
-void ADMC_PlayerCharacter::TryConsumeBufferedInput()
-{
-	if (!BufferComponent || !BufferComponent->HasBufferedInput()) return;
-
-	EDMC_BufferedInput Input = BufferComponent->PopInput();
-	SetState(EDMC_PlayerState::ECS_Nothing);
-
-	switch (Input)
-	{
-	case EDMC_BufferedInput::EBI_Dodge:
-		PerformDodge();
-		break;
-	case EDMC_BufferedInput::EBI_LightAttack:
-		if (HeavyAttackIndex > 0)
-		{
-			PerformComboStarter();
-		}
-		else
-		{
-			LightAttack();
-		}
-		break;
-	case EDMC_BufferedInput::EBI_HeavyAttack:
-		if (ComboExtenderIndex > 0)
-		{
-			PerformComboExtender();
-		}
-		else
-		{
-			HeavyAttack();
-		}
-		break;
-	default:
-		break;
-	}
-}
-
-bool ADMC_PlayerCharacter::PerformLightAttack(int32 InAttackIndex)
-{
-	if (!ComboData) return false;
-
-	const bool bIsRageActive = RageComp ? RageComp->IsRageActive() : false;
-	const TArray<TObjectPtr<UAnimMontage>>& CurrentCombo = bIsRageActive ? ComboData->LightAttackRageCombo : ComboData->LightAttackCombo;
-
-	if (!CurrentCombo.IsValidIndex(InAttackIndex)) return false;
-
-	if (ExecuteAttack(CurrentCombo[InAttackIndex], ComboData->LightAttackBuffer))
-	{
-		LightAttackIndex++;
-		if (LightAttackIndex >= CurrentCombo.Num())
-		{
-			LightAttackIndex = 0;
-		}
-		return true;
-	}
-	
-	return false;
-}
-
-bool ADMC_PlayerCharacter::PerformHeavyAttack(int32 InAttackIndex)
-{
-	if (!ComboData || !ComboData->HeavyAttackCombo.IsValidIndex(InAttackIndex)) return false;
-
-	if (ExecuteAttack(ComboData->HeavyAttackCombo[InAttackIndex], ComboData->HeavyAttackBuffer))
-	{
-		HeavyAttackIndex++;
-		if (HeavyAttackIndex >= ComboData->HeavyAttackCombo.Num())
-		{
-			HeavyAttackIndex = 0;
-		}
-		return true;
-	}
-	
-	return false;
-}
-
-bool ADMC_PlayerCharacter::PerformComboStarter()
-{
-	if (!ComboData || IsBusy() || GetCharacterMovement()->IsFalling()) return false;
-	
-	int32 HL_ComboStarterIndex = HeavyAttackIndex - 1;
-	
-	if (ComboData->ComboStarterMontages.IsValidIndex(HL_ComboStarterIndex))
-	{
-		if (ExecuteAttack(ComboData->ComboStarterMontages[HL_ComboStarterIndex], ComboData->StarterAttackBuffer))
-		{
-			ComboExtenderIndex = HeavyAttackIndex;
-			ResetHeavyAttackVariables();
-			return true;
-		}
-	}
-	
-	return false;
-}
-
-bool ADMC_PlayerCharacter::PerformComboExtender()
-{
-	if (!ComboData || IsBusy() || GetCharacterMovement()->IsFalling()) return false;
-
-	int32 LH_FinisherIndex = ComboExtenderIndex - 1;
-	if (ComboData->ComboExtenderMontages.IsValidIndex(LH_FinisherIndex))
-	{
-		if (ExecuteAttack(ComboData->ComboExtenderMontages[LH_FinisherIndex], ComboData->ExtenderAttackBuffer))
-		{
-			ResetLightAttackVariables();
-			ResetHeavyAttackVariables();
-			ComboExtenderIndex = 0;
-			return true;
-		}
-	}
-
-	return false;
-}
-
 bool ADMC_PlayerCharacter::SpecialAttack()
 {
-	if (!ComboData || ComboData->SpecialAttacks.Num() == 0) return false;
+	if (!ComboData || ComboData->SpecialAttacks.Num() == 0 || !CombatComp) return false;
 
 	const FVector LastInput = GetCharacterMovement()->GetLastInputVector();
 	const float ForwardDot = !LastInput.IsNearlyZero() ? FVector::DotProduct(GetActorForwardVector(), LastInput.GetSafeNormal()) : 0.f;
@@ -542,7 +404,7 @@ bool ADMC_PlayerCharacter::SpecialAttack()
 		if (!bReqsMet) continue;
 
 		// If we reached here, all conditions are met!
-		if (ExecuteAttack(AttackData.Montage, AttackData.BufferAmount))
+		if (CombatComp->ExecuteAttack(AttackData.Montage, AttackData.BufferAmount))
 		{
 			ResetLightAttackVariables();
 			ResetHeavyAttackVariables();
@@ -583,48 +445,9 @@ void ADMC_PlayerCharacter::PerformDodge()
 
 void ADMC_PlayerCharacter::FinisherAttack()
 {
-	TArray<EDMC_PlayerState> StatesToIgnore;
-	StatesToIgnore.Add(EDMC_PlayerState::ECS_Dodge);
-	StatesToIgnore.Add(EDMC_PlayerState::ECS_Finisher);
-	
-	if (IsStateEqualToAny(StatesToIgnore)) return;
-
-	if (GetIsTargeting() && GetTargetActor())
+	if (FinisherComp)
 	{
-		AActor* Target = GetTargetActor();
-		
-		float Distance = GetDistanceTo(Target);
-		if (ComboData && Distance <= ComboData->FinisherAttackDistance)
-		{
-			if (ADMC_EnemyCharacterBase* Enemy = Cast<ADMC_EnemyCharacterBase>(Target))
-			{
-				if (Enemy->GetHealth() / Enemy->GetMaxHealth() > 0.1f) return;
-
-				if (TargetingComp)
-				{
-					TargetingComp->StopRotation();
-				}
-				if (BufferComponent)
-				{
-					BufferComponent->StopBuffer();
-				}
-				Enemy->Finished(this);
-
-				FRotator LookAtRot = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), Target->GetActorLocation());
-				SetActorRotation(FRotator(0.f, LookAtRot.Yaw, 0.f));
-				SetState(EDMC_PlayerState::ECS_Finisher);
-				
-				if (ComboData->FinisherAttackMontage)
-				{
-					PlayAnimMontage(ComboData->FinisherAttackMontage);
-				}
-
-				if (TargetingComp)
-				{
-					TargetingComp->StopLockOn();
-				}
-			}
-		}
+		FinisherComp->TryExecuteFinisher();
 	}
 }
 
@@ -673,14 +496,14 @@ void ADMC_PlayerCharacter::OnChargeTimerFinished()
 
 void ADMC_PlayerCharacter::ResetLightAttackVariables()
 {
-	LightAttackIndex = 0;
+	if (CombatComp) CombatComp->ResetLightCombo();
 	bDodgeAttackEnabled = false;
 	bPerformChargeAttack = false;
 }
 
 void ADMC_PlayerCharacter::ResetHeavyAttackVariables()
 {
-	HeavyAttackIndex = 0;
+	if (CombatComp) CombatComp->ResetHeavyCombo();
 }
 
 bool ADMC_PlayerCharacter::GetIsTargeting() const
