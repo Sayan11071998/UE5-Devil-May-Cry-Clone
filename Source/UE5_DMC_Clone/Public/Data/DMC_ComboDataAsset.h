@@ -11,7 +11,8 @@ enum class EDMC_SpecialAttackRequirement : uint8
 	ESAR_RequiresTarget UMETA(DisplayName = "Requires Target"),
 	ESAR_RequiresNoTarget UMETA(DisplayName = "Requires No Target"),
 	ESAR_GroundOnly UMETA(DisplayName = "Ground Only"),
-	ESAR_AirOnly UMETA(DisplayName = "Air Only")
+	ESAR_AirOnly UMETA(DisplayName = "Air Only"),
+	ESAR_FinisherOnly UMETA(DisplayName = "Finisher Only")
 };
 
 USTRUCT(BlueprintType)
@@ -96,13 +97,7 @@ public:
 	TArray<FDMC_AttackData> ComboExtenderMontages;
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Attack|SpecialAttacks")
-	FDMC_AttackData StingerAttackData;
-	
-	UPROPERTY(EditDefaultsOnly, Category = "Attack|SpecialAttacks")
 	FDMC_AttackData FinisherAttackData;
-	
-	UPROPERTY(EditDefaultsOnly, Category = "Attack|SpecialAttacks")
-	FDMC_AttackData ChargeAttackData;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Attack|Special")
 	TObjectPtr<UAnimMontage> RageMontage;
