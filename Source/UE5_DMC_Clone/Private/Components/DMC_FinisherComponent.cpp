@@ -28,9 +28,10 @@ void UDMC_FinisherComponent::TryExecuteFinisher()
 	
 	if (PlayerOwner->IsStateEqualToAny(StatesToIgnore)) return;
 
-	if (PlayerOwner->GetIsTargeting() && PlayerOwner->GetTargetActor())
+	if (PlayerOwner->GetIsTargeting() && PlayerOwner->GetCombatTarget())
 	{
-		AActor* Target = PlayerOwner->GetTargetActor();
+		AActor* Target = PlayerOwner->GetCombatTarget();
+		if (!Target) return;
 		UDMC_ComboDataAsset* ComboData = PlayerOwner->GetComboData();
 		
 		float Distance = PlayerOwner->GetDistanceTo(Target);

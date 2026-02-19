@@ -115,7 +115,7 @@ void ADMC_BaseWeapon::HandleCollisionTracing()
 					float FinalDamage = KatanaDamageAmount;
 					if (ADMC_PlayerCharacter* Character = Cast<ADMC_PlayerCharacter>(GetOwner()))
 					{
-						FinalDamage *= Character->KatanaDamage;
+						FinalDamage *= Character->GetKatanaDamage();
 						Character->HitStop();
 					}
 

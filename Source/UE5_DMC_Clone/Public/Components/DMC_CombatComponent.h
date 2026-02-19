@@ -17,9 +17,10 @@ class UE5_DMC_CLONE_API UDMC_CombatComponent : public UActorComponent
 public:
 	UDMC_CombatComponent();
 
-	// Combo Interface
 	void PerformLightAttack();
 	void PerformHeavyAttack();
+	void PerformDodge();
+	void SpecialAttack();
 	void TryConsumeBufferedInput();
 	
 	bool ExecuteAttack(UAnimMontage* Montage, float BufferAmount);
@@ -32,6 +33,12 @@ public:
 	FORCEINLINE int32 GetLightAttackIndex() const { return LightAttackIndex; }
 	FORCEINLINE int32 GetHeavyAttackIndex() const { return HeavyAttackIndex; }
 	FORCEINLINE int32 GetComboExtenderIndex() const { return ComboExtenderIndex; }
+
+	// Flag State
+	FORCEINLINE void SetDodgeAttackEnabled(bool bEnabled) { bDodgeAttackEnabled = bEnabled; }
+	FORCEINLINE void SetPerformChargeAttack(bool bPerform) { bPerformChargeAttack = bPerform; }
+	FORCEINLINE bool GetDodgeAttackEnabled() const { return bDodgeAttackEnabled; }
+	FORCEINLINE bool GetPerformChargeAttack() const { return bPerformChargeAttack; }
 
 protected:
 	virtual void BeginPlay() override;
@@ -50,4 +57,7 @@ private:
 	int32 LightAttackIndex = 0;
 	int32 HeavyAttackIndex = 0;
 	int32 ComboExtenderIndex = 0;
+
+	bool bDodgeAttackEnabled = false;
+	bool bPerformChargeAttack = false;
 };

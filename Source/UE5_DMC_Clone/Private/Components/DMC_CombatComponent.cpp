@@ -3,6 +3,8 @@
 #include "Data/DMC_ComboDataAsset.h"
 #include "Components/DMC_CombatBufferComponent.h"
 #include "Components/DMC_RageComponent.h"
+#include "Components/DMC_TargetingComponent.h"
+#include "Data/DMC_ComboDataAsset.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
 UDMC_CombatComponent::UDMC_CombatComponent()
@@ -55,6 +57,108 @@ void UDMC_CombatComponent::PerformHeavyAttack()
 		{
 			ResetLightCombo();
 			Internal_PerformHeavyAttack(HeavyAttackIndex);
+		}
+	}
+}
+
+void UDMC_CombatComponent::PerformDodge()
+{
+	if (!PlayerOwner) return;
+
+	PlayerOwner->StopRotation();
+	bPerformChargeAttack = false;
+	if (UDMC_TargetingComponent* Targeting = PlayerOwner->GetTargetingComp())
+	{
+		Targeting->ClearSoftTarget();
+	}
+	
+	FVector LastInput = PlayerOwner->GetCharacterMovement()->GetLastInputVector();
+	if (!LastInput.IsNearlyZero())
+	{
+		PlayerOwner->SetActorRotation(LastInput.Rotation());
+	}
+	
+	if (UDMC_CombatBufferComponent* Buffer = PlayerOwner->GetBufferComponent())
+	{
+		Buffer->StopBuffer();
+	}
+	
+	UDMC_ComboDataAsset* ComboData = PlayerOwner->GetComboData();
+	if (ComboData)
+	{
+		if (UDMC_CombatBufferComponent* Buffer = PlayerOwner->GetBufferComponent())
+		{
+			Buffer->StartBuffer(ComboData->DodgeBufferAmount);
+		}
+		
+		PlayerOwner->SetState(EDMC_PlayerState::ECS_Dodge);
+		
+		if (ComboData->DodgeMontage)
+		{
+			PlayerOwner->PlayAnimMontage(ComboData->DodgeMontage);
+		}
+	}
+}
+
+void UDMC_CombatComponent::SpecialAttack()
+{
+	UDMC_ComboDataAsset* ComboData = PlayerOwner->GetComboData();
+	if (!ComboData || ComboData->SpecialAttacks.Num() == 0) return;
+
+	const FVector LastInput = PlayerOwner->GetCharacterMovement()->GetLastInputVector();
+	const float ForwardDot = !LastInput.IsNearlyZero() ? FVector::DotProduct(PlayerOwner->GetActorForwardVector(), LastInput.GetSafeNormal()) : 0.f;
+	const bool bIsFalling = PlayerOwner->GetCharacterMovement()->IsFalling();
+	const bool bHasTarget = PlayerOwner->GetIsTargeting() && PlayerOwner->GetCombatTarget() != nullptr;
+
+	for (const FDMC_SpecialAttackData& AttackData : ComboData->SpecialAttacks)
+	{
+		if (!AttackData.Montage) continue;
+
+		// 1. Check Flags
+		if (AttackData.bCheckDodgeFlag && !bDodgeAttackEnabled) continue;
+		if (AttackData.bCheckChargeFlag && !bPerformChargeAttack) continue;
+
+		// 2. Check Direction (if enabled)
+		if (AttackData.MinForwardDot > -1.05f || AttackData.MaxForwardDot < 1.05f)
+		{
+			if (LastInput.IsNearlyZero() || ForwardDot < AttackData.MinForwardDot || ForwardDot > AttackData.MaxForwardDot)
+			{
+				continue;
+			}
+		}
+
+		// 3. Check Requirements
+		bool bReqsMet = true;
+		for (EDMC_SpecialAttackRequirement Req : AttackData.Requirements)
+		{
+			switch (Req)
+			{
+			case EDMC_SpecialAttackRequirement::ESAR_RequiresTarget:
+				if (!bHasTarget) bReqsMet = false;
+				break;
+			case EDMC_SpecialAttackRequirement::ESAR_RequiresNoTarget:
+				if (bHasTarget) bReqsMet = false;
+				break;
+			case EDMC_SpecialAttackRequirement::ESAR_GroundOnly:
+				if (bIsFalling) bReqsMet = false;
+				break;
+			case EDMC_SpecialAttackRequirement::ESAR_AirOnly:
+				if (!bIsFalling) bReqsMet = false;
+				break;
+			default: ;
+			}
+			if (!bReqsMet) break;
+		}
+
+		if (!bReqsMet) continue;
+
+		// If we reached here, all conditions are met!
+		if (ExecuteAttack(AttackData.Montage, AttackData.BufferAmount))
+		{
+			PlayerOwner->ResetLightAttackVariables();
+			PlayerOwner->ResetHeavyAttackVariables();
+			PlayerOwner->RotateToTarget();
+			return;
 		}
 	}
 }
@@ -168,7 +272,7 @@ void UDMC_CombatComponent::TryConsumeBufferedInput()
 	switch (Input)
 	{
 	case EDMC_BufferedInput::EBI_Dodge:
-		PlayerOwner->Dodge(); // Dodge still handled by character
+		PerformDodge();
 		break;
 	case EDMC_BufferedInput::EBI_LightAttack:
 		if (HeavyAttackIndex > 0)
