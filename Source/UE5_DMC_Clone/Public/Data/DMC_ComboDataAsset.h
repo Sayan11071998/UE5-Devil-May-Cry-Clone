@@ -41,6 +41,27 @@ struct FDMC_SpecialAttackData
 	bool bCheckChargeFlag = false;
 };
 
+USTRUCT(BlueprintType)
+struct FDMC_RageStage
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	TObjectPtr<UParticleSystem> StageFX;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	TObjectPtr<UMaterialInterface> OverlayMaterial;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	float DelayToNextStage = 0.5f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	bool bDestroyPreviousFX = false;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	FVector FXScale = FVector(1.0f);
+};
+
 UCLASS()
 class UE5_DMC_CLONE_API UDMC_ComboDataAsset : public UDataAsset
 {
@@ -107,12 +128,15 @@ public:
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Combat|Finisher")
 	float FinisherAttackDistance = 100.f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Combat|Rage")
+	TArray<FDMC_RageStage> RageSequence;
 	
-	UPROPERTY(EditDefaultsOnly, Category = "Effects|Rage")
+	UPROPERTY(EditDefaultsOnly, Category = "Effects|Rage", meta = (DEPRECATED = "Use RageSequence instead"))
 	TObjectPtr<UParticleSystem> RageParticles_1;
-	UPROPERTY(EditDefaultsOnly, Category = "Effects|Rage")
+	UPROPERTY(EditDefaultsOnly, Category = "Effects|Rage", meta = (DEPRECATED = "Use RageSequence instead"))
 	TObjectPtr<UParticleSystem> RageParticles_2;
-	UPROPERTY(EditDefaultsOnly, Category = "Effects|Rage")
+	UPROPERTY(EditDefaultsOnly, Category = "Effects|Rage", meta = (DEPRECATED = "Use RageSequence instead"))
 	TObjectPtr<UMaterialInterface> RageOverlayMaterial;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Combat|Rage")

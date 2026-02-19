@@ -9,6 +9,28 @@ class ADMC_PlayerCharacter;
 class UAnimMontage;
 class UDMC_ComboDataAsset;
 
+USTRUCT(BlueprintType)
+struct FDMC_ComboState
+{
+	GENERATED_BODY()
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	int32 LightIndex = 0;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	int32 HeavyIndex = 0;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	int32 ExtenderIndex = 0;
+
+	void Reset()
+	{
+		LightIndex = 0;
+		HeavyIndex = 0;
+		ExtenderIndex = 0;
+	}
+};
+
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class UE5_DMC_CLONE_API UDMC_CombatComponent : public UActorComponent
 {
@@ -26,13 +48,13 @@ public:
 	bool ExecuteAttack(UAnimMontage* Montage, float BufferAmount);
 	
 	// Index Resetters
-	void ResetLightCombo();
-	void ResetHeavyCombo();
+	void ResetLightCombo() { ComboState.LightIndex = 0; }
+	void ResetHeavyCombo() { ComboState.HeavyIndex = 0; }
 	
 	// Getters
-	FORCEINLINE int32 GetLightAttackIndex() const { return LightAttackIndex; }
-	FORCEINLINE int32 GetHeavyAttackIndex() const { return HeavyAttackIndex; }
-	FORCEINLINE int32 GetComboExtenderIndex() const { return ComboExtenderIndex; }
+	FORCEINLINE int32 GetLightAttackIndex() const { return ComboState.LightIndex; }
+	FORCEINLINE int32 GetHeavyAttackIndex() const { return ComboState.HeavyIndex; }
+	FORCEINLINE int32 GetComboExtenderIndex() const { return ComboState.ExtenderIndex; }
 
 	// Flag State
 	FORCEINLINE void SetDodgeAttackEnabled(bool bEnabled) { bDodgeAttackEnabled = bEnabled; }
@@ -53,10 +75,8 @@ private:
 	UPROPERTY()
 	TObjectPtr<ADMC_PlayerCharacter> PlayerOwner;
 
-	// Moved from Character
-	int32 LightAttackIndex = 0;
-	int32 HeavyAttackIndex = 0;
-	int32 ComboExtenderIndex = 0;
+	UPROPERTY(VisibleAnywhere, Category = "DMC|Combat")
+	FDMC_ComboState ComboState;
 
 	bool bDodgeAttackEnabled = false;
 	bool bPerformChargeAttack = false;

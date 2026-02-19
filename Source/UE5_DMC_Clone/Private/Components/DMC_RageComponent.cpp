@@ -30,64 +30,65 @@ void UDMC_RageComponent::StartRage()
 		Player->SetState(EDMC_PlayerState::ECS_GeneralActions);
 		Player->PlayAnimMontage(ComboData->RageMontage);
 
-		if (ComboData->RageParticles_1)
+		CurrentStageIndex = 0;
+		ExecuteNextRageStage();
+	}
+}
+
+void UDMC_RageComponent::ExecuteNextRageStage()
+{
+	ADMC_PlayerCharacter* Player = Cast<ADMC_PlayerCharacter>(GetOwner());
+	if (!Player) return;
+
+	UDMC_ComboDataAsset* ComboData = Player->GetComboData();
+	if (!ComboData) return;
+
+	// Check if we've reached the end of the sequence
+	if (!ComboData->RageSequence.IsValidIndex(CurrentStageIndex))
+	{
+		if (ActiveRageEmitter)
 		{
-			ActiveRageEmitter = UGameplayStatics::SpawnEmitterAtLocation(
-				GetWorld(),
-				ComboData->RageParticles_1,
-				Player->GetActorLocation(), // Use Actor Location as fallback
-				Player->GetActorRotation(),
-				FVector(1.6f)
-			);
+			ActiveRageEmitter->DestroyComponent();
+			ActiveRageEmitter = nullptr;
+		}
+		EnterRageMode();
+		return;
+	}
+
+	const FDMC_RageStage& CurrentStage = ComboData->RageSequence[CurrentStageIndex];
+
+	// Handle FX
+	if (CurrentStage.StageFX)
+	{
+		if (CurrentStage.bDestroyPreviousFX && ActiveRageEmitter)
+		{
+			ActiveRageEmitter->DestroyComponent();
+			ActiveRageEmitter = nullptr;
 		}
 
-		GetWorld()->GetTimerManager().SetTimer(RageTimerHandle, this, &UDMC_RageComponent::RageStage2, 1.0f, false);
-	}
-}
-
-void UDMC_RageComponent::RageStage2()
-{
-	ADMC_PlayerCharacter* Player = Cast<ADMC_PlayerCharacter>(GetOwner());
-	if (!Player) return;
-
-	UDMC_ComboDataAsset* ComboData = Player->GetComboData();
-	if (ComboData && ComboData->RageParticles_2)
-	{
-		UGameplayStatics::SpawnEmitterAtLocation(
+		UParticleSystemComponent* NewEmitter = UGameplayStatics::SpawnEmitterAtLocation(
 			GetWorld(),
-			ComboData->RageParticles_2,
+			CurrentStage.StageFX,
 			Player->GetActorLocation(),
 			Player->GetActorRotation(),
-			FVector(1.0f)
+			CurrentStage.FXScale
 		);
+
+		if (!CurrentStage.bDestroyPreviousFX)
+		{
+			ActiveRageEmitter = NewEmitter;
+		}
 	}
 
-	GetWorld()->GetTimerManager().SetTimer(RageTimerHandle, this, &UDMC_RageComponent::RageStage3, 0.4f, false);
-}
-
-void UDMC_RageComponent::RageStage3()
-{
-	ADMC_PlayerCharacter* Player = Cast<ADMC_PlayerCharacter>(GetOwner());
-	if (!Player) return;
-
-	UDMC_ComboDataAsset* ComboData = Player->GetComboData();
-	if (ComboData && ComboData->RageOverlayMaterial)
+	// Handle Material Overlay
+	if (CurrentStage.OverlayMaterial && Player->GetMesh())
 	{
-		Player->GetMesh()->SetOverlayMaterial(ComboData->RageOverlayMaterial);
+		Player->GetMesh()->SetOverlayMaterial(CurrentStage.OverlayMaterial);
 	}
 
-	GetWorld()->GetTimerManager().SetTimer(RageTimerHandle, this, &UDMC_RageComponent::RageStage4, 0.1f, false);
-}
-
-void UDMC_RageComponent::RageStage4()
-{
-	if (ActiveRageEmitter)
-	{
-		ActiveRageEmitter->DestroyComponent();
-		ActiveRageEmitter = nullptr;
-	}
-
-	EnterRageMode();
+	// Move to next stage after delay
+	CurrentStageIndex++;
+	GetWorld()->GetTimerManager().SetTimer(RageTimerHandle, this, &UDMC_RageComponent::ExecuteNextRageStage, CurrentStage.DelayToNextStage, false);
 }
 
 void UDMC_RageComponent::EnterRageMode()

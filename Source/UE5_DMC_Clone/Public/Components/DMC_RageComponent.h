@@ -26,11 +26,10 @@ protected:
 	virtual void BeginPlay() override;
 
 private:
-	void RageStage2();
-	void RageStage3();
-	void RageStage4();
+	void ExecuteNextRageStage();
 	void EnterRageMode();
 
+	int32 CurrentStageIndex = 0;
 	bool bRageActive = false;
 
 	FTimerHandle RageTimerHandle;

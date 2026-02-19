@@ -35,7 +35,7 @@ void UDMC_CombatComponent::PerformLightAttack()
 		if (!PlayerOwner->GetCharacterMovement()->IsFalling())
 		{
 			ResetHeavyCombo();
-			Internal_PerformLightAttack(LightAttackIndex);
+			Internal_PerformLightAttack(ComboState.LightIndex);
 		}
 	}
 }
@@ -56,7 +56,7 @@ void UDMC_CombatComponent::PerformHeavyAttack()
 		if (!PlayerOwner->GetCharacterMovement()->IsFalling())
 		{
 			ResetLightCombo();
-			Internal_PerformHeavyAttack(HeavyAttackIndex);
+			Internal_PerformHeavyAttack(ComboState.HeavyIndex);
 		}
 	}
 }
@@ -192,10 +192,10 @@ bool UDMC_CombatComponent::Internal_PerformLightAttack(int32 InAttackIndex)
 
 	if (ExecuteAttack(CurrentCombo[InAttackIndex], ComboData->LightAttackBuffer))
 	{
-		LightAttackIndex++;
-		if (LightAttackIndex >= CurrentCombo.Num())
+		ComboState.LightIndex++;
+		if (ComboState.LightIndex >= CurrentCombo.Num())
 		{
-			LightAttackIndex = 0;
+			ComboState.LightIndex = 0;
 		}
 		return true;
 	}
@@ -210,10 +210,10 @@ bool UDMC_CombatComponent::Internal_PerformHeavyAttack(int32 InAttackIndex)
 
 	if (ExecuteAttack(ComboData->HeavyAttackCombo[InAttackIndex], ComboData->HeavyAttackBuffer))
 	{
-		HeavyAttackIndex++;
-		if (HeavyAttackIndex >= ComboData->HeavyAttackCombo.Num())
+		ComboState.HeavyIndex++;
+		if (ComboState.HeavyIndex >= ComboData->HeavyAttackCombo.Num())
 		{
-			HeavyAttackIndex = 0;
+			ComboState.HeavyIndex = 0;
 		}
 		return true;
 	}
@@ -226,13 +226,13 @@ bool UDMC_CombatComponent::Internal_PerformComboStarter()
 	UDMC_ComboDataAsset* ComboData = PlayerOwner->GetComboData();
 	if (!ComboData || PlayerOwner->IsBusy() || PlayerOwner->GetCharacterMovement()->IsFalling()) return false;
 	
-	int32 HL_ComboStarterIndex = HeavyAttackIndex - 1;
+	int32 HL_ComboStarterIndex = ComboState.HeavyIndex - 1;
 	
 	if (ComboData->ComboStarterMontages.IsValidIndex(HL_ComboStarterIndex))
 	{
 		if (ExecuteAttack(ComboData->ComboStarterMontages[HL_ComboStarterIndex], ComboData->StarterAttackBuffer))
 		{
-			ComboExtenderIndex = HeavyAttackIndex;
+			ComboState.ExtenderIndex = ComboState.HeavyIndex;
 			ResetHeavyCombo();
 			return true;
 		}
@@ -246,13 +246,13 @@ bool UDMC_CombatComponent::Internal_PerformComboExtender()
 	UDMC_ComboDataAsset* ComboData = PlayerOwner->GetComboData();
 	if (!ComboData || PlayerOwner->IsBusy() || PlayerOwner->GetCharacterMovement()->IsFalling()) return false;
 
-	int32 LH_FinisherIndex = ComboExtenderIndex - 1;
+	int32 LH_FinisherIndex = ComboState.ExtenderIndex - 1;
 	
 	if (ComboData->ComboExtenderMontages.IsValidIndex(LH_FinisherIndex))
 	{
 		if (ExecuteAttack(ComboData->ComboExtenderMontages[LH_FinisherIndex], ComboData->ExtenderAttackBuffer))
 		{
-			ComboExtenderIndex = 0;
+			ComboState.ExtenderIndex = 0;
 			return true;
 		}
 	}
@@ -275,7 +275,7 @@ void UDMC_CombatComponent::TryConsumeBufferedInput()
 		PerformDodge();
 		break;
 	case EDMC_BufferedInput::EBI_LightAttack:
-		if (HeavyAttackIndex > 0)
+		if (ComboState.HeavyIndex > 0)
 		{
 			Internal_PerformComboStarter();
 		}
@@ -285,7 +285,7 @@ void UDMC_CombatComponent::TryConsumeBufferedInput()
 		}
 		break;
 	case EDMC_BufferedInput::EBI_HeavyAttack:
-		if (ComboExtenderIndex > 0)
+		if (ComboState.ExtenderIndex > 0)
 		{
 			Internal_PerformComboExtender();
 		}
@@ -299,12 +299,3 @@ void UDMC_CombatComponent::TryConsumeBufferedInput()
 	}
 }
 
-void UDMC_CombatComponent::ResetLightCombo()
-{
-	LightAttackIndex = 0;
-}
-
-void UDMC_CombatComponent::ResetHeavyCombo()
-{
-	HeavyAttackIndex = 0;
-}
