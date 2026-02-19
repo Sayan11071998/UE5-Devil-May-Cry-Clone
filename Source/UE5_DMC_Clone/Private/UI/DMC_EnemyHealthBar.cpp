@@ -17,10 +17,14 @@ void UDMC_EnemyHealthBar::NativeTick(const FGeometry& MyGeometry, float InDeltaT
 
 	if (!OwnerActor) return;
 
-	APawn* PlayerPawn = UGameplayStatics::GetPlayerPawn(GetWorld(), 0);
-	if (!PlayerPawn) return;
+	if (!CachedPlayerPawn)
+	{
+		CachedPlayerPawn = UGameplayStatics::GetPlayerPawn(GetWorld(), 0);
+	}
+	
+	if (!CachedPlayerPawn) return;
 
-	float Distance = FVector::Dist(PlayerPawn->GetActorLocation(), OwnerActor->GetActorLocation());
+	float Distance = FVector::Dist(CachedPlayerPawn->GetActorLocation(), OwnerActor->GetActorLocation());
 
 	if (ExecuteText)
 	{

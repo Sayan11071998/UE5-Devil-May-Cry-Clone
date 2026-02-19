@@ -32,4 +32,8 @@ public:
 	// Weapon Collision
 	virtual void StartWeaponCollision(TSubclassOf<class UDMC_DamageType> DamageType) = 0;
 	virtual void EndWeaponCollision() = 0;
+
+	// Hit Stop
+	virtual void EnableHitStop(bool bInEnable) = 0;
+	virtual void HitStop() = 0;
 };

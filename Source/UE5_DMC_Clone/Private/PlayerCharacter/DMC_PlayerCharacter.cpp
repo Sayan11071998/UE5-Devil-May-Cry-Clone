@@ -509,6 +509,15 @@ bool ADMC_PlayerCharacter::PerformComboExtender()
 
 bool ADMC_PlayerCharacter::SpecialAttack()
 {
+	if (bDodgeAttackEnabled && ComboData && ComboData->DodgeAttackMontage)
+	{
+		if (ExecuteAttack(ComboData->DodgeAttackMontage, ComboData->DodgeBufferAmount))
+		{
+			ResetLightAttackVariables();
+			return true;
+		}
+	}
+
 	if (bPerformChargeAttack)
 	{
 		SetState(EDMC_PlayerState::ECS_Attack);

@@ -26,6 +26,9 @@ protected:
 	
 	UPROPERTY(BlueprintReadOnly, Category = "Health Bar")
 	TObjectPtr<AActor> OwnerActor;
+
+	UPROPERTY()
+	TObjectPtr<APawn> CachedPlayerPawn;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Health Bar")
 	float DisplayRange = 1500.f;

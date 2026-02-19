@@ -30,10 +30,10 @@ public:
 	void ResetDoubleJump();
 	
 	UFUNCTION(BlueprintCallable, Category = "DMC|Combat")
-	void EnableHitStop(bool bInEnable) { bHitStopEnabled = bInEnable; }
+	virtual void EnableHitStop(bool bInEnable) override { bHitStopEnabled = bInEnable; }
 	
 	UFUNCTION(BlueprintCallable, Category = "DMC|Combat")
-	void HitStop();
+	virtual void HitStop() override;
 
 	// Combat || Input Interface -> These are called by Input Bindings or Animation Notifies
 	void LightAttack();
