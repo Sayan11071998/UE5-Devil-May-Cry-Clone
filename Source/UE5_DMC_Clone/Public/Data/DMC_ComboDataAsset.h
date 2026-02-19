@@ -4,6 +4,43 @@
 #include "Engine/DataAsset.h"
 #include "DMC_ComboDataAsset.generated.h"
 
+UENUM(BlueprintType)
+enum class EDMC_SpecialAttackRequirement : uint8
+{
+	ESAR_None UMETA(DisplayName = "None"),
+	ESAR_RequiresTarget UMETA(DisplayName = "Requires Target"),
+	ESAR_RequiresNoTarget UMETA(DisplayName = "Requires No Target"),
+	ESAR_GroundOnly UMETA(DisplayName = "Ground Only"),
+	ESAR_AirOnly UMETA(DisplayName = "Air Only")
+};
+
+USTRUCT(BlueprintType)
+struct FDMC_SpecialAttackData
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	TObjectPtr<UAnimMontage> Montage;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	float BufferAmount = 0.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	float MinForwardDot = -1.1f; // -1.1 means disabled
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	float MaxForwardDot = 1.1f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	TArray<EDMC_SpecialAttackRequirement> Requirements;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	bool bCheckDodgeFlag = false;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	bool bCheckChargeFlag = false;
+};
+
 UCLASS()
 class UE5_DMC_CLONE_API UDMC_ComboDataAsset : public UDataAsset
 {
@@ -39,6 +76,10 @@ public:
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Attack|Special")
 	TObjectPtr<UAnimMontage> RageMontage;
+	
+	/** New Data-Driven Special Attacks */
+	UPROPERTY(EditDefaultsOnly, Category = "Attack|SpecialAttacks")
+	TArray<FDMC_SpecialAttackData> SpecialAttacks;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Combat|Buffers")
 	float LightAttackBuffer = 3.f;

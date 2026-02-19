@@ -509,70 +509,65 @@ bool ADMC_PlayerCharacter::PerformComboExtender()
 
 bool ADMC_PlayerCharacter::SpecialAttack()
 {
-	if (bDodgeAttackEnabled && ComboData && ComboData->DodgeAttackMontage)
+	if (!ComboData || ComboData->SpecialAttacks.Num() == 0) return false;
+
+	const FVector LastInput = GetCharacterMovement()->GetLastInputVector();
+	const float ForwardDot = !LastInput.IsNearlyZero() ? FVector::DotProduct(GetActorForwardVector(), LastInput.GetSafeNormal()) : 0.f;
+	const bool bIsFalling = GetCharacterMovement()->IsFalling();
+	const bool bHasTarget = GetIsTargeting() && GetTargetActor() != nullptr;
+
+	for (const FDMC_SpecialAttackData& AttackData : ComboData->SpecialAttacks)
 	{
-		if (ExecuteAttack(ComboData->DodgeAttackMontage, ComboData->DodgeBufferAmount))
+		if (!AttackData.Montage) continue;
+
+		// 1. Check Flags
+		if (AttackData.bCheckDodgeFlag && !bDodgeAttackEnabled) continue;
+		if (AttackData.bCheckChargeFlag && !bPerformChargeAttack) continue;
+
+		// 2. Check Direction (if enabled)
+		if (AttackData.MinForwardDot > -1.05f || AttackData.MaxForwardDot < 1.05f)
 		{
-			ResetLightAttackVariables();
-			return true;
+			if (LastInput.IsNearlyZero() || ForwardDot < AttackData.MinForwardDot || ForwardDot > AttackData.MaxForwardDot)
+			{
+				continue;
+			}
 		}
-	}
 
-	if (bPerformChargeAttack)
-	{
-		SetState(EDMC_PlayerState::ECS_Attack);
-		ResetLightAttackVariables();
-		ResetHeavyAttackVariables();
-		RotateToTarget();
-		
-		if (BufferComponent)
+		// 3. Check Requirements
+		bool bReqsMet = true;
+		for (EDMC_SpecialAttackRequirement Req : AttackData.Requirements)
 		{
-			BufferComponent->StopBuffer();
-			BufferComponent->StartBuffer(ComboData ? ComboData->ChargedBufferAmount : 5.0f);
+			switch (Req)
+			{
+			case EDMC_SpecialAttackRequirement::ESAR_RequiresTarget:
+				if (!bHasTarget) bReqsMet = false;
+				break;
+			case EDMC_SpecialAttackRequirement::ESAR_RequiresNoTarget:
+				if (bHasTarget) bReqsMet = false;
+				break;
+			case EDMC_SpecialAttackRequirement::ESAR_GroundOnly:
+				if (bIsFalling) bReqsMet = false;
+				break;
+			case EDMC_SpecialAttackRequirement::ESAR_AirOnly:
+				if (!bIsFalling) bReqsMet = false;
+				break;
+			default: ;
+			}
+			if (!bReqsMet) break;
 		}
-		
-		if (ComboData && ComboData->ChargeAttackMontage)
+
+		if (!bReqsMet) continue;
+
+		// If we reached here, all conditions are met!
+		if (ExecuteAttack(AttackData.Montage, AttackData.BufferAmount))
 		{
-			PlayAnimMontage(ComboData->ChargeAttackMontage);
-			return true;
-		}
-	}
-
-	if (GetIsTargeting() && GetTargetActor())
-	{
-		if (IsBusy() || GetCharacterMovement()->IsFalling()) return false;
-
-		FVector LastInput = GetCharacterMovement()->GetLastInputVector();
-		float ForwardValue = FVector::DotProduct(GetActorForwardVector(), LastInput.GetSafeNormal());
-
-		if (ForwardValue > 0.1f)
-		{
-			SetState(EDMC_PlayerState::ECS_Attack);
 			ResetLightAttackVariables();
 			ResetHeavyAttackVariables();
 			RotateToTarget();
-			
-			if (BufferComponent)
-			{
-				BufferComponent->StopBuffer();
-				BufferComponent->StartBuffer(ComboData ? ComboData->StingerAttackBuffer : 25.0f);
-			}
-			
-			if (ComboData && ComboData->StingerAttackMontage)
-			{
-				PlayAnimMontage(ComboData->StingerAttackMontage);
-				return true;
-			}
-		}
-		else if (ForwardValue < -0.1f)
-		{
-			RotateToTarget();
-			SetState(EDMC_PlayerState::ECS_Attack);
-			
 			return true;
 		}
 	}
-	
+
 	return false;
 }
 
