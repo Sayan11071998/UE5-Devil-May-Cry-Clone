@@ -138,6 +138,7 @@ void ADMC_PlayerCharacter::LightAttack()
 	}
 	else
 	{
+		bHitStopEnabled = false;
 		if (SpecialAttack()) return;
 
 		if (!GetCharacterMovement()->IsFalling())
@@ -236,6 +237,20 @@ void ADMC_PlayerCharacter::ResetState()
 	
 	TargetingComp->StopRotation();
 	TargetingComp->ClearSoftTarget();
+
+	bHitStopEnabled = false;
+}
+
+void ADMC_PlayerCharacter::HitStop()
+{
+	if (!bHitStopEnabled) return;
+
+	CustomTimeDilation = HitStopTimeDilation;
+
+	GetWorldTimerManager().SetTimer(HitStopTimerHandle, FTimerDelegate::CreateLambda([this]()
+	{
+		CustomTimeDilation = bRageActive && ComboData ? ComboData->RageTimeDilation : 1.0f;
+	}), HitStopTime, false);
 }
 
 void ADMC_PlayerCharacter::EquipWeapon()
@@ -320,6 +335,8 @@ void ADMC_PlayerCharacter::Landed(const FHitResult& Hit)
 			}
 		}
 	}
+
+	bHitStopEnabled = false;
 }
 
 void ADMC_PlayerCharacter::Move(const FInputActionValue& Value)
