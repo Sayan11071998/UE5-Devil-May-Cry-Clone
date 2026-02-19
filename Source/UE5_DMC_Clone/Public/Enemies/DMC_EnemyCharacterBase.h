@@ -4,6 +4,7 @@
 #include "GameFramework/Character.h"
 #include "DamageTypes/DMC_DamageType.h"
 #include "Components/WidgetComponent.h"
+#include "Interfaces/DMC_CombatInterface.h"
 #include "DMC_EnemyCharacterBase.generated.h"
 
 USTRUCT(BlueprintType)
@@ -19,12 +20,27 @@ struct FDMC_HitReactionData
 };
 
 UCLASS()
-class UE5_DMC_CLONE_API ADMC_EnemyCharacterBase : public ACharacter
+class UE5_DMC_CLONE_API ADMC_EnemyCharacterBase : public ACharacter, public IDMC_CombatInterface
 {
 	GENERATED_BODY()
 
 public:
 	ADMC_EnemyCharacterBase();
+	
+	// ~ Begin IDMC_CombatInterface
+	virtual bool CanBeFinished() const override;
+	virtual void OnFinished(AActor* Attacker) override;
+	
+	// Buffers (minimal implementations for interface compliance if needed, though they have defaults now)
+	virtual void SaveLightAttack() override {}
+	virtual void SaveHeavyAttack() override {}
+	virtual void SaveDodge() override {}
+	virtual void ResetState() override {}
+	virtual void RotateToTarget() override {}
+	virtual void SetAllowPhysicsRotation(bool bAllow) override {}
+	virtual class AActor* GetCombatTarget() const override { return nullptr; }
+	virtual class AActor* GetSoftTarget() const override { return nullptr; }
+	// ~ End IDMC_CombatInterface
 	
 	// ~ Begin APawn interface
 	virtual float TakeDamage(
@@ -34,8 +50,6 @@ public:
 		AActor* DamageCauser	
 	) override;
 	// ~ End APawn interface
-	
-	void Finished(AActor* PlayerAttacker);
 	
 	void SpawnHitFX(AActor* DamageCauser, const FHitResult& HitResult);
 	

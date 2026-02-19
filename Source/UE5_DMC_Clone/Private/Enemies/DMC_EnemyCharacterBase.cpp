@@ -6,6 +6,8 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "Components/DMC_CombatBufferComponent.h"
 #include "UI/DMC_EnemyHealthBar.h"
+#include "PlayerCharacter/DMC_PlayerCharacter.h"
+#include "Components/DMC_TargetingComponent.h"
 
 ADMC_EnemyCharacterBase::ADMC_EnemyCharacterBase()
 {
@@ -84,25 +86,6 @@ float ADMC_EnemyCharacterBase::TakeDamage(float DamageAmount, struct FDamageEven
 	return DamageAmount;
 }
 
-void ADMC_EnemyCharacterBase::Finished(AActor* PlayerAttacker)
-{
-	bDead = true;
-	
-	if (PlayerAttacker)
-	{
-		FRotator LookAtRot = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), PlayerAttacker->GetActorLocation());
-		SetActorRotation(FRotator(0.f, LookAtRot.Yaw, 0.f));
-	}
-
-	if (FinishedMontage)
-	{
-		PlayAnimMontage(FinishedMontage);
-	}
-	
-	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-}
-
 void ADMC_EnemyCharacterBase::SpawnHitFX(AActor* DamageCauser, const FHitResult& HitResult)
 {
 	if (!HitVFX || !DamageCauser) return;
@@ -127,6 +110,31 @@ void ADMC_EnemyCharacterBase::PlayHitReaction(EDMC_DamageType DamageDirection)
 			PlayAnimMontage(Data.HitReactMontage);
 		}
 	}
+}
+
+bool ADMC_EnemyCharacterBase::CanBeFinished() const
+{
+	if (bDead) return false;
+	return (Health / MaxHealth) <= 0.1f;
+}
+
+void ADMC_EnemyCharacterBase::OnFinished(AActor* Attacker)
+{
+	if (bDead) return;
+
+	bDead = true;
+	if (FinishedMontage)
+	{
+		PlayAnimMontage(FinishedMontage);
+	}
+	
+	if (UDMC_TargetingComponent* TargetingComp = Cast<ADMC_PlayerCharacter>(Attacker)->GetTargetingComp())
+	{
+		TargetingComp->StopLockOn();
+	}
+
+	Health = 0.f;
+	Death();
 }
 
 void ADMC_EnemyCharacterBase::Death()

@@ -1,6 +1,6 @@
 #include "Components/DMC_FinisherComponent.h"
 #include "PlayerCharacter/DMC_PlayerCharacter.h"
-#include "Enemies/DMC_EnemyCharacterBase.h"
+#include "Interfaces/DMC_CombatInterface.h"
 #include "Components/DMC_TargetingComponent.h"
 #include "Components/DMC_CombatBufferComponent.h"
 #include "Data/DMC_ComboDataAsset.h"
@@ -37,9 +37,9 @@ void UDMC_FinisherComponent::TryExecuteFinisher()
 		float Distance = PlayerOwner->GetDistanceTo(Target);
 		if (ComboData && Distance <= ComboData->FinisherAttackDistance)
 		{
-			if (ADMC_EnemyCharacterBase* Enemy = Cast<ADMC_EnemyCharacterBase>(Target))
+			if (IDMC_CombatInterface* CombatInterface = Cast<IDMC_CombatInterface>(Target))
 			{
-				if (Enemy->GetHealth() / Enemy->GetMaxHealth() > 0.1f) return;
+				if (!CombatInterface->CanBeFinished()) return;
 
 				if (UDMC_TargetingComponent* TargetingComp = PlayerOwner->GetTargetingComp())
 				{
@@ -50,7 +50,7 @@ void UDMC_FinisherComponent::TryExecuteFinisher()
 					BufferComponent->StopBuffer();
 				}
 				
-				Enemy->Finished(PlayerOwner);
+				CombatInterface->OnFinished(PlayerOwner);
 
 				FRotator LookAtRot = UKismetMathLibrary::FindLookAtRotation(PlayerOwner->GetActorLocation(), Target->GetActorLocation());
 				PlayerOwner->SetActorRotation(FRotator(0.f, LookAtRot.Yaw, 0.f));
