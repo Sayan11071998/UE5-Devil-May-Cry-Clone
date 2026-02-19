@@ -38,44 +38,67 @@ class UE5_DMC_CLONE_API UDMC_CombatComponent : public UActorComponent
 public:
 	UDMC_CombatComponent();
 
+	// ~ Begin Combat API
+	/** Initiates a light attack combo step */
 	void PerformLightAttack();
+	
+	/** Initiates a heavy attack combo step */
 	void PerformHeavyAttack();
+	
+	/** Initiates a dodge maneuver */
 	void PerformDodge();
+	
+	/** Checks and executes available special attacks based on current context */
 	void SpecialAttack();
+	
+	/** Consumes any buffered input and executes the corresponding action */
 	void TryConsumeBufferedInput();
 	
+	/** Low-level attack execution with animation and buffering */
 	bool ExecuteAttack(const FDMC_AttackData& AttackData);
+	// ~ End Combat API
 	
-	// Index Resetters
+	// ~ Begin State API
+	/** Resets specific combo indices */
 	void ResetLightCombo() { ComboState.LightIndex = 0; }
 	void ResetHeavyCombo() { ComboState.HeavyIndex = 0; }
 	
-	// Getters
+	/** Combat state getters */
 	FORCEINLINE int32 GetLightAttackIndex() const { return ComboState.LightIndex; }
 	FORCEINLINE int32 GetHeavyAttackIndex() const { return ComboState.HeavyIndex; }
 	FORCEINLINE int32 GetComboExtenderIndex() const { return ComboState.ExtenderIndex; }
 
-	// Flag State
+	/** Combat flag management */
 	FORCEINLINE void SetDodgeAttackEnabled(bool bEnabled) { bDodgeAttackEnabled = bEnabled; }
 	FORCEINLINE void SetPerformChargeAttack(bool bPerform) { bPerformChargeAttack = bPerform; }
 	FORCEINLINE bool GetDodgeAttackEnabled() const { return bDodgeAttackEnabled; }
 	FORCEINLINE bool GetPerformChargeAttack() const { return bPerformChargeAttack; }
+	// ~ End State API
 
 protected:
 	virtual void BeginPlay() override;
 
 private:
-	// Internal Helpers
+	// ~ Begin Internal Helpers
+	/** Logic for iterating through a combo array safely */
 	bool Internal_ExecuteComboStep(const TArray<FDMC_AttackData>& ComboArray, int32& OutIndex);
-	bool Internal_PerformComboStarter();
-	bool Internal_PerformComboExtender();
 	
+	/** Logic for high-to-low combo transitions */
+	bool Internal_PerformComboStarter();
+	
+	/** Logic for low-to-high combo finishers */
+	bool Internal_PerformComboExtender();
+	// ~ End Internal Helpers
+	
+	/** The player character that owns this component */
 	UPROPERTY()
 	TObjectPtr<ADMC_PlayerCharacter> PlayerOwner;
 
+	/** Internal tracking of combo indices */
 	UPROPERTY(VisibleAnywhere, Category = "DMC|Combat")
 	FDMC_ComboState ComboState;
 
+	/** Transient combat flags */
 	bool bDodgeAttackEnabled = false;
 	bool bPerformChargeAttack = false;
 };

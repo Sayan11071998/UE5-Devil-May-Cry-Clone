@@ -1,10 +1,8 @@
 #include "Components/DMC_CombatComponent.h"
 #include "PlayerCharacter/DMC_PlayerCharacter.h"
-#include "Data/DMC_ComboDataAsset.h"
 #include "Components/DMC_CombatBufferComponent.h"
 #include "Components/DMC_RageComponent.h"
 #include "Components/DMC_TargetingComponent.h"
-#include "Data/DMC_ComboDataAsset.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
 UDMC_CombatComponent::UDMC_CombatComponent()
@@ -18,6 +16,7 @@ void UDMC_CombatComponent::BeginPlay()
 	PlayerOwner = Cast<ADMC_PlayerCharacter>(GetOwner());
 }
 
+// ~ Begin Combat API
 void UDMC_CombatComponent::PerformLightAttack()
 {
 	if (!PlayerOwner) return;
@@ -29,14 +28,10 @@ void UDMC_CombatComponent::PerformLightAttack()
 			Buffer->BufferInput(EDMC_BufferedInput::EBI_LightAttack);
 		}
 	}
-	else
+	else if (!PlayerOwner->GetCharacterMovement()->IsFalling())
 	{
-		// Special Attack logic (Stinger, etc.) still handled by character for now via delegated calls
-		if (!PlayerOwner->GetCharacterMovement()->IsFalling())
-		{
-			ResetHeavyCombo();
-			Internal_ExecuteComboStep(PlayerOwner->IsRaging() ? PlayerOwner->GetComboData()->LightAttackRageCombo : PlayerOwner->GetComboData()->LightAttackCombo, ComboState.LightIndex);
-		}
+		ResetHeavyCombo();
+		Internal_ExecuteComboStep(PlayerOwner->IsRaging() ? PlayerOwner->GetComboData()->LightAttackRageCombo : PlayerOwner->GetComboData()->LightAttackCombo, ComboState.LightIndex);
 	}
 }
 
@@ -51,13 +46,10 @@ void UDMC_CombatComponent::PerformHeavyAttack()
 			Buffer->BufferInput(EDMC_BufferedInput::EBI_HeavyAttack);
 		}
 	}
-	else
+	else if (!PlayerOwner->GetCharacterMovement()->IsFalling())
 	{
-		if (!PlayerOwner->GetCharacterMovement()->IsFalling())
-		{
-			ResetLightCombo();
-			Internal_ExecuteComboStep(PlayerOwner->GetComboData()->HeavyAttackCombo, ComboState.HeavyIndex);
-		}
+		ResetLightCombo();
+		Internal_ExecuteComboStep(PlayerOwner->GetComboData()->HeavyAttackCombo, ComboState.HeavyIndex);
 	}
 }
 
@@ -67,12 +59,13 @@ void UDMC_CombatComponent::PerformDodge()
 
 	PlayerOwner->StopRotation();
 	bPerformChargeAttack = false;
+	
 	if (UDMC_TargetingComponent* Targeting = PlayerOwner->GetTargetingComp())
 	{
 		Targeting->ClearSoftTarget();
 	}
 	
-	FVector LastInput = PlayerOwner->GetCharacterMovement()->GetLastInputVector();
+	const FVector LastInput = PlayerOwner->GetCharacterMovement()->GetLastInputVector();
 	if (!LastInput.IsNearlyZero())
 	{
 		PlayerOwner->SetActorRotation(LastInput.Rotation());
@@ -83,8 +76,7 @@ void UDMC_CombatComponent::PerformDodge()
 		Buffer->StopBuffer();
 	}
 	
-	UDMC_ComboDataAsset* ComboData = PlayerOwner->GetComboData();
-	if (ComboData)
+	if (UDMC_ComboDataAsset* ComboData = PlayerOwner->GetComboData())
 	{
 		if (UDMC_CombatBufferComponent* Buffer = PlayerOwner->GetBufferComponent())
 		{
@@ -92,7 +84,6 @@ void UDMC_CombatComponent::PerformDodge()
 		}
 		
 		PlayerOwner->SetState(EDMC_PlayerState::ECS_Dodge);
-		
 		if (ComboData->DodgeData.Montage)
 		{
 			PlayerOwner->PlayAnimMontage(ComboData->DodgeData.Montage);
@@ -114,11 +105,11 @@ void UDMC_CombatComponent::SpecialAttack()
 	{
 		if (!AttackData.Montage) continue;
 
-		// 1. Check Flags
+		// 1. Check Specific Flags (Dodge/Charge context)
 		if (AttackData.bCheckDodgeFlag && !bDodgeAttackEnabled) continue;
 		if (AttackData.bCheckChargeFlag && !bPerformChargeAttack) continue;
 
-		// 2. Check Direction (if enabled)
+		// 2. Check Directional Alignment
 		if (AttackData.MinForwardDot > -1.05f || AttackData.MaxForwardDot < 1.05f)
 		{
 			if (LastInput.IsNearlyZero() || ForwardDot < AttackData.MinForwardDot || ForwardDot > AttackData.MaxForwardDot)
@@ -127,7 +118,7 @@ void UDMC_CombatComponent::SpecialAttack()
 			}
 		}
 
-		// 3. Check Requirements
+		// 3. Check Contextual Requirements
 		bool bReqsMet = true;
 		for (EDMC_SpecialAttackRequirement Req : AttackData.Requirements)
 		{
@@ -145,21 +136,45 @@ void UDMC_CombatComponent::SpecialAttack()
 			case EDMC_SpecialAttackRequirement::ESAR_AirOnly:
 				if (!bIsFalling) bReqsMet = false;
 				break;
-			default: ;
+			case EDMC_SpecialAttackRequirement::ESAR_FinisherOnly:
+				bReqsMet = false; // FinisherOnly is handled by FinisherComponent
+				break;
 			}
 			if (!bReqsMet) break;
 		}
 
-		if (!bReqsMet) continue;
-
-		// If we reached here, all conditions are met!
-		if (ExecuteAttack(FDMC_AttackData{AttackData.Montage, AttackData.BufferAmount}))
+		if (bReqsMet && ExecuteAttack(FDMC_AttackData{AttackData.Montage, AttackData.BufferAmount}))
 		{
 			PlayerOwner->ResetLightAttackVariables();
 			PlayerOwner->ResetHeavyAttackVariables();
 			PlayerOwner->RotateToTarget();
 			return;
 		}
+	}
+}
+
+void UDMC_CombatComponent::TryConsumeBufferedInput()
+{
+	if (!PlayerOwner) return;
+	UDMC_CombatBufferComponent* Buffer = PlayerOwner->GetBufferComponent();
+	if (!Buffer || !Buffer->HasBufferedInput()) return;
+
+	const EDMC_BufferedInput Input = Buffer->PopInput();
+	PlayerOwner->SetState(EDMC_PlayerState::ECS_Nothing);
+
+	switch (Input)
+	{
+	case EDMC_BufferedInput::EBI_Dodge:
+		PerformDodge();
+		break;
+	case EDMC_BufferedInput::EBI_LightAttack:
+		if (ComboState.HeavyIndex > 0) Internal_PerformComboStarter();
+		else PerformLightAttack();
+		break;
+	case EDMC_BufferedInput::EBI_HeavyAttack:
+		if (ComboState.ExtenderIndex > 0) Internal_PerformComboExtender();
+		else PerformHeavyAttack();
+		break;
 	}
 }
 
@@ -179,31 +194,27 @@ bool UDMC_CombatComponent::ExecuteAttack(const FDMC_AttackData& AttackData)
 
 	return true;
 }
+// ~ End Combat API
 
+// ~ Begin Internal Helpers
 bool UDMC_CombatComponent::Internal_ExecuteComboStep(const TArray<FDMC_AttackData>& ComboArray, int32& OutIndex)
 {
 	if (!ComboArray.IsValidIndex(OutIndex)) return false;
 
 	if (ExecuteAttack(ComboArray[OutIndex]))
 	{
-		OutIndex++;
-		if (OutIndex >= ComboArray.Num())
-		{
-			OutIndex = 0;
-		}
+		OutIndex = (OutIndex + 1) % ComboArray.Num();
 		return true;
 	}
 	return false;
 }
-
 
 bool UDMC_CombatComponent::Internal_PerformComboStarter()
 {
 	UDMC_ComboDataAsset* ComboData = PlayerOwner->GetComboData();
 	if (!ComboData || PlayerOwner->IsBusy() || PlayerOwner->GetCharacterMovement()->IsFalling()) return false;
 	
-	int32 HL_ComboStarterIndex = ComboState.HeavyIndex - 1;
-	
+	const int32 HL_ComboStarterIndex = ComboState.HeavyIndex - 1;
 	if (ComboData->ComboStarterMontages.IsValidIndex(HL_ComboStarterIndex))
 	{
 		if (ExecuteAttack(ComboData->ComboStarterMontages[HL_ComboStarterIndex]))
@@ -213,7 +224,6 @@ bool UDMC_CombatComponent::Internal_PerformComboStarter()
 			return true;
 		}
 	}
-	
 	return false;
 }
 
@@ -222,8 +232,7 @@ bool UDMC_CombatComponent::Internal_PerformComboExtender()
 	UDMC_ComboDataAsset* ComboData = PlayerOwner->GetComboData();
 	if (!ComboData || PlayerOwner->IsBusy() || PlayerOwner->GetCharacterMovement()->IsFalling()) return false;
 
-	int32 LH_FinisherIndex = ComboState.ExtenderIndex - 1;
-	
+	const int32 LH_FinisherIndex = ComboState.ExtenderIndex - 1;
 	if (ComboData->ComboExtenderMontages.IsValidIndex(LH_FinisherIndex))
 	{
 		if (ExecuteAttack(ComboData->ComboExtenderMontages[LH_FinisherIndex]))
@@ -232,46 +241,7 @@ bool UDMC_CombatComponent::Internal_PerformComboExtender()
 			return true;
 		}
 	}
-	
 	return false;
 }
-
-void UDMC_CombatComponent::TryConsumeBufferedInput()
-{
-	if (!PlayerOwner) return;
-	UDMC_CombatBufferComponent* Buffer = PlayerOwner->GetBufferComponent();
-	if (!Buffer || !Buffer->HasBufferedInput()) return;
-
-	EDMC_BufferedInput Input = Buffer->PopInput();
-	PlayerOwner->SetState(EDMC_PlayerState::ECS_Nothing);
-
-	switch (Input)
-	{
-	case EDMC_BufferedInput::EBI_Dodge:
-		PerformDodge();
-		break;
-	case EDMC_BufferedInput::EBI_LightAttack:
-		if (ComboState.HeavyIndex > 0)
-		{
-			Internal_PerformComboStarter();
-		}
-		else
-		{
-			PerformLightAttack();
-		}
-		break;
-	case EDMC_BufferedInput::EBI_HeavyAttack:
-		if (ComboState.ExtenderIndex > 0)
-		{
-			Internal_PerformComboExtender();
-		}
-		else
-		{
-			PerformHeavyAttack();
-		}
-		break;
-	default:
-		break;
-	}
-}
+// ~ End Internal Helpers
 

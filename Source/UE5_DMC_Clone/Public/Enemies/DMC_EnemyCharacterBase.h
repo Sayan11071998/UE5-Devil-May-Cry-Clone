@@ -27,11 +27,9 @@ class UE5_DMC_CLONE_API ADMC_EnemyCharacterBase : public ACharacter, public IDMC
 public:
 	ADMC_EnemyCharacterBase();
 	
-	// ~ Begin IDMC_CombatInterface
+	// ~ Begin IDMC_CombatInterface Implementation
 	virtual bool CanBeFinished() const override;
 	virtual void OnFinished(AActor* Attacker) override;
-	
-	// Buffers (minimal implementations for interface compliance if needed, though they have defaults now)
 	virtual void SaveLightAttack() override {}
 	virtual void SaveHeavyAttack() override {}
 	virtual void SaveDodge() override {}
@@ -40,57 +38,60 @@ public:
 	virtual void SetAllowPhysicsRotation(bool bAllow) override {}
 	virtual class AActor* GetCombatTarget() const override { return nullptr; }
 	virtual class AActor* GetSoftTarget() const override { return nullptr; }
-	// ~ End IDMC_CombatInterface
+	// ~ End IDMC_CombatInterface Implementation
 	
-	// ~ Begin APawn interface
-	virtual float TakeDamage(
-		float DamageAmount,
-		struct FDamageEvent const& DamageEvent,
-		class AController* EventInstigator,
-		AActor* DamageCauser	
-	) override;
-	// ~ End APawn interface
+	// ~ Begin AActor Interface
+	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
+	// ~ End AActor Interface
 	
+	/** Visual feedback for hits */
 	void SpawnHitFX(AActor* DamageCauser, const FHitResult& HitResult);
 	
+	/** Public state accessors */
+	FORCEINLINE bool IsDead() const { return bDead; }
+	FORCEINLINE float GetHealth() const { return Health; }
+	FORCEINLINE float GetMaxHealth() const { return MaxHealth; }
+
 protected:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
 	
-	// Link a Damage Type to a specific Animation and Pushback amount
-	UPROPERTY(EditDefaultsOnly, Category = "Combat|Hit Reaction")
+	/** Map of damage types to their corresponding reactions */
+	UPROPERTY(EditDefaultsOnly, Category = "DMC|Combat")
 	TMap<EDMC_DamageType, FDMC_HitReactionData> HitReactionMap;
 	
+	/** Triggers a hit reaction animation and pushback */
 	void PlayHitReaction(EDMC_DamageType DamageDirection);
 	
 private:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat", meta = (AllowPrivateAccess = "true"))
+	/** Final cleanup and death signal */
+	void Death();
+
+	// ~ Begin Combat Properties
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "DMC|Combat", meta = (AllowPrivateAccess = "true"))
 	float Health = 100.f;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "DMC|Combat", meta = (AllowPrivateAccess = "true"))
 	float MaxHealth = 100.f;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "DMC|Combat", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UAnimMontage> FinishedMontage;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "DMC|Combat", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UAnimMontage> DeathMontage;
 	
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "DMC|Combat", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UDMC_CombatBufferComponent> BufferComponent;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat|VFX", meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<class UNiagaraSystem> HitVFX;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "UI", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "DMC|Combat", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class UNiagaraSystem> HitVFX;
+	// ~ End Combat Properties
+
+	// ~ Begin UI Components
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "DMC|UI", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UWidgetComponent> HealthBarWidget;
+	// ~ End UI Components
 	
+	/** Internal life state */
 	bool bDead = false;
-	
-	void Death();
-	
-public:
-	FORCEINLINE bool IsDead() const { return bDead; }
-	FORCEINLINE float GetHealth() const { return Health; }
-	FORCEINLINE float GetMaxHealth() const { return MaxHealth; }
 };

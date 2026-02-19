@@ -96,9 +96,6 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "Attack|Combos|Special")
 	TArray<FDMC_AttackData> ComboExtenderMontages;
 	
-	UPROPERTY(EditDefaultsOnly, Category = "Attack|SpecialAttacks")
-	FDMC_AttackData FinisherAttackData;
-
 	UPROPERTY(EditDefaultsOnly, Category = "Attack|Special")
 	TObjectPtr<UAnimMontage> RageMontage;
 	

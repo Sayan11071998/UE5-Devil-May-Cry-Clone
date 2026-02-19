@@ -56,9 +56,19 @@ void UDMC_FinisherComponent::TryExecuteFinisher()
 				PlayerOwner->SetActorRotation(FRotator(0.f, LookAtRot.Yaw, 0.f));
 				PlayerOwner->SetState(EDMC_PlayerState::ECS_Finisher);
 				
-				if (ComboData->FinisherAttackData.Montage)
+				UAnimMontage* FinisherMontage = nullptr;
+				for (const FDMC_SpecialAttackData& AttackData : ComboData->SpecialAttacks)
 				{
-					PlayerOwner->PlayAnimMontage(ComboData->FinisherAttackData.Montage);
+					if (AttackData.Requirements.Contains(EDMC_SpecialAttackRequirement::ESAR_FinisherOnly))
+					{
+						FinisherMontage = AttackData.Montage;
+						break;
+					}
+				}
+
+				if (FinisherMontage)
+				{
+					PlayerOwner->PlayAnimMontage(FinisherMontage);
 				}
 
 				if (UDMC_TargetingComponent* TargetingComp = PlayerOwner->GetTargetingComp())
