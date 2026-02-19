@@ -3,11 +3,10 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "PlayerCharacter/DMC_CharacterTypes.h"
+#include "Data/DMC_ComboDataAsset.h"
 #include "DMC_CombatComponent.generated.h"
 
 class ADMC_PlayerCharacter;
-class UAnimMontage;
-class UDMC_ComboDataAsset;
 
 USTRUCT(BlueprintType)
 struct FDMC_ComboState
@@ -45,7 +44,7 @@ public:
 	void SpecialAttack();
 	void TryConsumeBufferedInput();
 	
-	bool ExecuteAttack(UAnimMontage* Montage, float BufferAmount);
+	bool ExecuteAttack(const FDMC_AttackData& AttackData);
 	
 	// Index Resetters
 	void ResetLightCombo() { ComboState.LightIndex = 0; }
@@ -67,8 +66,7 @@ protected:
 
 private:
 	// Internal Helpers
-	bool Internal_PerformLightAttack(int32 InAttackIndex);
-	bool Internal_PerformHeavyAttack(int32 InAttackIndex);
+	bool Internal_ExecuteComboStep(const TArray<FDMC_AttackData>& ComboArray, int32& OutIndex);
 	bool Internal_PerformComboStarter();
 	bool Internal_PerformComboExtender();
 	

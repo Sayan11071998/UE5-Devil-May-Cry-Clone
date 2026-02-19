@@ -35,7 +35,7 @@ void UDMC_CombatComponent::PerformLightAttack()
 		if (!PlayerOwner->GetCharacterMovement()->IsFalling())
 		{
 			ResetHeavyCombo();
-			Internal_PerformLightAttack(ComboState.LightIndex);
+			Internal_ExecuteComboStep(PlayerOwner->IsRaging() ? PlayerOwner->GetComboData()->LightAttackRageCombo : PlayerOwner->GetComboData()->LightAttackCombo, ComboState.LightIndex);
 		}
 	}
 }
@@ -56,7 +56,7 @@ void UDMC_CombatComponent::PerformHeavyAttack()
 		if (!PlayerOwner->GetCharacterMovement()->IsFalling())
 		{
 			ResetLightCombo();
-			Internal_PerformHeavyAttack(ComboState.HeavyIndex);
+			Internal_ExecuteComboStep(PlayerOwner->GetComboData()->HeavyAttackCombo, ComboState.HeavyIndex);
 		}
 	}
 }
@@ -88,14 +88,14 @@ void UDMC_CombatComponent::PerformDodge()
 	{
 		if (UDMC_CombatBufferComponent* Buffer = PlayerOwner->GetBufferComponent())
 		{
-			Buffer->StartBuffer(ComboData->DodgeBufferAmount);
+			Buffer->StartBuffer(ComboData->DodgeData.BufferAmount);
 		}
 		
 		PlayerOwner->SetState(EDMC_PlayerState::ECS_Dodge);
 		
-		if (ComboData->DodgeMontage)
+		if (ComboData->DodgeData.Montage)
 		{
-			PlayerOwner->PlayAnimMontage(ComboData->DodgeMontage);
+			PlayerOwner->PlayAnimMontage(ComboData->DodgeData.Montage);
 		}
 	}
 }
@@ -153,7 +153,7 @@ void UDMC_CombatComponent::SpecialAttack()
 		if (!bReqsMet) continue;
 
 		// If we reached here, all conditions are met!
-		if (ExecuteAttack(AttackData.Montage, AttackData.BufferAmount))
+		if (ExecuteAttack(FDMC_AttackData{AttackData.Montage, AttackData.BufferAmount}))
 		{
 			PlayerOwner->ResetLightAttackVariables();
 			PlayerOwner->ResetHeavyAttackVariables();
@@ -163,63 +163,39 @@ void UDMC_CombatComponent::SpecialAttack()
 	}
 }
 
-bool UDMC_CombatComponent::ExecuteAttack(UAnimMontage* Montage, float BufferAmount)
+bool UDMC_CombatComponent::ExecuteAttack(const FDMC_AttackData& AttackData)
 {
-	if (!PlayerOwner || !Montage) return false;
+	if (!PlayerOwner || !AttackData.Montage) return false;
 
 	if (UDMC_CombatBufferComponent* Buffer = PlayerOwner->GetBufferComponent())
 	{
 		Buffer->StopBuffer();
-		Buffer->StartBuffer(BufferAmount);
+		Buffer->StartBuffer(AttackData.BufferAmount);
 	}
 
 	PlayerOwner->SetState(EDMC_PlayerState::ECS_Attack);
 	PlayerOwner->SoftLockOn();
-	PlayerOwner->PlayAnimMontage(Montage);
+	PlayerOwner->PlayAnimMontage(AttackData.Montage);
 
 	return true;
 }
 
-bool UDMC_CombatComponent::Internal_PerformLightAttack(int32 InAttackIndex)
+bool UDMC_CombatComponent::Internal_ExecuteComboStep(const TArray<FDMC_AttackData>& ComboArray, int32& OutIndex)
 {
-	UDMC_ComboDataAsset* ComboData = PlayerOwner->GetComboData();
-	if (!ComboData) return false;
+	if (!ComboArray.IsValidIndex(OutIndex)) return false;
 
-	const bool bIsRageActive = PlayerOwner->IsRaging();
-	const TArray<TObjectPtr<UAnimMontage>>& CurrentCombo = bIsRageActive ? ComboData->LightAttackRageCombo : ComboData->LightAttackCombo;
-
-	if (!CurrentCombo.IsValidIndex(InAttackIndex)) return false;
-
-	if (ExecuteAttack(CurrentCombo[InAttackIndex], ComboData->LightAttackBuffer))
+	if (ExecuteAttack(ComboArray[OutIndex]))
 	{
-		ComboState.LightIndex++;
-		if (ComboState.LightIndex >= CurrentCombo.Num())
+		OutIndex++;
+		if (OutIndex >= ComboArray.Num())
 		{
-			ComboState.LightIndex = 0;
+			OutIndex = 0;
 		}
 		return true;
 	}
-	
 	return false;
 }
 
-bool UDMC_CombatComponent::Internal_PerformHeavyAttack(int32 InAttackIndex)
-{
-	UDMC_ComboDataAsset* ComboData = PlayerOwner->GetComboData();
-	if (!ComboData || !ComboData->HeavyAttackCombo.IsValidIndex(InAttackIndex)) return false;
-
-	if (ExecuteAttack(ComboData->HeavyAttackCombo[InAttackIndex], ComboData->HeavyAttackBuffer))
-	{
-		ComboState.HeavyIndex++;
-		if (ComboState.HeavyIndex >= ComboData->HeavyAttackCombo.Num())
-		{
-			ComboState.HeavyIndex = 0;
-		}
-		return true;
-	}
-	
-	return false;
-}
 
 bool UDMC_CombatComponent::Internal_PerformComboStarter()
 {
@@ -230,7 +206,7 @@ bool UDMC_CombatComponent::Internal_PerformComboStarter()
 	
 	if (ComboData->ComboStarterMontages.IsValidIndex(HL_ComboStarterIndex))
 	{
-		if (ExecuteAttack(ComboData->ComboStarterMontages[HL_ComboStarterIndex], ComboData->StarterAttackBuffer))
+		if (ExecuteAttack(ComboData->ComboStarterMontages[HL_ComboStarterIndex]))
 		{
 			ComboState.ExtenderIndex = ComboState.HeavyIndex;
 			ResetHeavyCombo();
@@ -250,7 +226,7 @@ bool UDMC_CombatComponent::Internal_PerformComboExtender()
 	
 	if (ComboData->ComboExtenderMontages.IsValidIndex(LH_FinisherIndex))
 	{
-		if (ExecuteAttack(ComboData->ComboExtenderMontages[LH_FinisherIndex], ComboData->ExtenderAttackBuffer))
+		if (ExecuteAttack(ComboData->ComboExtenderMontages[LH_FinisherIndex]))
 		{
 			ComboState.ExtenderIndex = 0;
 			return true;

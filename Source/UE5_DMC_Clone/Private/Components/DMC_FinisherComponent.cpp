@@ -56,9 +56,9 @@ void UDMC_FinisherComponent::TryExecuteFinisher()
 				PlayerOwner->SetActorRotation(FRotator(0.f, LookAtRot.Yaw, 0.f));
 				PlayerOwner->SetState(EDMC_PlayerState::ECS_Finisher);
 				
-				if (ComboData->FinisherAttackMontage)
+				if (ComboData->FinisherAttackData.Montage)
 				{
-					PlayerOwner->PlayAnimMontage(ComboData->FinisherAttackMontage);
+					PlayerOwner->PlayAnimMontage(ComboData->FinisherAttackData.Montage);
 				}
 
 				if (UDMC_TargetingComponent* TargetingComp = PlayerOwner->GetTargetingComp())

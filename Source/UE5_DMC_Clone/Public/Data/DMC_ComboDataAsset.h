@@ -15,6 +15,18 @@ enum class EDMC_SpecialAttackRequirement : uint8
 };
 
 USTRUCT(BlueprintType)
+struct FDMC_AttackData
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	TObjectPtr<UAnimMontage> Montage;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	float BufferAmount = 3.f;
+};
+
+USTRUCT(BlueprintType)
 struct FDMC_SpecialAttackData
 {
 	GENERATED_BODY()
@@ -69,32 +81,29 @@ class UE5_DMC_CLONE_API UDMC_ComboDataAsset : public UDataAsset
 	
 public:
 	UPROPERTY(EditDefaultsOnly, Category = "Attack|Combos|Light")
-	TArray<TObjectPtr<UAnimMontage>> LightAttackCombo;
+	TArray<FDMC_AttackData> LightAttackCombo;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Attack|Combos|Light")
-	TArray<TObjectPtr<UAnimMontage>> LightAttackRageCombo;
+	TArray<FDMC_AttackData> LightAttackRageCombo;
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Attack|Combos|Heavy")
-	TArray<TObjectPtr<UAnimMontage>> HeavyAttackCombo;
+	TArray<FDMC_AttackData> HeavyAttackCombo;
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Attack|Combos|Special")
-	TArray<TObjectPtr<UAnimMontage>> ComboStarterMontages;
+	TArray<FDMC_AttackData> ComboStarterMontages;
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Attack|Combos|Special")
-	TArray<TObjectPtr<UAnimMontage>> ComboExtenderMontages;
+	TArray<FDMC_AttackData> ComboExtenderMontages;
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Attack|SpecialAttacks")
-	TObjectPtr<UAnimMontage> StingerAttackMontage;
+	FDMC_AttackData StingerAttackData;
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Attack|SpecialAttacks")
-	TObjectPtr<UAnimMontage> DodgeAttackMontage;
+	FDMC_AttackData FinisherAttackData;
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Attack|SpecialAttacks")
-	TObjectPtr<UAnimMontage> FinisherAttackMontage;
-	
-	UPROPERTY(EditDefaultsOnly, Category = "Attack|SpecialAttacks")
-	TObjectPtr<UAnimMontage> ChargeAttackMontage;
-	
+	FDMC_AttackData ChargeAttackData;
+
 	UPROPERTY(EditDefaultsOnly, Category = "Attack|Special")
 	TObjectPtr<UAnimMontage> RageMontage;
 	
@@ -102,29 +111,8 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "Attack|SpecialAttacks")
 	TArray<FDMC_SpecialAttackData> SpecialAttacks;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Combat|Buffers")
-	float LightAttackBuffer = 3.f;
-	
-	UPROPERTY(EditDefaultsOnly, Category = "Combat|Buffers")
-	float HeavyAttackBuffer = 3.f;
-	
-	UPROPERTY(EditDefaultsOnly, Category = "Combat|Buffers")
-	float StarterAttackBuffer = 3.f;
-	
-	UPROPERTY(EditDefaultsOnly, Category = "Combat|Buffers")
-	float ExtenderAttackBuffer = 3.f;
-	
-	UPROPERTY(EditDefaultsOnly, Category = "Combat|Buffers")
-	float StingerAttackBuffer = 25.f;
-	
-	UPROPERTY(EditDefaultsOnly, Category = "Combat|Buffers")
-	float ChargedBufferAmount = 5.f;
-	
-	UPROPERTY(EditDefaultsOnly, Category = "Combat|Buffers")
-	float DodgeBufferAmount = 20.f;
-
 	UPROPERTY(EditDefaultsOnly, Category = "Combat|Dodge")
-	TObjectPtr<UAnimMontage> DodgeMontage;
+	FDMC_AttackData DodgeData;
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Combat|Finisher")
 	float FinisherAttackDistance = 100.f;
@@ -132,13 +120,6 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "Combat|Rage")
 	TArray<FDMC_RageStage> RageSequence;
 	
-	UPROPERTY(EditDefaultsOnly, Category = "Effects|Rage", meta = (DEPRECATED = "Use RageSequence instead"))
-	TObjectPtr<UParticleSystem> RageParticles_1;
-	UPROPERTY(EditDefaultsOnly, Category = "Effects|Rage", meta = (DEPRECATED = "Use RageSequence instead"))
-	TObjectPtr<UParticleSystem> RageParticles_2;
-	UPROPERTY(EditDefaultsOnly, Category = "Effects|Rage", meta = (DEPRECATED = "Use RageSequence instead"))
-	TObjectPtr<UMaterialInterface> RageOverlayMaterial;
-
 	UPROPERTY(EditDefaultsOnly, Category = "Combat|Rage")
 	float RageTimeDilation = 1.15f;
 
