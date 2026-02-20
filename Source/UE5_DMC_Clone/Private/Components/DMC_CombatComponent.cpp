@@ -1,7 +1,6 @@
 #include "Components/DMC_CombatComponent.h"
 #include "PlayerCharacter/DMC_PlayerCharacter.h"
 #include "Components/DMC_CombatBufferComponent.h"
-#include "Components/DMC_RageComponent.h"
 #include "Components/DMC_TargetingComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
@@ -16,7 +15,6 @@ void UDMC_CombatComponent::BeginPlay()
 	PlayerOwner = Cast<ADMC_PlayerCharacter>(GetOwner());
 }
 
-// ~ Begin Combat API
 void UDMC_CombatComponent::PerformLightAttack()
 {
 	if (!PlayerOwner) return;
@@ -104,12 +102,10 @@ void UDMC_CombatComponent::SpecialAttack()
 	for (const FDMC_SpecialAttackData& AttackData : ComboData->SpecialAttacks)
 	{
 		if (!AttackData.Montage) continue;
-
-		// 1. Check Specific Flags (Dodge/Charge context)
 		if (AttackData.bCheckDodgeFlag && !bDodgeAttackEnabled) continue;
 		if (AttackData.bCheckChargeFlag && !bPerformChargeAttack) continue;
 
-		// 2. Check Directional Alignment
+		// Check Directional Alignment
 		if (AttackData.MinForwardDot > -1.05f || AttackData.MaxForwardDot < 1.05f)
 		{
 			if (LastInput.IsNearlyZero() || ForwardDot < AttackData.MinForwardDot || ForwardDot > AttackData.MaxForwardDot)
@@ -117,8 +113,7 @@ void UDMC_CombatComponent::SpecialAttack()
 				continue;
 			}
 		}
-
-		// 3. Check Contextual Requirements
+		
 		bool bReqsMet = true;
 		for (EDMC_SpecialAttackRequirement Req : AttackData.Requirements)
 		{
@@ -127,19 +122,27 @@ void UDMC_CombatComponent::SpecialAttack()
 			case EDMC_SpecialAttackRequirement::ESAR_RequiresTarget:
 				if (!bHasTarget) bReqsMet = false;
 				break;
+			
 			case EDMC_SpecialAttackRequirement::ESAR_RequiresNoTarget:
 				if (bHasTarget) bReqsMet = false;
 				break;
+			
 			case EDMC_SpecialAttackRequirement::ESAR_GroundOnly:
 				if (bIsFalling) bReqsMet = false;
 				break;
+			
 			case EDMC_SpecialAttackRequirement::ESAR_AirOnly:
 				if (!bIsFalling) bReqsMet = false;
 				break;
+			
 			case EDMC_SpecialAttackRequirement::ESAR_FinisherOnly:
 				bReqsMet = false; // FinisherOnly is handled by FinisherComponent
 				break;
+				
+			default:
+				break;
 			}
+			
 			if (!bReqsMet) break;
 		}
 
@@ -156,6 +159,7 @@ void UDMC_CombatComponent::SpecialAttack()
 void UDMC_CombatComponent::TryConsumeBufferedInput()
 {
 	if (!PlayerOwner) return;
+	
 	UDMC_CombatBufferComponent* Buffer = PlayerOwner->GetBufferComponent();
 	if (!Buffer || !Buffer->HasBufferedInput()) return;
 
@@ -167,13 +171,18 @@ void UDMC_CombatComponent::TryConsumeBufferedInput()
 	case EDMC_BufferedInput::EBI_Dodge:
 		PerformDodge();
 		break;
+		
 	case EDMC_BufferedInput::EBI_LightAttack:
 		if (ComboState.HeavyIndex > 0) Internal_PerformComboStarter();
 		else PerformLightAttack();
 		break;
+		
 	case EDMC_BufferedInput::EBI_HeavyAttack:
 		if (ComboState.ExtenderIndex > 0) Internal_PerformComboExtender();
 		else PerformHeavyAttack();
+		break;
+		
+	default:
 		break;
 	}
 }
@@ -194,9 +203,7 @@ bool UDMC_CombatComponent::ExecuteAttack(const FDMC_AttackData& AttackData)
 
 	return true;
 }
-// ~ End Combat API
 
-// ~ Begin Internal Helpers
 bool UDMC_CombatComponent::Internal_ExecuteComboStep(const TArray<FDMC_AttackData>& ComboArray, int32& OutIndex)
 {
 	if (!ComboArray.IsValidIndex(OutIndex)) return false;
@@ -243,5 +250,3 @@ bool UDMC_CombatComponent::Internal_PerformComboExtender()
 	}
 	return false;
 }
-// ~ End Internal Helpers
-
