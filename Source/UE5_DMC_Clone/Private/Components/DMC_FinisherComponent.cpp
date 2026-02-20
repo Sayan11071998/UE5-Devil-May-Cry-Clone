@@ -5,7 +5,6 @@
 #include "Components/DMC_CombatBufferComponent.h"
 #include "Data/DMC_ComboDataAsset.h"
 #include "Kismet/KismetMathLibrary.h"
-#include "GameFramework/CharacterMovementComponent.h"
 
 UDMC_FinisherComponent::UDMC_FinisherComponent()
 {
@@ -45,6 +44,7 @@ void UDMC_FinisherComponent::TryExecuteFinisher()
 				{
 					TargetingComp->StopRotation();
 				}
+				
 				if (UDMC_CombatBufferComponent* BufferComponent = PlayerOwner->GetBufferComponent())
 				{
 					BufferComponent->StopBuffer();

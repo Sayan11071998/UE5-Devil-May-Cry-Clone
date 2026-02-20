@@ -14,7 +14,7 @@ class UE5_DMC_CLONE_API UDMC_FinisherComponent : public UActorComponent
 public:
 	UDMC_FinisherComponent();
 
-	/** Tries to execute a finisher on the current target if conditions are met */
+	// Tries to execute a finisher on the current target if conditions are met
 	void TryExecuteFinisher();
 
 protected:

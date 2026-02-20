@@ -20,8 +20,6 @@ public:
 	void StartRage();
 	void StopRage();
 
-	bool IsRageActive() const { return bRageActive; }
-
 protected:
 	virtual void BeginPlay() override;
 
@@ -37,4 +35,7 @@ private:
 
 	UPROPERTY()
 	TObjectPtr<UParticleSystemComponent> ActiveRageEmitter;
+	
+public:
+	FORCEINLINE bool IsRageActive() const { return bRageActive; }
 };

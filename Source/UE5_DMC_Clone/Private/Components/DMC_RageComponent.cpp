@@ -1,11 +1,10 @@
 #include "Components/DMC_RageComponent.h"
 #include "GameFramework/Character.h"
-#include "Interfaces/DMC_CombatInterface.h"
 #include "Data/DMC_ComboDataAsset.h"
 #include "Kismet/GameplayStatics.h"
 #include "Particles/ParticleSystemComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
-#include "PlayerCharacter/DMC_PlayerCharacter.h" // Needed for state check
+#include "PlayerCharacter/DMC_PlayerCharacter.h"
 
 UDMC_RageComponent::UDMC_RageComponent()
 {
@@ -17,7 +16,6 @@ void UDMC_RageComponent::BeginPlay()
 	Super::BeginPlay();
 }
 
-// ~ Begin Rage API
 void UDMC_RageComponent::StartRage()
 {
 	ADMC_PlayerCharacter* Player = Cast<ADMC_PlayerCharacter>(GetOwner());
@@ -58,9 +56,7 @@ void UDMC_RageComponent::StopRage()
 	bRageActive = false;
 	GetWorld()->GetTimerManager().ClearTimer(DurationTimerHandle);
 }
-// ~ End Rage API
 
-// ~ Begin Internal Implementation
 void UDMC_RageComponent::ExecuteNextRageStage()
 {
 	ADMC_PlayerCharacter* Player = Cast<ADMC_PlayerCharacter>(GetOwner());
@@ -68,8 +64,7 @@ void UDMC_RageComponent::ExecuteNextRageStage()
 
 	UDMC_ComboDataAsset* ComboData = Player->GetComboData();
 	if (!ComboData) return;
-
-	// Check if sequence is complete
+	
 	if (!ComboData->RageSequence.IsValidIndex(CurrentStageIndex))
 	{
 		if (ActiveRageEmitter)
@@ -83,7 +78,6 @@ void UDMC_RageComponent::ExecuteNextRageStage()
 
 	const FDMC_RageStage& CurrentStage = ComboData->RageSequence[CurrentStageIndex];
 
-	// Handle Visual Effects
 	if (CurrentStage.StageFX)
 	{
 		if (CurrentStage.bDestroyPreviousFX && ActiveRageEmitter)
@@ -105,14 +99,12 @@ void UDMC_RageComponent::ExecuteNextRageStage()
 			ActiveRageEmitter = NewEmitter;
 		}
 	}
-
-	// Handle Material Feedback
+	
 	if (CurrentStage.OverlayMaterial && Player->GetMesh())
 	{
 		Player->GetMesh()->SetOverlayMaterial(CurrentStage.OverlayMaterial);
 	}
-
-	// Transition to next stage after defined delay
+	
 	CurrentStageIndex++;
 	GetWorld()->GetTimerManager().SetTimer(RageTimerHandle, this, &UDMC_RageComponent::ExecuteNextRageStage, CurrentStage.DelayToNextStage, false);
 }
@@ -124,17 +116,14 @@ void UDMC_RageComponent::EnterRageMode()
 
 	UDMC_ComboDataAsset* ComboData = Player->GetComboData();
 	if (!ComboData) return;
-
-	// Apply combat buffs
+	
 	Player->CustomTimeDilation = ComboData->RageTimeDilation;
 	Player->SetKatanaDamage(ComboData->RageDamageMultiplier);
 	bRageActive = true;
-
-	// Clear combo state to allow a fresh start in Rage
+	
 	Player->SetState(EDMC_PlayerState::ECS_Nothing);
 	Player->ResetLightAttackVariables();
 	Player->ResetHeavyAttackVariables();
 
 	GetWorld()->GetTimerManager().SetTimer(DurationTimerHandle, this, &UDMC_RageComponent::StopRage, ComboData->RageDuration, false);
 }
-// ~ End Internal Implementation

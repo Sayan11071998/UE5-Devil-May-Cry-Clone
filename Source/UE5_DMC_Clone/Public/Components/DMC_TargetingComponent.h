@@ -14,7 +14,6 @@ public:
 	UDMC_TargetingComponent();
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	
-	// Interface for the Character to call
 	void LockOn();
 	void StopLockOn();
 	void SoftLockOn();
