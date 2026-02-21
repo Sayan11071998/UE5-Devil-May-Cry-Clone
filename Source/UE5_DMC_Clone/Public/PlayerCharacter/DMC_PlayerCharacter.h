@@ -144,13 +144,6 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "DMC|Combat")
 	TObjectPtr<UAnimMontage> DoubleJumpMontage;
 
-	// Combat Feedback
-	UPROPERTY(EditDefaultsOnly, Category = "DMC|Combat")
-	float KatanaDamage = 1.0f;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Combat")
-	float DamageMultiplier = 1.0f;
-
 	UPROPERTY(EditDefaultsOnly, Category = "DMC|HitStop")
 	float HitStopTime = 0.05f;
 
@@ -210,8 +203,6 @@ public:
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 	FORCEINLINE bool GetDoubleJumpState() const { return bDoubleJump; }
 	FORCEINLINE EDMC_PlayerState GetState() const { return CurrentState; }
-	FORCEINLINE float GetKatanaDamage() const { return KatanaDamage; }
-	FORCEINLINE void SetKatanaDamage(float InDamage) { KatanaDamage = InDamage; }
 
 	FORCEINLINE class UDMC_ComboDataAsset* GetComboData() const { return ComboData; }
 	FORCEINLINE class UDMC_RageComponent* GetRageComp() const { return RageComp; }

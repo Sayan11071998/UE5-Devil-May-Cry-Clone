@@ -4,6 +4,7 @@
 #include "DamageTypes/DMC_DamageType.h"
 #include "NiagaraComponent.h"
 #include "PlayerCharacter/DMC_PlayerCharacter.h"
+#include "Data/DMC_ComboDataAsset.h"
 
 ADMC_BaseWeapon::ADMC_BaseWeapon()
 {
@@ -112,10 +113,13 @@ void ADMC_BaseWeapon::HandleCollisionTracing()
 				{
 					AlreadyHitActors.AddUnique(HitActor);
 					
-					float FinalDamage = KatanaDamageAmount;
+					float FinalDamage = BaseDamage;
 					if (ADMC_PlayerCharacter* Character = Cast<ADMC_PlayerCharacter>(GetOwner()))
 					{
-						FinalDamage *= Character->GetKatanaDamage();
+						if (Character->IsRaging() && Character->GetComboData())
+						{
+							FinalDamage *= Character->GetComboData()->RageDamageMultiplier;
+						}
 						Character->HitStop();
 					}
 

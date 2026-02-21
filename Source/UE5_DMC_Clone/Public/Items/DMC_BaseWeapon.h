@@ -44,7 +44,7 @@ protected:
 	float TraceRadius = 20.f;
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Combat")
-	float KatanaDamageAmount = 20.f;
+	float BaseDamage = 20.f;
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Combat|VFX")
 	TObjectPtr<UNiagaraSystem> TrailSystem;

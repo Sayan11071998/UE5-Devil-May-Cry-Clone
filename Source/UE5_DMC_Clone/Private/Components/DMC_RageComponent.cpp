@@ -42,7 +42,6 @@ void UDMC_RageComponent::StopRage()
 	if (Player)
 	{
 		Player->CustomTimeDilation = 1.0f;
-		Player->SetKatanaDamage(1.0f);
 		
 		if (Player->GetMesh())
 		{
@@ -118,7 +117,6 @@ void UDMC_RageComponent::EnterRageMode()
 	if (!ComboData) return;
 	
 	Player->CustomTimeDilation = ComboData->RageTimeDilation;
-	Player->SetKatanaDamage(ComboData->RageDamageMultiplier);
 	bRageActive = true;
 	
 	Player->SetState(EDMC_PlayerState::ECS_Nothing);
