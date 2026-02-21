@@ -84,15 +84,15 @@ void UDMC_CombatComponent::PerformDodge()
 	}
 }
 
-void UDMC_CombatComponent::SpecialAttack()
+bool UDMC_CombatComponent::SpecialAttack()
 {
 	UDMC_ComboDataAsset* ComboData = PlayerOwner->GetComboData();
-	if (!ComboData || ComboData->SpecialAttacks.Num() == 0) return;
+	if (!ComboData || ComboData->SpecialAttacks.Num() == 0) return false;
 
 	const FVector LastInput = PlayerOwner->GetCharacterMovement()->GetLastInputVector();
 	const float ForwardDot = !LastInput.IsNearlyZero() ? FVector::DotProduct(PlayerOwner->GetActorForwardVector(), LastInput.GetSafeNormal()) : 0.f;
 	const bool bIsFalling = PlayerOwner->GetCharacterMovement()->IsFalling();
-	const bool bHasTarget = PlayerOwner->GetIsTargeting() && PlayerOwner->GetCombatTarget() != nullptr;
+	const bool bHasTarget = PlayerOwner->GetCombatTarget() != nullptr;
 
 	for (const FDMC_SpecialAttackData& AttackData : ComboData->SpecialAttacks)
 	{
@@ -149,9 +149,10 @@ void UDMC_CombatComponent::SpecialAttack()
 			{
 				Targeting->SnapToTarget();
 			}
-			return;
+			return true;
 		}
 	}
+	return false;
 }
 
 void UDMC_CombatComponent::TryConsumeBufferedInput()

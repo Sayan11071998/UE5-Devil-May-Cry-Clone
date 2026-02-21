@@ -45,7 +45,7 @@ public:
 	void PerformDodge();
 	
 	// Checks and executes available special attacks based on current context
-	void SpecialAttack();
+	bool SpecialAttack();
 	
 	// Consumes any buffered input and executes the corresponding action
 	void TryConsumeBufferedInput();

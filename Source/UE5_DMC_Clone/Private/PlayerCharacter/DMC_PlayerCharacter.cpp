@@ -210,8 +210,10 @@ void ADMC_PlayerCharacter::LightAttack()
 		}
 		
 		bHitStopEnabled = false;
-		CombatComp->SpecialAttack(); // Checks internal matching and executes if valid
-		CombatComp->PerformLightAttack();
+		if (!CombatComp->SpecialAttack()) // Only do normal attack if no special attack was triggered
+		{
+			CombatComp->PerformLightAttack();
+		}
 	}
 	
 	GetWorldTimerManager().SetTimer(ChargeTimerHandle, this, &ADMC_PlayerCharacter::OnChargeTimerFinished, 0.5f, false);
