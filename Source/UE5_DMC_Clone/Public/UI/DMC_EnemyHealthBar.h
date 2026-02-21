@@ -40,6 +40,17 @@ protected:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Health Bar")
 	FLinearColor LowRangeColor = FLinearColor::Red;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Health Bar|Animation")
+	float PulseSpeed = 5.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Health Bar|Animation")
+	float MinPulseScale = 0.8f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Health Bar|Animation")
+	float MaxPulseScale = 1.2f;
+
+	float PulseTime = 0.0f;
 	
 public:
 	FORCEINLINE void SetOwnerActor(AActor* InOwner) { OwnerActor = InOwner; }
