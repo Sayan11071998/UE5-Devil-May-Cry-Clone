@@ -200,13 +200,13 @@ public:
 	FORCEINLINE bool IsStateEqualToAny(const TArray<EDMC_PlayerState>& StatesToCheck) const { return StatesToCheck.Contains(CurrentState); }
 
 	// Getters & Setters
-	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
+	FORCEINLINE TObjectPtr<UCameraComponent> GetFollowCamera() const { return FollowCamera; }
 	FORCEINLINE bool GetDoubleJumpState() const { return bDoubleJump; }
 	FORCEINLINE EDMC_PlayerState GetState() const { return CurrentState; }
 
-	FORCEINLINE class UDMC_ComboDataAsset* GetComboData() const { return ComboData; }
-	FORCEINLINE class UDMC_RageComponent* GetRageComp() const { return RageComp; }
-	FORCEINLINE class UDMC_TargetingComponent* GetTargetingComp() const { return TargetingComp; }
-	FORCEINLINE class UDMC_CombatBufferComponent* GetBufferComponent() const { return BufferComponent; }
-	FORCEINLINE class UDMC_CombatComponent* GetCombatComp() const { return CombatComp; }
+	FORCEINLINE TObjectPtr<UDMC_ComboDataAsset> GetComboData() const { return ComboData; }
+	FORCEINLINE TObjectPtr<UDMC_RageComponent> GetRageComp() const { return RageComp; }
+	FORCEINLINE TObjectPtr<UDMC_TargetingComponent> GetTargetingComp() const { return TargetingComp; }
+	FORCEINLINE TObjectPtr<UDMC_CombatBufferComponent> GetBufferComponent() const { return BufferComponent; }
+	FORCEINLINE TObjectPtr<UDMC_CombatComponent> GetCombatComp() const { return CombatComp; }
 };

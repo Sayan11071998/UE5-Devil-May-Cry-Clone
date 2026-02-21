@@ -16,9 +16,7 @@
 #include "Enemies/DMC_EnemyCharacterBase.h"
 #include "Data/DMC_ComboDataAsset.h"
 #include "Items/DMC_BaseWeapon.h"
-#include "Kismet/KismetMathLibrary.h"
 #include "TimerManager.h"
-#include "Kismet/GameplayStatics.h"
 
 ADMC_PlayerCharacter::ADMC_PlayerCharacter()
 {
@@ -60,7 +58,6 @@ ADMC_PlayerCharacter::ADMC_PlayerCharacter()
 	CurrentState = EDMC_PlayerState::ECS_Nothing;
 }
 
-// ~ Begin Engine Overrides
 void ADMC_PlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
@@ -102,22 +99,26 @@ void ADMC_PlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 	{
 		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ADMC_PlayerCharacter::Move);
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &ADMC_PlayerCharacter::Look);
+		
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ADMC_PlayerCharacter::Jump);
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
+		
 		EnhancedInputComponent->BindAction(LightAttackAction, ETriggerEvent::Started, this, &ADMC_PlayerCharacter::LightAttack);
 		EnhancedInputComponent->BindAction(LightAttackAction, ETriggerEvent::Completed, this, &ADMC_PlayerCharacter::LightAttackReleased);
+		
 		EnhancedInputComponent->BindAction(HeavyAttackAction, ETriggerEvent::Started, this, &ADMC_PlayerCharacter::HeavyAttack);
 		EnhancedInputComponent->BindAction(FinisherAttackAction, ETriggerEvent::Started, this, &ADMC_PlayerCharacter::FinisherAttack);
+		
 		EnhancedInputComponent->BindAction(DodgeAction, ETriggerEvent::Started, this, &ADMC_PlayerCharacter::Dodge);
+		
 		EnhancedInputComponent->BindAction(LockOnAction, ETriggerEvent::Started, this, &ADMC_PlayerCharacter::LockOn);
 		EnhancedInputComponent->BindAction(LockOnAction, ETriggerEvent::Completed, this, &ADMC_PlayerCharacter::StopLockOn);
+		
 		EnhancedInputComponent->BindAction(RageAction, ETriggerEvent::Started, this, &ADMC_PlayerCharacter::Rage);
 		EnhancedInputComponent->BindAction(StopRageAction, ETriggerEvent::Started, this, &ADMC_PlayerCharacter::StopRage);
 	}
 }
-// ~ End Engine Overrides
 
-// ~ Begin State Management
 void ADMC_PlayerCharacter::SetState(EDMC_PlayerState NewState)
 {
 	if (CurrentState != NewState)
@@ -164,9 +165,7 @@ void ADMC_PlayerCharacter::ResetState()
 	}
 	bHitStopEnabled = false;
 }
-// ~ End State Management
 
-// ~ Begin Combat Input Callbacks
 void ADMC_PlayerCharacter::Move(const FInputActionValue& Value)
 {
 	FVector2D Moved = Value.Get<FVector2D>();
@@ -264,14 +263,31 @@ void ADMC_PlayerCharacter::Dodge()
 	}
 }
 
-void ADMC_PlayerCharacter::FinisherAttack() { if (FinisherComp) FinisherComp->TryExecuteFinisher(); }
-void ADMC_PlayerCharacter::Rage() { if (RageComp) RageComp->StartRage(); }
-void ADMC_PlayerCharacter::StopRage() { if (RageComp) RageComp->StopRage(); }
-void ADMC_PlayerCharacter::LockOn() { if (TargetingComp) TargetingComp->LockOn(); }
-void ADMC_PlayerCharacter::StopLockOn() { if (TargetingComp) TargetingComp->StopLockOn(); }
-// ~ End Combat Input Callbacks
+void ADMC_PlayerCharacter::FinisherAttack()
+{
+	if (FinisherComp) FinisherComp->TryExecuteFinisher();
+}
 
-// ~ Begin Animation Notify Delegates
+void ADMC_PlayerCharacter::Rage()
+{
+	if (RageComp) RageComp->StartRage();
+}
+
+void ADMC_PlayerCharacter::StopRage()
+{
+	if (RageComp) RageComp->StopRage();
+}
+
+void ADMC_PlayerCharacter::LockOn()
+{
+	if (TargetingComp) TargetingComp->LockOn();
+}
+
+void ADMC_PlayerCharacter::StopLockOn()
+{
+	if (TargetingComp) TargetingComp->StopLockOn();
+}
+
 void ADMC_PlayerCharacter::SaveLightAttack()
 {
 	if (CombatComp) CombatComp->TryConsumeBufferedInput();
@@ -286,9 +302,7 @@ void ADMC_PlayerCharacter::SaveDodge()
 {
 	if (CombatComp) CombatComp->TryConsumeBufferedInput();
 }
-// ~ End Animation Notify Delegates
 
-// ~ Begin IDMC_CombatInterface Implementation
 void ADMC_PlayerCharacter::HitStop()
 {
 	if (!bHitStopEnabled) return;
@@ -314,21 +328,41 @@ void ADMC_PlayerCharacter::SetAllowPhysicsRotation(bool bAllow)
 	GetCharacterMovement()->bAllowPhysicsRotationDuringAnimRootMotion = bAllow;
 }
 
-void ADMC_PlayerCharacter::RotateToTarget() { if (TargetingComp) TargetingComp->RotateToTarget(); }
-void ADMC_PlayerCharacter::StopRotation() { if (TargetingComp) TargetingComp->StopRotation(); }
-void ADMC_PlayerCharacter::SoftLockOn() { if (TargetingComp) TargetingComp->SoftLockOn(); }
+void ADMC_PlayerCharacter::RotateToTarget()
+{
+	if (TargetingComp) TargetingComp->RotateToTarget();
+}
+
+void ADMC_PlayerCharacter::StopRotation()
+{
+	if (TargetingComp) TargetingComp->StopRotation();
+}
+
+void ADMC_PlayerCharacter::SoftLockOn()
+{
+	if (TargetingComp) TargetingComp->SoftLockOn();
+}
 
 bool ADMC_PlayerCharacter::IsRaging() const
 {
 	return RageComp ? RageComp->IsRageActive() : false;
 }
 
-bool ADMC_PlayerCharacter::GetIsTargeting() const { return TargetingComp ? TargetingComp->IsTargeting() : false; }
-TObjectPtr<AActor> ADMC_PlayerCharacter::GetSoftTarget() const { return TargetingComp ? TargetingComp->GetSoftTarget() : nullptr; }
-TObjectPtr<AActor> ADMC_PlayerCharacter::GetCombatTarget() const { return TargetingComp ? TargetingComp->GetTargetActor() : nullptr; }
-// ~ End IDMC_CombatInterface Implementation
+bool ADMC_PlayerCharacter::GetIsTargeting() const
+{
+	return TargetingComp ? TargetingComp->IsTargeting() : false;
+}
 
-// ~ Begin Internal Implementation
+TObjectPtr<AActor> ADMC_PlayerCharacter::GetSoftTarget() const
+{
+	return TargetingComp ? TargetingComp->GetSoftTarget() : nullptr;
+}
+
+TObjectPtr<AActor> ADMC_PlayerCharacter::GetCombatTarget() const
+{
+	return TargetingComp ? TargetingComp->GetTargetActor() : nullptr;
+}
+
 void ADMC_PlayerCharacter::EquipWeapon()
 {
 	if (!WeaponClass || EquippedWeapon) return;
@@ -338,4 +372,3 @@ void ADMC_PlayerCharacter::EquipWeapon()
 	EquippedWeapon = GetWorld()->SpawnActor<ADMC_BaseWeapon>(WeaponClass, SpawnParams);
 	if (EquippedWeapon) EquippedWeapon->Equip(GetMesh(), WeaponSocketName, this, this);
 }
-// ~ End Internal Implementation
