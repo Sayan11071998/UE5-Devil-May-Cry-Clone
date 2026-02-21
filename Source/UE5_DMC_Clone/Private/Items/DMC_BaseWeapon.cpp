@@ -42,7 +42,7 @@ void ADMC_BaseWeapon::AttachMeshToSocket(TObjectPtr<USceneComponent> InParent, c
 	WeaponMesh->AttachToComponent(InParent, TransformRules, InSocketName);
 }
 
-void ADMC_BaseWeapon::StartCollision(TSubclassOf<class UDMC_DamageType> DamageType)
+void ADMC_BaseWeapon::StartCollision(TSubclassOf<UDMC_DamageType> DamageType)
 {
 	AlreadyHitActors.Empty();
 	CurrentDamageType = DamageType;
