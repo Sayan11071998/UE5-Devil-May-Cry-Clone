@@ -85,6 +85,8 @@ protected:
 	void FinisherAttack();
 	void Rage();
 	void StopRage();
+	void ModifierPressed();
+	void ModifierReleased();
 	void OnChargeTimerFinished();
 
 private:
@@ -149,6 +151,7 @@ private:
 
 	FTimerHandle HitStopTimerHandle;
 	bool bHitStopEnabled = false;
+	bool bModifierHeld = false;
 
 	// Input Assets
 	UPROPERTY(EditDefaultsOnly, Category = "DMC|Input")
@@ -181,6 +184,9 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "DMC|Input")
 	TObjectPtr<UInputAction> StopRageAction;
 
+	UPROPERTY(EditDefaultsOnly, Category = "DMC|Input")
+	TObjectPtr<UInputAction> ModifierAction;
+
 	FTimerHandle ChargeTimerHandle;
 	
 	void EquipWeapon();
@@ -192,6 +198,7 @@ public:
 	FORCEINLINE bool IsDodging() const { return CurrentState == EDMC_PlayerState::ECS_Dodge || CurrentState == EDMC_PlayerState::ECS_GeneralActions; }
 	FORCEINLINE bool IsBusy() const { return IsAttacking() || IsDodging(); }
 	FORCEINLINE bool IsStateEqualToAny(const TArray<EDMC_PlayerState>& StatesToCheck) const { return StatesToCheck.Contains(CurrentState); }
+	FORCEINLINE bool IsModifierHeld() const { return bModifierHeld; }
 
 	// Getters & Setters
 	FORCEINLINE TObjectPtr<UCameraComponent> GetFollowCamera() const { return FollowCamera; }

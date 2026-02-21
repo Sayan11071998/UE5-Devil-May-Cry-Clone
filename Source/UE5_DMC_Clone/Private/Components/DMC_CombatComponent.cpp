@@ -129,7 +129,11 @@ bool UDMC_CombatComponent::SpecialAttack()
 			case EDMC_SpecialAttackRequirement::ESAR_AirOnly:
 				if (!bIsFalling) bReqsMet = false;
 				break;
-			
+		
+			case EDMC_SpecialAttackRequirement::ESAR_RequiresModifier:
+				if (!PlayerOwner->IsModifierHeld()) bReqsMet = false;
+				break;
+		
 			case EDMC_SpecialAttackRequirement::ESAR_FinisherOnly:
 				bReqsMet = false; // FinisherOnly is handled by FinisherComponent
 				break;

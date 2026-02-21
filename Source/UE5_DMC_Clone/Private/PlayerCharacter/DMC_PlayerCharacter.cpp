@@ -113,6 +113,9 @@ void ADMC_PlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 		
 		EnhancedInputComponent->BindAction(RageAction, ETriggerEvent::Started, this, &ADMC_PlayerCharacter::Rage);
 		EnhancedInputComponent->BindAction(StopRageAction, ETriggerEvent::Started, this, &ADMC_PlayerCharacter::StopRage);
+		
+		EnhancedInputComponent->BindAction(ModifierAction, ETriggerEvent::Started, this, &ADMC_PlayerCharacter::ModifierPressed);
+		EnhancedInputComponent->BindAction(ModifierAction, ETriggerEvent::Completed, this, &ADMC_PlayerCharacter::ModifierReleased);
 	}
 }
 
@@ -274,6 +277,16 @@ void ADMC_PlayerCharacter::Rage()
 void ADMC_PlayerCharacter::StopRage()
 {
 	if (RageComp) RageComp->StopRage();
+}
+
+void ADMC_PlayerCharacter::ModifierPressed()
+{
+	bModifierHeld = true;
+}
+
+void ADMC_PlayerCharacter::ModifierReleased()
+{
+	bModifierHeld = false;
 }
 
 void ADMC_PlayerCharacter::SaveLightAttack()
