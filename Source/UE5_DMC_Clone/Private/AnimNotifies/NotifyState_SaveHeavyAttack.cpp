@@ -1,4 +1,4 @@
-#include "PlayerCharacter/Notifies/NotifyState_SaveHeavyAttack.h"
+#include "AnimNotifies/NotifyState_SaveHeavyAttack.h"
 #include "Interfaces/DMC_CombatInterface.h"
 
 void UNotifyState_SaveHeavyAttack::NotifyTick(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation,

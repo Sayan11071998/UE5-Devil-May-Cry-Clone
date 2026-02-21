@@ -2,20 +2,23 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
-#include "Data/DMC_ComboDataAsset.h"
 #include "Interfaces/DMC_CombatInterface.h"
 #include "DMC_CharacterTypes.h"
 #include "DMC_PlayerCharacter.generated.h"
 
-class UDMC_DamageType;
-class ADMC_BaseWeapon;
 class USpringArmComponent;
 class UCameraComponent;
 class UInputMappingContext;
 class UInputAction;
 struct FInputActionValue;
+class UDMC_ComboDataAsset;
 class UDMC_CombatBufferComponent;
+class UDMC_RageComponent;
 class UDMC_TargetingComponent;
+class UDMC_FinisherComponent;
+class UDMC_CombatComponent;
+class ADMC_BaseWeapon;
+class UDMC_DamageType;
 
 UCLASS()
 class UE5_DMC_CLONE_API ADMC_PlayerCharacter : public ACharacter, public IDMC_CombatInterface
@@ -24,218 +27,186 @@ class UE5_DMC_CLONE_API ADMC_PlayerCharacter : public ACharacter, public IDMC_Co
 
 public:
 	ADMC_PlayerCharacter();
-
-	// Core State Management
+	
+	// Updates the current state of the player
 	void SetState(EDMC_PlayerState NewState);
+	
+	// Resets the double jump flag
 	void ResetDoubleJump();
 	
-	UFUNCTION(BlueprintCallable, Category = "DMC|Combat")
-	void EnableHitStop(bool bInEnable) { bHitStopEnabled = bInEnable; }
-	
-	UFUNCTION(BlueprintCallable, Category = "DMC|Combat")
-	void HitStop();
-
-	// Combat || Input Interface -> These are called by Input Bindings or Animation Notifies
-	void LightAttack();
-	void HeavyAttack();
-	void Dodge();
-	
-	// Combat - Input Interface implementations
-	virtual void SaveLightAttack() override;
-	virtual void SaveHeavyAttack() override;
-	virtual void SaveDodge() override;
-	
-	virtual void ResetState() override;
-	
-	// Targeting & Rotation implementations
-	virtual void RotateToTarget() override;
-	virtual void SetAllowPhysicsRotation(bool bAllow) override;
-	virtual AActor* GetCombatTarget() const override;
-	virtual AActor* GetSoftTarget() const override;
-	
-	// Weapon Collision implementations
-	virtual void StartWeaponCollision(TSubclassOf<class UDMC_DamageType> DamageType) override;
-	virtual void EndWeaponCollision() override;
-
-	// Combat || Equipment & Collision
-	void EquipWeapon();
-
-	// Combat || Targeting
-	void LockOn();
-	void StopLockOn();
-	void SoftLockOn();
-	void StopRotation();
-
-	// Damage Configuration
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "DMC|Combat")
-	TSubclassOf<UDMC_DamageType> DamageTypeClass;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "DMC|Combat", meta = (AllowPrivateAccess = "true"))
-	float KatanaDamage = 1.0f;
-
-protected:
-	// Engine Overrides
-	virtual void BeginPlay() override;
-	virtual void Tick(float DeltaTime) override;
-	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
-	
-	// ~ Begin ACharacter interface
-	virtual void Jump() override;
-	virtual void Landed(const FHitResult& Hit) override;
-	// ~ End ACharacter interface
-
-	// Movement Handlers
-	void Move(const FInputActionValue& Value);
-	void Look(const FInputActionValue& Value);
-	
-	FTimerHandle ChargeTimerHandle;
-
-private:
-	// Internal Implementation || Combat
-	bool ExecuteAttack(UAnimMontage* Montage, float BufferAmount);
-	void TryConsumeBufferedInput();
-
-	bool PerformLightAttack(int32 InAttackIndex);
-	bool PerformHeavyAttack(int32 InAttackIndex);
-	bool PerformComboStarter();
-	bool PerformComboExtender();
-	bool SpecialAttack();
-	void PerformDodge();
-	void FinisherAttack();
-	
-	void Rage();
-	void RageStage2();
-	void RageStage3();
-	void RageStage4();
-	
-	void RageMode();
-	void StopRage();
-	
-	void LightAttackReleased();
-	void OnChargeTimerFinished();
-
+	// Combat reset helpers
 	void ResetLightAttackVariables();
 	void ResetHeavyAttackVariables();
 	
-	FTimerHandle RageTimerHandle;
+	// Attack inputs
+	void LightAttack();
+	void HeavyAttack();
+	
+	// Dodge input
+	void Dodge();
+	
+	// Animation Notify Callbacks
+	void SaveLightAttack();
+	void SaveHeavyAttack();
+	void SaveDodge();
+	
+	// State Check
+	bool IsRaging() const;
 
-	// Components
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "DMC|Camera", meta = (AllowPrivateAccess = "true"))
+	// ~ Begin IDMC_CombatInterface Implementation
+	virtual void EnableHitStop(bool bInEnable) override { bHitStopEnabled = bInEnable; }
+	virtual void HitStop() override;
+	virtual void StartWeaponCollision(TSubclassOf<UDMC_DamageType> DamageType) override;
+	virtual void EndWeaponCollision() override;
+	
+	virtual void RotateToTarget() override;
+	virtual void SetAllowPhysicsRotation(bool bAllow) override;
+	virtual TObjectPtr<AActor> GetCombatTarget() const override;
+	virtual TObjectPtr<AActor> GetSoftTarget() const override;
+
+	bool GetIsTargeting() const;
+	// ~ End IDMC_CombatInterface Implementation
+
+	// Combat Movement
+	void StopRotation();
+	void SoftLockOn();
+
+protected:
+	virtual void BeginPlay() override;
+	virtual void Tick(float DeltaTime) override;
+	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
+	virtual void Jump() override;
+	virtual void Landed(const FHitResult& Hit) override;
+
+	// Input Callbacks
+	void Move(const FInputActionValue& Value);
+	void Look(const FInputActionValue& Value);
+	void LightAttackReleased();
+	void FinisherAttack();
+	void Rage();
+	void StopRage();
+	void LockOn();
+	void StopLockOn();
+
+	void OnChargeTimerFinished();
+
+private:
+	// Private Components
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<USpringArmComponent> CameraBoom;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "DMC|Camera", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UCameraComponent> FollowCamera;
-	
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "DMC|Combat", meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<USceneComponent> Scene;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "DMC|Combat", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UDMC_CombatBufferComponent> BufferComponent;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "DMC|Combat", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UDMC_RageComponent> RageComp;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UDMC_TargetingComponent> TargetingComp;
 
-	// Input Action Config
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "DMC|Input", meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<UInputMappingContext> DefaultMappingContext;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UDMC_FinisherComponent> FinisherComp;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "DMC|Input", meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<UInputAction> MoveAction;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UDMC_CombatComponent> CombatComp;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "DMC|Input", meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<UInputAction> LookAction;
+	UPROPERTY(VisibleAnywhere, Category = "Components")
+	TObjectPtr<USceneComponent> Scene;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "DMC|Input", meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<UInputAction> JumpAction;
+	// State Properties
+	UPROPERTY(VisibleAnywhere, Category = "DMC|State")
+	EDMC_PlayerState CurrentState;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "DMC|Input", meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<UInputAction> LightAttackAction;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "DMC|Input", meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<UInputAction> HeavyAttackAction;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "DMC|Input", meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<UInputAction> DodgeAction;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "DMC|Input", meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<UInputAction> LockOnAction;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "DMC|Input", meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<UInputAction> FinisherAttackAction;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "DMC|Input", meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<UInputAction> RageAction;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "DMC|Input", meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<UInputAction> StopRageAction;
-
-	// Movement || Character Data
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "DMC|Movement", meta = (AllowPrivateAccess = "true"))
+	float DoubleJumpLaunchVelocity = 400.0f;
+
+	UPROPERTY(EditAnywhere, Category = "DMC|Movement")
 	TArray<TSubclassOf<AActor>> CanLandClasses;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "DMC|Movement", meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<UAnimMontage> DoubleJumpMontage;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "DMC|Movement", meta = (AllowPrivateAccess = "true"))
-	float DoubleJumpLaunchVelocity = 800.f;
-	
 	bool bDoubleJump = false;
 
-	// Combat || State & Weapon
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "DMC|Combat", meta = (AllowPrivateAccess = "true"))
+	// Combat Data
+	UPROPERTY(EditDefaultsOnly, Category = "DMC|Combat")
 	TObjectPtr<UDMC_ComboDataAsset> ComboData;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "DMC|Combat", meta = (AllowPrivateAccess = "true"))
-	EDMC_PlayerState CurrentState;
-	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "DMC|Combat", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditDefaultsOnly, Category = "DMC|Combat")
 	TSubclassOf<ADMC_BaseWeapon> WeaponClass;
-	
+
 	UPROPERTY()
 	TObjectPtr<ADMC_BaseWeapon> EquippedWeapon;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "DMC|Combat", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditDefaultsOnly, Category = "DMC|Combat")
 	FName WeaponSocketName;
-	
-	UPROPERTY()
-	TObjectPtr<UParticleSystemComponent> ActiveRageEmitter;
-
-	int32 LightAttackIndex = 0;
-	int32 HeavyAttackIndex = 0;
-	int32 ComboExtenderIndex = 0;
-
-	bool bSaveLightAttack = false;
-	bool bSaveHeavyAttack = false;
-	bool bDodgeAttackEnabled = false;
-	bool bSaveDodge = false;
-	bool bPerformChargeAttack = false;
-	bool bRageActive = false;
-
-	FTimerHandle DurationTimerHandle;
-	FTimerHandle HitStopTimerHandle;
 
 	UPROPERTY(EditDefaultsOnly, Category = "DMC|Combat")
+	TObjectPtr<UAnimMontage> DoubleJumpMontage;
+
+	UPROPERTY(EditDefaultsOnly, Category = "DMC|HitStop")
 	float HitStopTime = 0.05f;
 
-	UPROPERTY(EditDefaultsOnly, Category = "DMC|Combat")
-	float HitStopTimeDilation = 0.01f;
+	UPROPERTY(EditDefaultsOnly, Category = "DMC|HitStop")
+	float HitStopTimeDilation = 0.005f;
 
+	FTimerHandle HitStopTimerHandle;
 	bool bHitStopEnabled = false;
 
+	// Input Assets
+	UPROPERTY(EditDefaultsOnly, Category = "DMC|Input")
+	TObjectPtr<UInputMappingContext> DefaultMappingContext;
+
+	UPROPERTY(EditDefaultsOnly, Category = "DMC|Input")
+	TObjectPtr<UInputAction> MoveAction;
+
+	UPROPERTY(EditDefaultsOnly, Category = "DMC|Input")
+	TObjectPtr<UInputAction> LookAction;
+
+	UPROPERTY(EditDefaultsOnly, Category = "DMC|Input")
+	TObjectPtr<UInputAction> JumpAction;
+
+	UPROPERTY(EditDefaultsOnly, Category = "DMC|Input")
+	TObjectPtr<UInputAction> LightAttackAction;
+
+	UPROPERTY(EditDefaultsOnly, Category = "DMC|Input")
+	TObjectPtr<UInputAction> HeavyAttackAction;
+
+	UPROPERTY(EditDefaultsOnly, Category = "DMC|Input")
+	TObjectPtr<UInputAction> FinisherAttackAction;
+
+	UPROPERTY(EditDefaultsOnly, Category = "DMC|Input")
+	TObjectPtr<UInputAction> DodgeAction;
+
+	UPROPERTY(EditDefaultsOnly, Category = "DMC|Input")
+	TObjectPtr<UInputAction> LockOnAction;
+
+	UPROPERTY(EditDefaultsOnly, Category = "DMC|Input")
+	TObjectPtr<UInputAction> RageAction;
+
+	UPROPERTY(EditDefaultsOnly, Category = "DMC|Input")
+	TObjectPtr<UInputAction> StopRageAction;
+
+	FTimerHandle ChargeTimerHandle;
+	
+	void EquipWeapon();
+	void ResetState();
+	
 public:
-	// Specialized Getters
-	FORCEINLINE TObjectPtr<USpringArmComponent> GetCameraBoom() const { return CameraBoom; }
+	// State Checkers
+	FORCEINLINE bool IsAttacking() const { return CurrentState == EDMC_PlayerState::ECS_Attack; }
+	FORCEINLINE bool IsDodging() const { return CurrentState == EDMC_PlayerState::ECS_Dodge || CurrentState == EDMC_PlayerState::ECS_GeneralActions; }
+	FORCEINLINE bool IsBusy() const { return IsAttacking() || IsDodging(); }
+	FORCEINLINE bool IsStateEqualToAny(const TArray<EDMC_PlayerState>& StatesToCheck) const { return StatesToCheck.Contains(CurrentState); }
+
+	// Getters & Setters
 	FORCEINLINE TObjectPtr<UCameraComponent> GetFollowCamera() const { return FollowCamera; }
 	FORCEINLINE bool GetDoubleJumpState() const { return bDoubleJump; }
 	FORCEINLINE EDMC_PlayerState GetState() const { return CurrentState; }
 
-	FORCEINLINE bool IsAttacking() const { return CurrentState == EDMC_PlayerState::ECS_Attack; }
-	FORCEINLINE bool IsDodging() const { return CurrentState == EDMC_PlayerState::ECS_Dodge || CurrentState == EDMC_PlayerState::ECS_GeneralActions; }
-	FORCEINLINE bool IsRaging() const { return CurrentState == EDMC_PlayerState::ECS_GeneralActions; }
-	FORCEINLINE bool IsBusy() const { return IsAttacking() || IsDodging() || IsRaging(); }
-	FORCEINLINE bool IsStateEqualToAny(const TArray<EDMC_PlayerState>& StatesToCheck) const { return StatesToCheck.Contains(CurrentState); }
-
-	// Targeting Getters
-	bool GetIsTargeting() const;
-	AActor* GetTargetActor() const { return GetCombatTarget(); }
+	FORCEINLINE TObjectPtr<UDMC_ComboDataAsset> GetComboData() const { return ComboData; }
+	FORCEINLINE TObjectPtr<UDMC_RageComponent> GetRageComp() const { return RageComp; }
+	FORCEINLINE TObjectPtr<UDMC_TargetingComponent> GetTargetingComp() const { return TargetingComp; }
+	FORCEINLINE TObjectPtr<UDMC_CombatBufferComponent> GetBufferComponent() const { return BufferComponent; }
+	FORCEINLINE TObjectPtr<UDMC_CombatComponent> GetCombatComp() const { return CombatComp; }
 };

@@ -6,6 +6,7 @@
 
 class UNiagaraComponent;
 class UNiagaraSystem;
+class UDMC_DamageType;
 
 UCLASS()
 class UE5_DMC_CLONE_API ADMC_BaseWeapon : public AActor
@@ -26,7 +27,7 @@ public:
 	void AttachMeshToSocket(TObjectPtr<USceneComponent> InParent, const FName& InSocketName);
 	
 	// Called by the owner to enable/disable weapon collision
-	void StartCollision(TSubclassOf<class UDMC_DamageType> DamageType);
+	void StartCollision(TSubclassOf<UDMC_DamageType> DamageType);
 	void EndCollision();
 	
 protected:
@@ -43,7 +44,7 @@ protected:
 	float TraceRadius = 20.f;
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Combat")
-	float KatanaDamageAmount = 20.f;
+	float BaseDamage = 20.f;
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Combat|VFX")
 	TObjectPtr<UNiagaraSystem> TrailSystem;
@@ -60,7 +61,7 @@ private:
 	TSubclassOf<UDMC_DamageType> CurrentDamageType;
 	
 	UPROPERTY()
-	TArray<AActor*> AlreadyHitActors;
+	TArray<TObjectPtr<AActor>> AlreadyHitActors;
 	
 	void HandleCollisionTracing();
 	

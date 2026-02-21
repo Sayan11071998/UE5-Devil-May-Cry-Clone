@@ -16,7 +16,9 @@ public:
 	void SetHealthPercent(float InPercent);
 	
 protected:
+	// ~ Begin UUserWidget Interface
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
+	// ~ End UUserWidget Interface
 	
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UProgressBar> HealthProgressBar;
@@ -26,6 +28,9 @@ protected:
 	
 	UPROPERTY(BlueprintReadOnly, Category = "Health Bar")
 	TObjectPtr<AActor> OwnerActor;
+
+	UPROPERTY()
+	TObjectPtr<APawn> CachedPlayerPawn;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Health Bar")
 	float DisplayRange = 1500.f;

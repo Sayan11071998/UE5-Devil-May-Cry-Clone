@@ -1,5 +1,5 @@
-#include "PlayerCharacter/Notifies/Notify_EnableHitStop.h"
-#include "PlayerCharacter/DMC_PlayerCharacter.h"
+#include "AnimNotifies/Notify_EnableHitStop.h"
+#include "Interfaces/DMC_CombatInterface.h"
 
 void UNotify_EnableHitStop::Notify(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation,
 	const FAnimNotifyEventReference& EventReference)
@@ -8,9 +8,9 @@ void UNotify_EnableHitStop::Notify(USkeletalMeshComponent* MeshComp, UAnimSequen
 
 	if (MeshComp && MeshComp->GetOwner())
 	{
-		if (ADMC_PlayerCharacter* PlayerCharacter = Cast<ADMC_PlayerCharacter>(MeshComp->GetOwner()))
+		if (IDMC_CombatInterface* CombatInterface = Cast<IDMC_CombatInterface>(MeshComp->GetOwner()))
 		{
-			PlayerCharacter->EnableHitStop(bEnableHitStop);
+			CombatInterface->EnableHitStop(bEnableHitStop);
 		}
 	}
 }

@@ -1,7 +1,7 @@
-#include "PlayerCharacter/Notifies/Notify_SaveDodge.h"
+﻿#include "AnimNotifies/Notify_ResetState.h"
 #include "Interfaces/DMC_CombatInterface.h"
 
-void UNotify_SaveDodge::Notify(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation,
+void UNotify_ResetState::Notify(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation,
 	const FAnimNotifyEventReference& EventReference)
 {
 	Super::Notify(MeshComp, Animation, EventReference);
@@ -10,6 +10,6 @@ void UNotify_SaveDodge::Notify(USkeletalMeshComponent* MeshComp, UAnimSequenceBa
 	
 	if (IDMC_CombatInterface* CombatInterface = Cast<IDMC_CombatInterface>(MeshComp->GetOwner()))
 	{
-		CombatInterface->SaveDodge();
+		CombatInterface->ResetState();
 	}
 }

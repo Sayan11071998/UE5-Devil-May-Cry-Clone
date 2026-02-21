@@ -1,7 +1,7 @@
-﻿#include "PlayerCharacter/Notifies/Notify_SaveHeavyAttack.h"
+#include "AnimNotifies/Notify_RotationToTarget.h"
 #include "Interfaces/DMC_CombatInterface.h"
 
-void UNotify_SaveHeavyAttack::Notify(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation,
+void UNotify_RotationToTarget::Notify(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation,
 	const FAnimNotifyEventReference& EventReference)
 {
 	Super::Notify(MeshComp, Animation, EventReference);
@@ -10,6 +10,6 @@ void UNotify_SaveHeavyAttack::Notify(USkeletalMeshComponent* MeshComp, UAnimSequ
 	
 	if (IDMC_CombatInterface* CombatInterface = Cast<IDMC_CombatInterface>(MeshComp->GetOwner()))
 	{
-		CombatInterface->SaveHeavyAttack();
+		CombatInterface->RotateToTarget();
 	}
 }

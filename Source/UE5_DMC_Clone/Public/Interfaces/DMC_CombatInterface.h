@@ -26,10 +26,18 @@ public:
 	// Targeting & Rotation
 	virtual void RotateToTarget() = 0;
 	virtual void SetAllowPhysicsRotation(bool bAllow) = 0;
-	virtual class AActor* GetCombatTarget() const = 0;
-	virtual class AActor* GetSoftTarget() const = 0;
+	virtual TObjectPtr<AActor> GetCombatTarget() const = 0;
+	virtual TObjectPtr<AActor> GetSoftTarget() const = 0;
 	
 	// Weapon Collision
-	virtual void StartWeaponCollision(TSubclassOf<class UDMC_DamageType> DamageType) = 0;
-	virtual void EndWeaponCollision() = 0;
+	virtual void StartWeaponCollision(TSubclassOf<class UDMC_DamageType> DamageType) {}
+	virtual void EndWeaponCollision() {}
+
+	// Hit Stop
+	virtual void EnableHitStop(bool bInEnable) {}
+	virtual void HitStop() {}
+
+	// Finisher System
+	virtual bool CanBeFinished() const { return false; }
+	virtual void OnFinished(TObjectPtr<AActor> Attacker) {}
 };
