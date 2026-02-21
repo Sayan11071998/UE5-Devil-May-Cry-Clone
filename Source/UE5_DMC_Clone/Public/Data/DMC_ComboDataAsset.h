@@ -7,12 +7,12 @@
 UENUM(BlueprintType)
 enum class EDMC_SpecialAttackRequirement : uint8
 {
-	ESAR_None UMETA(DisplayName = "None"),
-	ESAR_RequiresTarget UMETA(DisplayName = "Requires Target"),
-	ESAR_RequiresNoTarget UMETA(DisplayName = "Requires No Target"),
-	ESAR_GroundOnly UMETA(DisplayName = "Ground Only"),
-	ESAR_AirOnly UMETA(DisplayName = "Air Only"),
-	ESAR_FinisherOnly UMETA(DisplayName = "Finisher Only")
+	ESAR_None				UMETA(DisplayName = "None"),
+	ESAR_RequiresTarget		UMETA(DisplayName = "Requires Target"),
+	ESAR_RequiresNoTarget	UMETA(DisplayName = "Requires No Target"),
+	ESAR_GroundOnly			UMETA(DisplayName = "Ground Only"),
+	ESAR_AirOnly			UMETA(DisplayName = "Air Only"),
+	ESAR_FinisherOnly		UMETA(DisplayName = "Finisher Only")
 };
 
 USTRUCT(BlueprintType)
@@ -99,7 +99,7 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "Attack|Special")
 	TObjectPtr<UAnimMontage> RageMontage;
 	
-	/** New Data-Driven Special Attacks */
+	// New Data-Driven Special Attacks
 	UPROPERTY(EditDefaultsOnly, Category = "Attack|SpecialAttacks")
 	TArray<FDMC_SpecialAttackData> SpecialAttacks;
 

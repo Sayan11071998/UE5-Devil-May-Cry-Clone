@@ -4,7 +4,7 @@
 #include "GameFramework/DamageType.h"
 #include "DMC_DamageType.generated.h"
 
-/** Enum to categorize the direction of the damage for hit reactions */
+// Enum to categorize the direction of the damage for hit reactions
 UENUM(BlueprintType)
 enum class EDMC_DamageType : uint8
 {
