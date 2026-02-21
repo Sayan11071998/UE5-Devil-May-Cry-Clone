@@ -77,7 +77,6 @@ void ADMC_EnemyCharacterBase::OnFinished(TObjectPtr<AActor> Attacker)
 {
 	if (bDead) return;
 
-	bDead = true;
 	if (FinishedMontage)
 	{
 		PlayAnimMontage(FinishedMontage);
@@ -170,11 +169,22 @@ void ADMC_EnemyCharacterBase::Death()
 		PlayAnimMontage(DeathMontage);
 	}
 	
-	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	if (GetCapsuleComponent())
+	{
+		GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		GetCapsuleComponent()->SetCollisionResponseToAllChannels(ECR_Ignore);
+	}
+
+	if (GetMesh())
+	{
+		GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		GetMesh()->SetCollisionResponseToAllChannels(ECR_Ignore);
+	}
 
 	if (HealthBarWidget)
 	{
 		HealthBarWidget->SetVisibility(false);
 	}
+
+	SetLifeSpan(5.0f);
 }
