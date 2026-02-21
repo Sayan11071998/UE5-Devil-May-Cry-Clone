@@ -46,7 +46,7 @@ bool ADMC_EnemyCharacterBase::CanBeFinished() const
 	return (Health / MaxHealth) <= 0.1f;
 }
 
-void ADMC_EnemyCharacterBase::OnFinished(AActor* Attacker)
+void ADMC_EnemyCharacterBase::OnFinished(TObjectPtr<AActor> Attacker)
 {
 	if (bDead) return;
 
@@ -107,7 +107,7 @@ float ADMC_EnemyCharacterBase::TakeDamage(float DamageAmount, struct FDamageEven
 	return DamageAmount;
 }
 
-void ADMC_EnemyCharacterBase::SpawnHitFX(AActor* DamageCauser, const FHitResult& HitResult)
+void ADMC_EnemyCharacterBase::SpawnHitFX(TObjectPtr<AActor> DamageCauser, const FHitResult& HitResult)
 {
 	if (!HitVFX || !DamageCauser) return;
 	

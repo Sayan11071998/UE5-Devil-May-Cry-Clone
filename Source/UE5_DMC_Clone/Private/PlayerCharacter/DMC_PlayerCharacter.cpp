@@ -324,8 +324,8 @@ bool ADMC_PlayerCharacter::IsRaging() const
 }
 
 bool ADMC_PlayerCharacter::GetIsTargeting() const { return TargetingComp ? TargetingComp->IsTargeting() : false; }
-AActor* ADMC_PlayerCharacter::GetSoftTarget() const { return TargetingComp ? TargetingComp->GetSoftTarget() : nullptr; }
-AActor* ADMC_PlayerCharacter::GetCombatTarget() const { return TargetingComp ? TargetingComp->GetTargetActor() : nullptr; }
+TObjectPtr<AActor> ADMC_PlayerCharacter::GetSoftTarget() const { return TargetingComp ? TargetingComp->GetSoftTarget() : nullptr; }
+TObjectPtr<AActor> ADMC_PlayerCharacter::GetCombatTarget() const { return TargetingComp ? TargetingComp->GetTargetActor() : nullptr; }
 // ~ End IDMC_CombatInterface Implementation
 
 // ~ Begin Internal Implementation

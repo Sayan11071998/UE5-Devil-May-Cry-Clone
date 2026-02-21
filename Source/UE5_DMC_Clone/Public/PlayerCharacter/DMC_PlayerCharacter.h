@@ -72,8 +72,8 @@ public:
 	
 	virtual void RotateToTarget() override;
 	virtual void SetAllowPhysicsRotation(bool bAllow) override;
-	virtual class AActor* GetCombatTarget() const override;
-	virtual class AActor* GetSoftTarget() const override;
+	virtual TObjectPtr<AActor> GetCombatTarget() const override;
+	virtual TObjectPtr<AActor> GetSoftTarget() const override;
 
 	FORCEINLINE bool GetIsTargeting() const;
 	// ~ End IDMC_CombatInterface Implementation

@@ -29,15 +29,15 @@ public:
 	
 	// ~ Begin IDMC_CombatInterface Implementation
 	virtual bool CanBeFinished() const override;
-	virtual void OnFinished(AActor* Attacker) override;
+	virtual void OnFinished(TObjectPtr<AActor> Attacker) override;
 	virtual void SaveLightAttack() override {}
 	virtual void SaveHeavyAttack() override {}
 	virtual void SaveDodge() override {}
 	virtual void ResetState() override {}
 	virtual void RotateToTarget() override {}
 	virtual void SetAllowPhysicsRotation(bool bAllow) override {}
-	virtual class AActor* GetCombatTarget() const override { return nullptr; }
-	virtual class AActor* GetSoftTarget() const override { return nullptr; }
+	virtual TObjectPtr<AActor> GetCombatTarget() const override { return nullptr; }
+	virtual TObjectPtr<AActor> GetSoftTarget() const override { return nullptr; }
 	// ~ End IDMC_CombatInterface Implementation
 	
 	// ~ Begin AActor Interface
@@ -45,7 +45,7 @@ public:
 	// ~ End AActor Interface
 	
 	// Visual feedback for hits
-	void SpawnHitFX(AActor* DamageCauser, const FHitResult& HitResult);
+	void SpawnHitFX(TObjectPtr<AActor> DamageCauser, const FHitResult& HitResult);
 
 protected:
 	virtual void BeginPlay() override;
