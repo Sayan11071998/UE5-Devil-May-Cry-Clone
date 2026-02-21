@@ -16,7 +16,9 @@ public:
 	void SetHealthPercent(float InPercent);
 	
 protected:
+	// ~ Begin UUserWidget Interface
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
+	// ~ End UUserWidget Interface
 	
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UProgressBar> HealthProgressBar;
