@@ -1,4 +1,4 @@
-#include "PlayerCharacter/Notifies/Notify_EnableHitStop.h"
+#include "AnimNotifies/Notify_EnableHitStop.h"
 #include "Interfaces/DMC_CombatInterface.h"
 
 void UNotify_EnableHitStop::Notify(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation,

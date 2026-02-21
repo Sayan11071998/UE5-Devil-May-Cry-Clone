@@ -1,4 +1,4 @@
-#include "PlayerCharacter/Notifies/Notify_RotationToTarget.h"
+#include "AnimNotifies/Notify_RotationToTarget.h"
 #include "Interfaces/DMC_CombatInterface.h"
 
 void UNotify_RotationToTarget::Notify(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation,

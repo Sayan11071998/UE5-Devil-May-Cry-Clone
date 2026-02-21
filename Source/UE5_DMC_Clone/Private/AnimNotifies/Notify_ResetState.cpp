@@ -1,4 +1,4 @@
-﻿#include "PlayerCharacter/Notifies/Notify_ResetState.h"
+﻿#include "AnimNotifies/Notify_ResetState.h"
 #include "Interfaces/DMC_CombatInterface.h"
 
 void UNotify_ResetState::Notify(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation,

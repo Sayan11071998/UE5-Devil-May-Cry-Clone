@@ -1,4 +1,4 @@
-#include "PlayerCharacter/Notifies/NotifyState_SaveLightAttack.h"
+#include "AnimNotifies/NotifyState_SaveLightAttack.h"
 #include "Interfaces/DMC_CombatInterface.h"
 
 void UNotifyState_SaveLightAttack::NotifyTick(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation,

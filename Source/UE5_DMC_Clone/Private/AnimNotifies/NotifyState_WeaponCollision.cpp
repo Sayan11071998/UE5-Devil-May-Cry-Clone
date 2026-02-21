@@ -1,7 +1,7 @@
-#include "PlayerCharacter/Notifies/NotifyState_RootMotionRotation.h"
+#include "AnimNotifies/NotifyState_WeaponCollision.h"
 #include "Interfaces/DMC_CombatInterface.h"
 
-void UNotifyState_RootMotionRotation::NotifyBegin(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation,
+void UNotifyState_WeaponCollision::NotifyBegin(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation,
 	float TotalDuration, const FAnimNotifyEventReference& EventReference)
 {
 	Super::NotifyBegin(MeshComp, Animation, TotalDuration, EventReference);
@@ -10,18 +10,11 @@ void UNotifyState_RootMotionRotation::NotifyBegin(USkeletalMeshComponent* MeshCo
 	
 	if (IDMC_CombatInterface* CombatInterface = Cast<IDMC_CombatInterface>(MeshComp->GetOwner()))
 	{
-		bool bAllowPhysicsRotation =
-			!IsValid(CombatInterface->GetSoftTarget()) ||
-			!IsValid(CombatInterface->GetCombatTarget());
-			
-		if (bAllowPhysicsRotation)
-		{
-			CombatInterface->SetAllowPhysicsRotation(true);
-		}
+		CombatInterface->StartWeaponCollision(DamageTypeClass);
 	}
 }
 
-void UNotifyState_RootMotionRotation::NotifyEnd(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation,
+void UNotifyState_WeaponCollision::NotifyEnd(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation,
 	const FAnimNotifyEventReference& EventReference)
 {
 	Super::NotifyEnd(MeshComp, Animation, EventReference);
@@ -30,6 +23,6 @@ void UNotifyState_RootMotionRotation::NotifyEnd(USkeletalMeshComponent* MeshComp
 	
 	if (IDMC_CombatInterface* CombatInterface = Cast<IDMC_CombatInterface>(MeshComp->GetOwner()))
 	{
-		CombatInterface->SetAllowPhysicsRotation(false);
+		CombatInterface->EndWeaponCollision();
 	}
 }
