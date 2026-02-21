@@ -43,4 +43,5 @@ protected:
 	
 public:
 	FORCEINLINE void SetOwnerActor(AActor* InOwner) { OwnerActor = InOwner; }
+	FORCEINLINE float GetDisplayRange() const { return DisplayRange; }
 };

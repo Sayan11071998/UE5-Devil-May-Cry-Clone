@@ -8,6 +8,7 @@
 #include "UI/DMC_EnemyHealthBar.h"
 #include "PlayerCharacter/DMC_PlayerCharacter.h"
 #include "Components/DMC_TargetingComponent.h"
+#include "Kismet/GameplayStatics.h"
 
 ADMC_EnemyCharacterBase::ADMC_EnemyCharacterBase()
 {
@@ -19,6 +20,9 @@ ADMC_EnemyCharacterBase::ADMC_EnemyCharacterBase()
 
 	HealthBarWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("HealthBarWidget"));
 	HealthBarWidget->SetupAttachment(GetMesh());
+	HealthBarWidget->SetWidgetSpace(EWidgetSpace::Screen);
+	HealthBarWidget->SetDrawAtDesiredSize(false);
+	HealthBarWidget->SetRelativeLocation(FVector(0.f, 0.f, 200.f));
 }
 
 void ADMC_EnemyCharacterBase::BeginPlay()
@@ -27,6 +31,8 @@ void ADMC_EnemyCharacterBase::BeginPlay()
 
 	if (HealthBarWidget)
 	{
+		HealthBarWidget->SetDrawSize(FVector2D(HealthBarDrawSize_X, HealthBarDrawSize_Y));
+		
 		if (UDMC_EnemyHealthBar* HealthBar = Cast<UDMC_EnemyHealthBar>(HealthBarWidget->GetUserWidgetObject()))
 		{
 			HealthBar->SetOwnerActor(this);
@@ -38,6 +44,27 @@ void ADMC_EnemyCharacterBase::BeginPlay()
 void ADMC_EnemyCharacterBase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	if (HealthBarWidget)
+	{
+		APawn* PlayerPawn = UGameplayStatics::GetPlayerPawn(GetWorld(), 0);
+		UDMC_EnemyHealthBar* HealthBar = Cast<UDMC_EnemyHealthBar>(HealthBarWidget->GetUserWidgetObject());
+		
+		if (PlayerPawn && HealthBar && !bDead)
+		{
+			float Distance = FVector::Dist(PlayerPawn->GetActorLocation(), GetActorLocation());
+			bool bShouldBeVisible = Distance <= HealthBar->GetDisplayRange();
+			
+			if (HealthBarWidget->IsVisible() != bShouldBeVisible)
+			{
+				HealthBarWidget->SetVisibility(bShouldBeVisible);
+			}
+		}
+		else if (HealthBarWidget->IsVisible())
+		{
+			HealthBarWidget->SetVisibility(false);
+		}
+	}
 }
 
 bool ADMC_EnemyCharacterBase::CanBeFinished() const
@@ -145,4 +172,9 @@ void ADMC_EnemyCharacterBase::Death()
 	
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	if (HealthBarWidget)
+	{
+		HealthBarWidget->SetVisibility(false);
+	}
 }
