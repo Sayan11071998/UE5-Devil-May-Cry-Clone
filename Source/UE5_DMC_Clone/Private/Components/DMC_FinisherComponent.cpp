@@ -25,20 +25,34 @@ void UDMC_FinisherComponent::TryExecuteFinisher()
 	StatesToIgnore.Add(EDMC_PlayerState::ECS_Dodge);
 	StatesToIgnore.Add(EDMC_PlayerState::ECS_Finisher);
 	
-	if (PlayerOwner->IsStateEqualToAny(StatesToIgnore)) return;
-
-	if (PlayerOwner->GetIsTargeting() && PlayerOwner->GetCombatTarget())
+	if (PlayerOwner->IsStateEqualToAny(StatesToIgnore))
 	{
-		AActor* Target = PlayerOwner->GetCombatTarget();
-		if (!Target) return;
+		UE_LOG(LogTemp, Warning, TEXT("[FinisherComp] TryExecuteFinisher ignored: Player is in an invalid state."));
+		return;
+	}
+
+	// Support both Hard and Soft targets
+	AActor* Target = PlayerOwner->GetCombatTarget() ? PlayerOwner->GetCombatTarget() : PlayerOwner->GetSoftTarget();
+
+	if (Target)
+	{
 		UDMC_ComboDataAsset* ComboData = PlayerOwner->GetComboData();
-		
+		if (!ComboData)
+		{
+			UE_LOG(LogTemp, Error, TEXT("[FinisherComp] TryExecuteFinisher failed: No ComboData found."));
+			return;
+		}
+
 		float Distance = PlayerOwner->GetDistanceTo(Target);
-		if (ComboData && Distance <= ComboData->FinisherAttackDistance)
+		if (Distance <= ComboData->FinisherAttackDistance)
 		{
 			if (IDMC_CombatInterface* CombatInterface = Cast<IDMC_CombatInterface>(Target))
 			{
-				if (!CombatInterface->CanBeFinished()) return;
+				if (!CombatInterface->CanBeFinished())
+				{
+					UE_LOG(LogTemp, Warning, TEXT("[FinisherComp] TryExecuteFinisher failed: Target cannot be finished yet."));
+					return;
+				}
 
 				if (UDMC_TargetingComponent* TargetingComp = PlayerOwner->GetTargetingComp())
 				{
@@ -69,6 +83,11 @@ void UDMC_FinisherComponent::TryExecuteFinisher()
 				if (FinisherMontage)
 				{
 					PlayerOwner->PlayAnimMontage(FinisherMontage);
+					UE_LOG(LogTemp, Log, TEXT("[FinisherComp] Executing Finisher Montage."));
+				}
+				else
+				{
+					UE_LOG(LogTemp, Error, TEXT("[FinisherComp] Finisher Montage not found in ComboData!"));
 				}
 
 				if (UDMC_TargetingComponent* TargetingComp = PlayerOwner->GetTargetingComp())
@@ -77,5 +96,13 @@ void UDMC_FinisherComponent::TryExecuteFinisher()
 				}
 			}
 		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("[FinisherComp] TryExecuteFinisher failed: Target too far (Distance: %f, Req: %f)"), Distance, ComboData->FinisherAttackDistance);
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[FinisherComp] TryExecuteFinisher failed: No valid Target found (Hard or Soft)."));
 	}
 }

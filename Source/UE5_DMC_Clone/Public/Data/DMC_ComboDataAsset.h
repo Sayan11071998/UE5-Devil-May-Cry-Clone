@@ -107,7 +107,7 @@ public:
 	FDMC_AttackData DodgeData;
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Combat|Finisher")
-	float FinisherAttackDistance = 100.f;
+	float FinisherAttackDistance = 300.f;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Combat|Rage")
 	TArray<FDMC_RageStage> RageSequence;
