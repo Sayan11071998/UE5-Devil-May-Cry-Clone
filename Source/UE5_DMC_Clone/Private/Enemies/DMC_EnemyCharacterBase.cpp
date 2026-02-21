@@ -77,13 +77,21 @@ void ADMC_EnemyCharacterBase::OnFinished(TObjectPtr<AActor> Attacker)
 {
 	if (bDead) return;
 
+	Health = 0.f;
+
 	if (FinishedMontage)
 	{
 		PlayAnimMontage(FinishedMontage);
+		
+		// Delay Death() until after the Finished montage completes
+		float MontageLength = FinishedMontage->GetPlayLength();
+		FTimerHandle FinishedTimerHandle;
+		GetWorldTimerManager().SetTimer(FinishedTimerHandle, this, &ADMC_EnemyCharacterBase::Death, MontageLength, false);
 	}
-
-	Health = 0.f;
-	Death();
+	else
+	{
+		Death();
+	}
 }
 
 float ADMC_EnemyCharacterBase::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser)
