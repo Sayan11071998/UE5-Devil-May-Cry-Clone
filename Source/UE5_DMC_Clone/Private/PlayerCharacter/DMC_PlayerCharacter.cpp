@@ -202,8 +202,6 @@ void ADMC_PlayerCharacter::Jump()
 
 void ADMC_PlayerCharacter::LightAttack()
 {
-	RotateToTarget(); // Turn to face the contextual target
-	
 	if (CombatComp)
 	{
 		if (CurrentState == EDMC_PlayerState::ECS_Dodge)
@@ -240,8 +238,6 @@ void ADMC_PlayerCharacter::OnChargeTimerFinished()
 
 void ADMC_PlayerCharacter::HeavyAttack()
 {
-	RotateToTarget(); // Turn to face the contextual target
-	
 	if (CombatComp)
 	{
 		CombatComp->PerformHeavyAttack();
@@ -250,8 +246,6 @@ void ADMC_PlayerCharacter::HeavyAttack()
 
 void ADMC_PlayerCharacter::Dodge()
 {
-	RotateToTarget(); // Turn to face the contextual target
-	
 	if (IsDodging() || CurrentState == EDMC_PlayerState::ECS_Finisher)
 	{
 		if (BufferComponent) BufferComponent->BufferInput(EDMC_BufferedInput::EBI_Dodge);

@@ -16,6 +16,7 @@ public:
 	
 	void SoftLockOn();
 	void RotateToTarget();
+	void SnapToTarget(); // Instant rotation for combat snapping
 	void StopRotation();
 	void ClearSoftTarget();
 	

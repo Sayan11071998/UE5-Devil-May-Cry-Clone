@@ -101,6 +101,16 @@ void UDMC_TargetingComponent::RotateToTarget()
 	}
 }
 
+void UDMC_TargetingComponent::SnapToTarget()
+{
+	AActor* Owner = GetOwner();
+	if (!Owner || !IsValid(FocusedTarget)) return;
+
+	FRotator LookAtRot = (FocusedTarget->GetActorLocation() - Owner->GetActorLocation()).Rotation();
+	FRotator CurrentRot = Owner->GetActorRotation();
+	Owner->SetActorRotation(FRotator(CurrentRot.Pitch, LookAtRot.Yaw, CurrentRot.Roll));
+}
+
 void UDMC_TargetingComponent::StopRotation()
 {
 	if (RotationTimeline.IsPlaying())

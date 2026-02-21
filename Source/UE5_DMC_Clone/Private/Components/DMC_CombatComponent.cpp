@@ -145,7 +145,10 @@ void UDMC_CombatComponent::SpecialAttack()
 		{
 			PlayerOwner->ResetLightAttackVariables();
 			PlayerOwner->ResetHeavyAttackVariables();
-			PlayerOwner->RotateToTarget();
+			if (UDMC_TargetingComponent* Targeting = PlayerOwner->GetTargetingComp())
+			{
+				Targeting->SnapToTarget();
+			}
 			return;
 		}
 	}
@@ -193,6 +196,10 @@ bool UDMC_CombatComponent::ExecuteAttack(const FDMC_AttackData& AttackData)
 	}
 
 	PlayerOwner->SetState(EDMC_PlayerState::ECS_Attack);
+	if (UDMC_TargetingComponent* Targeting = PlayerOwner->GetTargetingComp())
+	{
+		Targeting->SnapToTarget();
+	}
 	PlayerOwner->PlayAnimMontage(AttackData.Montage);
 
 	return true;
