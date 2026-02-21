@@ -19,7 +19,7 @@ void UDMC_RageComponent::BeginPlay()
 void UDMC_RageComponent::StartRage()
 {
 	ADMC_PlayerCharacter* Player = Cast<ADMC_PlayerCharacter>(GetOwner());
-	if (!Player || bRageActive) return;
+	if (!Player || bRageActive || bIsRageSequencePlaying) return;
 
 	UDMC_ComboDataAsset* ComboData = Player->GetComboData();
 	if (!ComboData || !ComboData->RageMontage) return;
@@ -29,6 +29,7 @@ void UDMC_RageComponent::StartRage()
 		Player->SetState(EDMC_PlayerState::ECS_GeneralActions);
 		Player->PlayAnimMontage(ComboData->RageMontage);
 
+		bIsRageSequencePlaying = true;
 		CurrentStageIndex = 0;
 		ExecuteNextRageStage();
 	}
@@ -53,7 +54,18 @@ void UDMC_RageComponent::StopRage()
 	}
 
 	bRageActive = false;
+	bIsRageSequencePlaying = false;
 	GetWorld()->GetTimerManager().ClearTimer(DurationTimerHandle);
+	GetWorld()->GetTimerManager().ClearTimer(RageTimerHandle);
+
+	for (TObjectPtr<UParticleSystemComponent> Emitter : ActiveRageEmitters)
+	{
+		if (Emitter)
+		{
+			Emitter->DestroyComponent();
+		}
+	}
+	ActiveRageEmitters.Empty();
 }
 
 void UDMC_RageComponent::ExecuteNextRageStage()
@@ -66,11 +78,16 @@ void UDMC_RageComponent::ExecuteNextRageStage()
 	
 	if (!ComboData->RageSequence.IsValidIndex(CurrentStageIndex))
 	{
-		if (ActiveRageEmitter)
+		for (TObjectPtr<UParticleSystemComponent> Emitter : ActiveRageEmitters)
 		{
-			ActiveRageEmitter->DestroyComponent();
-			ActiveRageEmitter = nullptr;
+			if (Emitter)
+			{
+				Emitter->DestroyComponent();
+			}
 		}
+		ActiveRageEmitters.Empty();
+
+		bIsRageSequencePlaying = false;
 		EnterRageMode();
 		return;
 	}
@@ -79,23 +96,33 @@ void UDMC_RageComponent::ExecuteNextRageStage()
 
 	if (CurrentStage.StageFX)
 	{
-		if (CurrentStage.bDestroyPreviousFX && ActiveRageEmitter)
+		if (CurrentStage.bDestroyPreviousFX)
 		{
-			ActiveRageEmitter->DestroyComponent();
-			ActiveRageEmitter = nullptr;
+			for (TObjectPtr<UParticleSystemComponent> Emitter : ActiveRageEmitters)
+			{
+				if (Emitter)
+				{
+					Emitter->DestroyComponent();
+				}
+			}
+			ActiveRageEmitters.Empty();
 		}
 
-		UParticleSystemComponent* NewEmitter = UGameplayStatics::SpawnEmitterAtLocation(
-			GetWorld(),
+		FVector RelativeLoc = FVector(0, 0, -Player->GetSimpleCollisionHalfHeight());
+
+		UParticleSystemComponent* NewEmitter = UGameplayStatics::SpawnEmitterAttached(
 			CurrentStage.StageFX,
-			Player->GetActorLocation(),
-			Player->GetActorRotation(),
-			CurrentStage.FXScale
+			Player->GetRootComponent(),
+			NAME_None,
+			RelativeLoc,
+			FRotator::ZeroRotator,
+			CurrentStage.FXScale,
+			EAttachLocation::KeepRelativeOffset
 		);
 
-		if (!CurrentStage.bDestroyPreviousFX)
+		if (NewEmitter)
 		{
-			ActiveRageEmitter = NewEmitter;
+			ActiveRageEmitters.Add(NewEmitter);
 		}
 	}
 	

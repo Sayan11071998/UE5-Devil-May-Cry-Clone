@@ -29,12 +29,13 @@ private:
 
 	int32 CurrentStageIndex = 0;
 	bool bRageActive = false;
+	bool bIsRageSequencePlaying = false;
 
 	FTimerHandle RageTimerHandle;
 	FTimerHandle DurationTimerHandle;
 
 	UPROPERTY()
-	TObjectPtr<UParticleSystemComponent> ActiveRageEmitter;
+	TArray<TObjectPtr<UParticleSystemComponent>> ActiveRageEmitters;
 	
 public:
 	FORCEINLINE bool IsRageActive() const { return bRageActive; }
