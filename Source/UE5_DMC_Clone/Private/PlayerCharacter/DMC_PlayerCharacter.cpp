@@ -67,8 +67,6 @@ void ADMC_PlayerCharacter::BeginPlay()
 void ADMC_PlayerCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	
-	SoftLockOn(); // Constantly look for a "Soft Target" in front of the player
 }
 
 void ADMC_PlayerCharacter::Landed(const FHitResult& Hit)
@@ -112,9 +110,6 @@ void ADMC_PlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 		EnhancedInputComponent->BindAction(FinisherAttackAction, ETriggerEvent::Started, this, &ADMC_PlayerCharacter::FinisherAttack);
 		
 		EnhancedInputComponent->BindAction(DodgeAction, ETriggerEvent::Started, this, &ADMC_PlayerCharacter::Dodge);
-		
-		EnhancedInputComponent->BindAction(LockOnAction, ETriggerEvent::Started, this, &ADMC_PlayerCharacter::LockOn);
-		EnhancedInputComponent->BindAction(LockOnAction, ETriggerEvent::Completed, this, &ADMC_PlayerCharacter::StopLockOn);
 		
 		EnhancedInputComponent->BindAction(RageAction, ETriggerEvent::Started, this, &ADMC_PlayerCharacter::Rage);
 		EnhancedInputComponent->BindAction(StopRageAction, ETriggerEvent::Started, this, &ADMC_PlayerCharacter::StopRage);
@@ -181,7 +176,6 @@ void ADMC_PlayerCharacter::Move(const FInputActionValue& Value)
 
 void ADMC_PlayerCharacter::Look(const FInputActionValue& Value)
 {
-	if (GetCombatTarget()) return;
 	FVector2D Looked = Value.Get<FVector2D>();
 	if (Controller)
 	{
@@ -208,6 +202,8 @@ void ADMC_PlayerCharacter::Jump()
 
 void ADMC_PlayerCharacter::LightAttack()
 {
+	RotateToTarget(); // Turn to face the contextual target
+	
 	if (CombatComp)
 	{
 		if (CurrentState == EDMC_PlayerState::ECS_Dodge)
@@ -244,6 +240,8 @@ void ADMC_PlayerCharacter::OnChargeTimerFinished()
 
 void ADMC_PlayerCharacter::HeavyAttack()
 {
+	RotateToTarget(); // Turn to face the contextual target
+	
 	if (CombatComp)
 	{
 		CombatComp->PerformHeavyAttack();
@@ -252,6 +250,8 @@ void ADMC_PlayerCharacter::HeavyAttack()
 
 void ADMC_PlayerCharacter::Dodge()
 {
+	RotateToTarget(); // Turn to face the contextual target
+	
 	if (IsDodging() || CurrentState == EDMC_PlayerState::ECS_Finisher)
 	{
 		if (BufferComponent) BufferComponent->BufferInput(EDMC_BufferedInput::EBI_Dodge);
@@ -278,16 +278,6 @@ void ADMC_PlayerCharacter::Rage()
 void ADMC_PlayerCharacter::StopRage()
 {
 	if (RageComp) RageComp->StopRage();
-}
-
-void ADMC_PlayerCharacter::LockOn()
-{
-	if (TargetingComp) TargetingComp->LockOn();
-}
-
-void ADMC_PlayerCharacter::StopLockOn()
-{
-	if (TargetingComp) TargetingComp->StopLockOn();
 }
 
 void ADMC_PlayerCharacter::SaveLightAttack()

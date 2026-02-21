@@ -90,10 +90,7 @@ void UDMC_FinisherComponent::TryExecuteFinisher()
 					UE_LOG(LogTemp, Error, TEXT("[FinisherComp] Finisher Montage not found in ComboData!"));
 				}
 
-				if (UDMC_TargetingComponent* TargetingComp = PlayerOwner->GetTargetingComp())
-				{
-					TargetingComp->StopLockOn();
-				}
+	
 			}
 		}
 		else

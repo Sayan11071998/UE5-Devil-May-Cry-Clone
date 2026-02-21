@@ -14,33 +14,34 @@ public:
 	UDMC_TargetingComponent();
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	
-	void LockOn();
-	void StopLockOn();
 	void SoftLockOn();
 	void RotateToTarget();
 	void StopRotation();
 	void ClearSoftTarget();
+	
+	AActor* FindBestContextualTarget();
 
 protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Combat|Rotation")
 	TObjectPtr<UCurveFloat> RotationCurve;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Combat|Targeting")
+	float MaxSearchRadius = 1500.f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Combat|Targeting")
+	float MaxFieldOfViewAngle = 60.f;
 	
 private:
 	UPROPERTY()
-	TObjectPtr<AActor> TargetActor;
-	
-	UPROPERTY()
-	TObjectPtr<AActor> SoftTarget;
+	TObjectPtr<AActor> FocusedTarget;
 	
 	FTimeline RotationTimeline;
-	bool bIsTargeting = false;
-	bool bInputHold = false;
 	
 	UFUNCTION()
 	void HandleRotationTimelineProgress(float Value);
 	
 public:
-	FORCEINLINE bool IsTargeting() const { return bIsTargeting; }
-	FORCEINLINE TObjectPtr<AActor> GetTargetActor() const { return TargetActor; }
-	FORCEINLINE TObjectPtr<AActor> GetSoftTarget() const { return SoftTarget; }
+	FORCEINLINE bool IsTargeting() const { return false; }
+	FORCEINLINE TObjectPtr<AActor> GetTargetActor() const { return FocusedTarget; }
+	FORCEINLINE TObjectPtr<AActor> GetSoftTarget() const { return FocusedTarget; }
 };

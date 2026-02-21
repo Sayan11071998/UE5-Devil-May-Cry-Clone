@@ -85,9 +85,6 @@ protected:
 	void FinisherAttack();
 	void Rage();
 	void StopRage();
-	void LockOn();
-	void StopLockOn();
-
 	void OnChargeTimerFinished();
 
 private:
@@ -177,9 +174,6 @@ private:
 
 	UPROPERTY(EditDefaultsOnly, Category = "DMC|Input")
 	TObjectPtr<UInputAction> DodgeAction;
-
-	UPROPERTY(EditDefaultsOnly, Category = "DMC|Input")
-	TObjectPtr<UInputAction> LockOnAction;
 
 	UPROPERTY(EditDefaultsOnly, Category = "DMC|Input")
 	TObjectPtr<UInputAction> RageAction;

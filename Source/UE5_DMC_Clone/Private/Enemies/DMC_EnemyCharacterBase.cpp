@@ -81,11 +81,6 @@ void ADMC_EnemyCharacterBase::OnFinished(TObjectPtr<AActor> Attacker)
 	{
 		PlayAnimMontage(FinishedMontage);
 	}
-	
-	if (UDMC_TargetingComponent* TargetingComp = Cast<ADMC_PlayerCharacter>(Attacker)->GetTargetingComp())
-	{
-		TargetingComp->StopLockOn();
-	}
 
 	Health = 0.f;
 	Death();

@@ -57,12 +57,7 @@ void UDMC_CombatComponent::PerformDodge()
 
 	PlayerOwner->StopRotation();
 	bPerformChargeAttack = false;
-	
-	if (UDMC_TargetingComponent* Targeting = PlayerOwner->GetTargetingComp())
-	{
-		Targeting->ClearSoftTarget();
-	}
-	
+
 	const FVector LastInput = PlayerOwner->GetCharacterMovement()->GetLastInputVector();
 	if (!LastInput.IsNearlyZero())
 	{
@@ -198,7 +193,6 @@ bool UDMC_CombatComponent::ExecuteAttack(const FDMC_AttackData& AttackData)
 	}
 
 	PlayerOwner->SetState(EDMC_PlayerState::ECS_Attack);
-	PlayerOwner->SoftLockOn();
 	PlayerOwner->PlayAnimMontage(AttackData.Montage);
 
 	return true;
