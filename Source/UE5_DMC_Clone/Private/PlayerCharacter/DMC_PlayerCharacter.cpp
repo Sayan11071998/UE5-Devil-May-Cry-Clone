@@ -67,6 +67,8 @@ void ADMC_PlayerCharacter::BeginPlay()
 void ADMC_PlayerCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+	
+	SoftLockOn(); // Constantly look for a "Soft Target" in front of the player
 }
 
 void ADMC_PlayerCharacter::Landed(const FHitResult& Hit)

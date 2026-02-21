@@ -86,6 +86,12 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "DMC|UI", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UWidgetComponent> HealthBarWidget;
 	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "DMC|UI", meta = (AllowPrivateAccess = "true"))
+	float HealthBarDrawSize_X = 150.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "DMC|UI", meta = (AllowPrivateAccess = "true"))
+	float HealthBarDrawSize_Y = 50.f;
+	
 public:
 	// Public state accessors
 	FORCEINLINE bool IsDead() const { return bDead; }

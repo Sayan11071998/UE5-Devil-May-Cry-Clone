@@ -2,6 +2,7 @@
 #include "Components/ProgressBar.h"
 #include "Components/TextBlock.h"
 #include "Kismet/GameplayStatics.h"
+#include "Enemies/DMC_EnemyCharacterBase.h"
 
 void UDMC_EnemyHealthBar::SetHealthPercent(float InPercent)
 {
@@ -16,25 +17,32 @@ void UDMC_EnemyHealthBar::NativeTick(const FGeometry& MyGeometry, float InDeltaT
 	Super::NativeTick(MyGeometry, InDeltaTime);
 
 	if (!OwnerActor) return;
-
-	if (!CachedPlayerPawn)
-	{
-		CachedPlayerPawn = UGameplayStatics::GetPlayerPawn(GetWorld(), 0);
-	}
 	
-	if (!CachedPlayerPawn) return;
+	ADMC_EnemyCharacterBase* Enemy = Cast<ADMC_EnemyCharacterBase>(OwnerActor);
+	if (!Enemy) return;
 
-	float Distance = FVector::Dist(CachedPlayerPawn->GetActorLocation(), OwnerActor->GetActorLocation());
-
-	if (ExecuteText)
+	if (Enemy->CanBeFinished())
 	{
-		if (Distance < DisplayRange)
+		if (HealthProgressBar) HealthProgressBar->SetVisibility(ESlateVisibility::Collapsed);
+		if (ExecuteText)
 		{
-			ExecuteText->SetColorAndOpacity(StandardColor);
-		}
-		else
-		{
+			ExecuteText->SetVisibility(ESlateVisibility::Visible);
 			ExecuteText->SetColorAndOpacity(LowRangeColor);
+
+			// Pulsing Animation
+			PulseTime += InDeltaTime * PulseSpeed;
+			float PulseValue = (FMath::Sin(PulseTime) + 1.0f) * 0.5f; // 0 to 1
+			float Scale = FMath::Lerp(MinPulseScale, MaxPulseScale, PulseValue);
+			ExecuteText->SetRenderScale(FVector2D(Scale));
+		}
+	}
+	else
+	{
+		if (HealthProgressBar) HealthProgressBar->SetVisibility(ESlateVisibility::Visible);
+		if (ExecuteText)
+		{
+			ExecuteText->SetVisibility(ESlateVisibility::Collapsed);
+			PulseTime = 0.0f;
 		}
 	}
 }
