@@ -21,7 +21,6 @@ ADMC_EnemyCharacterBase::ADMC_EnemyCharacterBase()
 	HealthBarWidget->SetupAttachment(GetMesh());
 }
 
-// ~ Begin Engine Overrides
 void ADMC_EnemyCharacterBase::BeginPlay()
 {
 	Super::BeginPlay();
@@ -40,9 +39,7 @@ void ADMC_EnemyCharacterBase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 }
-// ~ End Engine Overrides
 
-// ~ Begin IDMC_CombatInterface Implementation
 bool ADMC_EnemyCharacterBase::CanBeFinished() const
 {
 	if (bDead) return false;
@@ -67,9 +64,7 @@ void ADMC_EnemyCharacterBase::OnFinished(AActor* Attacker)
 	Health = 0.f;
 	Death();
 }
-// ~ End IDMC_CombatInterface Implementation
 
-// ~ Begin AActor Interface
 float ADMC_EnemyCharacterBase::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser)
 {
 	if (bDead) return 0.f;
@@ -111,9 +106,7 @@ float ADMC_EnemyCharacterBase::TakeDamage(float DamageAmount, struct FDamageEven
 	
 	return DamageAmount;
 }
-// ~ End AActor Interface
 
-// ~ Begin Combat Visuals & Feedback
 void ADMC_EnemyCharacterBase::SpawnHitFX(AActor* DamageCauser, const FHitResult& HitResult)
 {
 	if (!HitVFX || !DamageCauser) return;
@@ -139,9 +132,7 @@ void ADMC_EnemyCharacterBase::PlayHitReaction(EDMC_DamageType DamageDirection)
 		}
 	}
 }
-// ~ End Combat Visuals & Feedback
 
-// ~ Begin Private Implementation
 void ADMC_EnemyCharacterBase::Death()
 {
 	if (bDead) return;
@@ -155,4 +146,3 @@ void ADMC_EnemyCharacterBase::Death()
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 }
-// ~ End Private Implementation
