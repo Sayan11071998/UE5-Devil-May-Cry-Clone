@@ -77,18 +77,24 @@ void ADMC_EnemyCharacterBase::OnFinished(TObjectPtr<AActor> Attacker)
 {
 	if (bDead) return;
 
+	Health = 0.f;
+
 	if (FinishedMontage)
 	{
 		PlayAnimMontage(FinishedMontage);
+		
+		// Delay Death() until after the Finished montage completes
+		float MontageLength = FinishedMontage->GetPlayLength();
+		FTimerHandle FinishedTimerHandle;
+		GetWorldTimerManager().SetTimer(FinishedTimerHandle, [this]()
+		{
+			Death(true);
+		}, MontageLength, false);
 	}
-	
-	if (UDMC_TargetingComponent* TargetingComp = Cast<ADMC_PlayerCharacter>(Attacker)->GetTargetingComp())
+	else
 	{
-		TargetingComp->StopLockOn();
+		Death();
 	}
-
-	Health = 0.f;
-	Death();
 }
 
 float ADMC_EnemyCharacterBase::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser)
@@ -159,11 +165,19 @@ void ADMC_EnemyCharacterBase::PlayHitReaction(EDMC_DamageType DamageDirection)
 	}
 }
 
-void ADMC_EnemyCharacterBase::Death()
+void ADMC_EnemyCharacterBase::Death(bool bIsFinisher)
 {
 	if (bDead) return;
 	bDead = true;
 	
+	if (bIsFinisher)
+	{
+		// If finished, we don't play death montage and destroy immediately (or very soon)
+		// We can also trigger VXF/SFX here if needed
+		Destroy();
+		return;
+	}
+
 	if (DeathMontage)
 	{
 		PlayAnimMontage(DeathMontage);

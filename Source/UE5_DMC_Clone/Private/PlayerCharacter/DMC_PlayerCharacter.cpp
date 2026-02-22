@@ -67,8 +67,6 @@ void ADMC_PlayerCharacter::BeginPlay()
 void ADMC_PlayerCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	
-	SoftLockOn(); // Constantly look for a "Soft Target" in front of the player
 }
 
 void ADMC_PlayerCharacter::Landed(const FHitResult& Hit)
@@ -113,11 +111,11 @@ void ADMC_PlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 		
 		EnhancedInputComponent->BindAction(DodgeAction, ETriggerEvent::Started, this, &ADMC_PlayerCharacter::Dodge);
 		
-		EnhancedInputComponent->BindAction(LockOnAction, ETriggerEvent::Started, this, &ADMC_PlayerCharacter::LockOn);
-		EnhancedInputComponent->BindAction(LockOnAction, ETriggerEvent::Completed, this, &ADMC_PlayerCharacter::StopLockOn);
-		
 		EnhancedInputComponent->BindAction(RageAction, ETriggerEvent::Started, this, &ADMC_PlayerCharacter::Rage);
 		EnhancedInputComponent->BindAction(StopRageAction, ETriggerEvent::Started, this, &ADMC_PlayerCharacter::StopRage);
+		
+		EnhancedInputComponent->BindAction(ModifierAction, ETriggerEvent::Started, this, &ADMC_PlayerCharacter::ModifierPressed);
+		EnhancedInputComponent->BindAction(ModifierAction, ETriggerEvent::Completed, this, &ADMC_PlayerCharacter::ModifierReleased);
 	}
 }
 
@@ -181,7 +179,6 @@ void ADMC_PlayerCharacter::Move(const FInputActionValue& Value)
 
 void ADMC_PlayerCharacter::Look(const FInputActionValue& Value)
 {
-	if (GetCombatTarget()) return;
 	FVector2D Looked = Value.Get<FVector2D>();
 	if (Controller)
 	{
@@ -216,8 +213,10 @@ void ADMC_PlayerCharacter::LightAttack()
 		}
 		
 		bHitStopEnabled = false;
-		CombatComp->SpecialAttack(); // Checks internal matching and executes if valid
-		CombatComp->PerformLightAttack();
+		if (!CombatComp->SpecialAttack()) // Only do normal attack if no special attack was triggered
+		{
+			CombatComp->PerformLightAttack();
+		}
 	}
 	
 	GetWorldTimerManager().SetTimer(ChargeTimerHandle, this, &ADMC_PlayerCharacter::OnChargeTimerFinished, 0.5f, false);
@@ -280,14 +279,14 @@ void ADMC_PlayerCharacter::StopRage()
 	if (RageComp) RageComp->StopRage();
 }
 
-void ADMC_PlayerCharacter::LockOn()
+void ADMC_PlayerCharacter::ModifierPressed()
 {
-	if (TargetingComp) TargetingComp->LockOn();
+	bModifierHeld = true;
 }
 
-void ADMC_PlayerCharacter::StopLockOn()
+void ADMC_PlayerCharacter::ModifierReleased()
 {
-	if (TargetingComp) TargetingComp->StopLockOn();
+	bModifierHeld = false;
 }
 
 void ADMC_PlayerCharacter::SaveLightAttack()

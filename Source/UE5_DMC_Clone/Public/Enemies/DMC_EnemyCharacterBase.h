@@ -59,7 +59,7 @@ protected:
 	void PlayHitReaction(EDMC_DamageType DamageDirection);
 	
 private:
-	void Death();
+	void Death(bool bIsFinisher = false);
 	
 	bool bDead = false;
 

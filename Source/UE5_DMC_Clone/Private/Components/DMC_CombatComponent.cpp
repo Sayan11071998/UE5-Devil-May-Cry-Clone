@@ -57,12 +57,7 @@ void UDMC_CombatComponent::PerformDodge()
 
 	PlayerOwner->StopRotation();
 	bPerformChargeAttack = false;
-	
-	if (UDMC_TargetingComponent* Targeting = PlayerOwner->GetTargetingComp())
-	{
-		Targeting->ClearSoftTarget();
-	}
-	
+
 	const FVector LastInput = PlayerOwner->GetCharacterMovement()->GetLastInputVector();
 	if (!LastInput.IsNearlyZero())
 	{
@@ -89,15 +84,15 @@ void UDMC_CombatComponent::PerformDodge()
 	}
 }
 
-void UDMC_CombatComponent::SpecialAttack()
+bool UDMC_CombatComponent::SpecialAttack()
 {
 	UDMC_ComboDataAsset* ComboData = PlayerOwner->GetComboData();
-	if (!ComboData || ComboData->SpecialAttacks.Num() == 0) return;
+	if (!ComboData || ComboData->SpecialAttacks.Num() == 0) return false;
 
 	const FVector LastInput = PlayerOwner->GetCharacterMovement()->GetLastInputVector();
 	const float ForwardDot = !LastInput.IsNearlyZero() ? FVector::DotProduct(PlayerOwner->GetActorForwardVector(), LastInput.GetSafeNormal()) : 0.f;
 	const bool bIsFalling = PlayerOwner->GetCharacterMovement()->IsFalling();
-	const bool bHasTarget = PlayerOwner->GetIsTargeting() && PlayerOwner->GetCombatTarget() != nullptr;
+	const bool bHasTarget = PlayerOwner->GetCombatTarget() != nullptr;
 
 	for (const FDMC_SpecialAttackData& AttackData : ComboData->SpecialAttacks)
 	{
@@ -134,7 +129,11 @@ void UDMC_CombatComponent::SpecialAttack()
 			case EDMC_SpecialAttackRequirement::ESAR_AirOnly:
 				if (!bIsFalling) bReqsMet = false;
 				break;
-			
+		
+			case EDMC_SpecialAttackRequirement::ESAR_RequiresModifier:
+				if (!PlayerOwner->IsModifierHeld()) bReqsMet = false;
+				break;
+		
 			case EDMC_SpecialAttackRequirement::ESAR_FinisherOnly:
 				bReqsMet = false; // FinisherOnly is handled by FinisherComponent
 				break;
@@ -150,10 +149,14 @@ void UDMC_CombatComponent::SpecialAttack()
 		{
 			PlayerOwner->ResetLightAttackVariables();
 			PlayerOwner->ResetHeavyAttackVariables();
-			PlayerOwner->RotateToTarget();
-			return;
+			if (UDMC_TargetingComponent* Targeting = PlayerOwner->GetTargetingComp())
+			{
+				Targeting->SnapToTarget();
+			}
+			return true;
 		}
 	}
+	return false;
 }
 
 void UDMC_CombatComponent::TryConsumeBufferedInput()
@@ -198,7 +201,10 @@ bool UDMC_CombatComponent::ExecuteAttack(const FDMC_AttackData& AttackData)
 	}
 
 	PlayerOwner->SetState(EDMC_PlayerState::ECS_Attack);
-	PlayerOwner->SoftLockOn();
+	if (UDMC_TargetingComponent* Targeting = PlayerOwner->GetTargetingComp())
+	{
+		Targeting->SnapToTarget();
+	}
 	PlayerOwner->PlayAnimMontage(AttackData.Montage);
 
 	return true;
