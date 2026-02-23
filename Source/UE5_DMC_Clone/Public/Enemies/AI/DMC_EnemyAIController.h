@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "AIController.h"
+#include "Enemies/DMC_AIStates.h"
 #include "DMC_EnemyAIController.generated.h"
 
 UCLASS()
@@ -17,6 +18,15 @@ protected:
 	
 	UPROPERTY(EditDefaultsOnly, Category = "AI")
 	FName TargetKeyName = FName("Target");
+	
+	UPROPERTY(EditDefaultsOnly, Category = "AI")
+	FName StrafeDistanceKeyName = FName("StrafeDistance");
+	
+	UPROPERTY(EditDefaultsOnly, Category = "AI")
+	FName StateKeyName = FName("State");
+	
+	UPROPERTY(EditDefaultsOnly, Category = "AI")
+	float StrafeDistance = 400.f;
 	
 	UPROPERTY(EditDefaultsOnly, Category = "AI")
 	TObjectPtr<UBehaviorTree> BehaviorTree;

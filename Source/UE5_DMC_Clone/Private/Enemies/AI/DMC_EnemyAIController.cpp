@@ -17,7 +17,9 @@ void ADMC_EnemyAIController::OnPossess(APawn* InPawn)
 		if (UBlackboardComponent* BB = GetBlackboardComponent())
 		{
 			APawn* Player = UGameplayStatics::GetPlayerPawn(GetWorld(), 0);
+			
 			BB->SetValueAsObject(TargetKeyName, Player);
+			BB->SetValueAsFloat(StrafeDistanceKeyName, StrafeDistance);
 		}
 	}
 }
