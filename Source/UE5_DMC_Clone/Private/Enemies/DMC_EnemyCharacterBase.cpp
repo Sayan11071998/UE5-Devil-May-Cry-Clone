@@ -215,15 +215,27 @@ void ADMC_EnemyCharacterBase::EndWeaponCollision()
 	if (EquippedWeapon) EquippedWeapon->EndCollision();
 }
 
-void ADMC_EnemyCharacterBase::PerformAttack()
+float ADMC_EnemyCharacterBase::PerformAttack()
 {
-	if (bDead || AttackMontages.Num() == 0) return;
+	if (bDead || AttackMontages.Num() == 0 || bIsAttacking) return 0.f;
 
 	int32 RandomIndex = FMath::RandRange(0, AttackMontages.Num() - 1);
 	if (UAnimMontage* SelectedMontage = AttackMontages[RandomIndex])
 	{
-		PlayAnimMontage(SelectedMontage);
+		float Duration = PlayAnimMontage(SelectedMontage);
+		if (Duration > 0.f)
+		{
+			bIsAttacking = true;
+			GetWorldTimerManager().SetTimer(AttackTimerHandle, this, &ADMC_EnemyCharacterBase::ResetAttackState, Duration, false);
+			return Duration;
+		}
 	}
+	return 0.f;
+}
+
+void ADMC_EnemyCharacterBase::ResetAttackState()
+{
+	bIsAttacking = false;
 }
 
 void ADMC_EnemyCharacterBase::EquipWeapon()

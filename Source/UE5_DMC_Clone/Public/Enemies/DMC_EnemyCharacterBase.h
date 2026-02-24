@@ -52,7 +52,7 @@ public:
 	void SpawnHitFX(TObjectPtr<AActor> DamageCauser, const FHitResult& HitResult);
 
 	UFUNCTION(BlueprintCallable, Category = "DMC|Combat")
-	void PerformAttack();
+	float PerformAttack();
 
 protected:
 	virtual void BeginPlay() override;
@@ -69,7 +69,11 @@ private:
 	void Death(bool bIsFinisher = false);
 	void EquipWeapon();
 	
+	void ResetAttackState();
+	
 	bool bDead = false;
+	bool bIsAttacking = false;
+	FTimerHandle AttackTimerHandle;
 
 	// Combat Properties
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "DMC|Combat", meta = (AllowPrivateAccess = "true"))
@@ -115,6 +119,7 @@ private:
 public:
 	// Public state accessors
 	FORCEINLINE bool IsDead() const { return bDead; }
+	FORCEINLINE bool IsAttacking() const { return bIsAttacking; }
 	FORCEINLINE float GetHealth() const { return Health; }
 	FORCEINLINE float GetMaxHealth() const { return MaxHealth; }
 };
