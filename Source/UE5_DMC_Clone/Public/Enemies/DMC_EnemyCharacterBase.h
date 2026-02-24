@@ -3,9 +3,11 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "DamageTypes/DMC_DamageType.h"
-#include "Components/WidgetComponent.h"
 #include "Interfaces/DMC_CombatInterface.h"
 #include "DMC_EnemyCharacterBase.generated.h"
+
+class UWidgetComponent;
+class ADMC_BaseWeapon;
 
 USTRUCT(BlueprintType)
 struct FDMC_HitReactionData
@@ -38,6 +40,8 @@ public:
 	virtual void SetAllowPhysicsRotation(bool bAllow) override {}
 	virtual TObjectPtr<AActor> GetCombatTarget() const override { return nullptr; }
 	virtual TObjectPtr<AActor> GetSoftTarget() const override { return nullptr; }
+	virtual void StartWeaponCollision(TSubclassOf<class UDMC_DamageType> DamageType) override;
+	virtual void EndWeaponCollision() override;
 	// ~ End IDMC_CombatInterface Implementation
 	
 	// ~ Begin AActor Interface
@@ -46,6 +50,9 @@ public:
 	
 	// Visual feedback for hits
 	void SpawnHitFX(TObjectPtr<AActor> DamageCauser, const FHitResult& HitResult);
+
+	UFUNCTION(BlueprintCallable, Category = "DMC|Combat")
+	void PerformAttack(UAnimMontage* AttackMontage);
 
 protected:
 	virtual void BeginPlay() override;
@@ -60,6 +67,7 @@ protected:
 	
 private:
 	void Death(bool bIsFinisher = false);
+	void EquipWeapon();
 	
 	bool bDead = false;
 
@@ -81,6 +89,15 @@ private:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "DMC|Combat", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UNiagaraSystem> HitVFX;
+
+	UPROPERTY(EditDefaultsOnly, Category = "DMC|Combat")
+	TSubclassOf<ADMC_BaseWeapon> WeaponClass;
+
+	UPROPERTY()
+	TObjectPtr<ADMC_BaseWeapon> EquippedWeapon;
+
+	UPROPERTY(EditDefaultsOnly, Category = "DMC|Combat")
+	FName WeaponSocketName = FName("WeaponSocket");
 
 	// UI Components
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "DMC|UI", meta = (AllowPrivateAccess = "true"))

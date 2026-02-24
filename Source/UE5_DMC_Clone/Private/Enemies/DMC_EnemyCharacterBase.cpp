@@ -1,4 +1,5 @@
 #include "Enemies/DMC_EnemyCharacterBase.h"
+#include "Items/DMC_BaseWeapon.h"
 #include "NiagaraFunctionLibrary.h"
 #include "Components/CapsuleComponent.h"
 #include "DamageTypes/DMC_DamageType.h"
@@ -7,8 +8,8 @@
 #include "Components/DMC_CombatBufferComponent.h"
 #include "UI/DMC_EnemyHealthBar.h"
 #include "PlayerCharacter/DMC_PlayerCharacter.h"
-#include "Components/DMC_TargetingComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "Components/WidgetComponent.h"
 
 ADMC_EnemyCharacterBase::ADMC_EnemyCharacterBase()
 {
@@ -28,6 +29,7 @@ ADMC_EnemyCharacterBase::ADMC_EnemyCharacterBase()
 void ADMC_EnemyCharacterBase::BeginPlay()
 {
 	Super::BeginPlay();
+	EquipWeapon();
 
 	if (HealthBarWidget)
 	{
@@ -201,4 +203,37 @@ void ADMC_EnemyCharacterBase::Death(bool bIsFinisher)
 	}
 
 	SetLifeSpan(5.0f);
+}
+
+void ADMC_EnemyCharacterBase::StartWeaponCollision(TSubclassOf<class UDMC_DamageType> DamageType)
+{
+	if (EquippedWeapon) EquippedWeapon->StartCollision(DamageType);
+}
+
+void ADMC_EnemyCharacterBase::EndWeaponCollision()
+{
+	if (EquippedWeapon) EquippedWeapon->EndCollision();
+}
+
+void ADMC_EnemyCharacterBase::PerformAttack(UAnimMontage* AttackMontage)
+{
+	if (AttackMontage && !bDead)
+	{
+		PlayAnimMontage(AttackMontage);
+	}
+}
+
+void ADMC_EnemyCharacterBase::EquipWeapon()
+{
+	if (!WeaponClass || EquippedWeapon) return;
+
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.Owner = this;
+	SpawnParams.Instigator = this;
+
+	EquippedWeapon = GetWorld()->SpawnActor<ADMC_BaseWeapon>(WeaponClass, SpawnParams);
+	if (EquippedWeapon)
+	{
+		EquippedWeapon->Equip(GetMesh(), WeaponSocketName, this, this);
+	}
 }
