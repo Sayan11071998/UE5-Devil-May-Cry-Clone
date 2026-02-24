@@ -22,6 +22,9 @@ protected:
 	
 	UPROPERTY(EditAnywhere, Category = "AI")
 	FBlackboardKeySelector StrafeDistanceKey;
+
+	UPROPERTY(EditAnywhere, Category = "AI")
+	FBlackboardKeySelector AttackDistanceKey;
 	
 	UPROPERTY(EditAnywhere, Category = "AI")
 	FBlackboardKeySelector StateKey;

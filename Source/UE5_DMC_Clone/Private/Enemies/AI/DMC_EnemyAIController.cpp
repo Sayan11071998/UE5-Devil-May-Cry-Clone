@@ -20,6 +20,7 @@ void ADMC_EnemyAIController::OnPossess(APawn* InPawn)
 			
 			BB->SetValueAsObject(TargetKeyName, Player);
 			BB->SetValueAsFloat(StrafeDistanceKeyName, StrafeDistance);
+			BB->SetValueAsFloat(AttackDistanceKeyName, AttackDistance);
 		}
 	}
 }

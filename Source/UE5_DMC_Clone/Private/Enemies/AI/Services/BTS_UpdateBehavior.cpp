@@ -21,11 +21,16 @@ void UBTS_UpdateBehavior::TickNode(UBehaviorTreeComponent& OwnerComp, uint8* Nod
 	{
 		AActor* Target = Cast<AActor>(BB->GetValueAsObject(TargetKey.SelectedKeyName));
 		float StrafeDist = BB->GetValueAsFloat(StrafeDistanceKey.SelectedKeyName);
+		float AttackDist = BB->GetValueAsFloat(AttackDistanceKey.SelectedKeyName);
 		
 		if (Target)
 		{
 			float Distance = Enemy->GetDistanceTo(Target);
-			if (Distance <= StrafeDist)
+			if (Distance <= AttackDist)
+			{
+				BB->SetValueAsEnum(StateKey.SelectedKeyName, (uint8)EDMC_AIBehaviorState::EAIS_Attack);
+			}
+			else if (Distance <= StrafeDist)
 			{
 				BB->SetValueAsEnum(StateKey.SelectedKeyName, (uint8)EDMC_AIBehaviorState::EAIS_Strafe);
 			}

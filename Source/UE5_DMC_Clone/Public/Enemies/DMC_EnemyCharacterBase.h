@@ -52,7 +52,7 @@ public:
 	void SpawnHitFX(TObjectPtr<AActor> DamageCauser, const FHitResult& HitResult);
 
 	UFUNCTION(BlueprintCallable, Category = "DMC|Combat")
-	void PerformAttack(UAnimMontage* AttackMontage);
+	void PerformAttack();
 
 protected:
 	virtual void BeginPlay() override;
@@ -89,6 +89,9 @@ private:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "DMC|Combat", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UNiagaraSystem> HitVFX;
+
+	UPROPERTY(EditDefaultsOnly, Category = "DMC|Combat")
+	TArray<TObjectPtr<UAnimMontage>> AttackMontages;
 
 	UPROPERTY(EditDefaultsOnly, Category = "DMC|Combat")
 	TSubclassOf<ADMC_BaseWeapon> WeaponClass;
