@@ -29,10 +29,10 @@ protected:
 	FName StateKeyName = FName("State");
 	
 	UPROPERTY(EditDefaultsOnly, Category = "AI")
-	float StrafeDistance = 400.f;
+	float StrafeDistance = 450.f;
 
 	UPROPERTY(EditDefaultsOnly, Category = "AI")
-	float AttackDistance = 150.f;
+	float AttackDistance = 175.f;
 	
 	UPROPERTY(EditDefaultsOnly, Category = "AI")
 	TObjectPtr<UBehaviorTree> BehaviorTree;
