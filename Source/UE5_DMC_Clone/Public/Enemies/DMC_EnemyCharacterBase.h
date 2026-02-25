@@ -52,7 +52,7 @@ public:
 	void SpawnHitFX(TObjectPtr<AActor> DamageCauser, const FHitResult& HitResult);
 
 	UFUNCTION(BlueprintCallable, Category = "DMC|Combat")
-	float PerformAttack();
+	float PerformAttack(int32 AttackIndex = -1);
 
 protected:
 	virtual void BeginPlay() override;

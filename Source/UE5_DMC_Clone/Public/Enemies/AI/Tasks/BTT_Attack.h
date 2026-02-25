@@ -12,6 +12,9 @@ class UE5_DMC_CLONE_API UBTT_Attack : public UBTTaskNode
 public:
 	UBTT_Attack();
 
+	UPROPERTY(EditAnywhere, Category = "AI")
+	int32 AttackIndex = -1;
+
 protected:
 	// ~ Begin UBTTaskNode interface
 	virtual EBTNodeResult::Type ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory) override;

@@ -16,7 +16,7 @@ EBTNodeResult::Type UBTT_Attack::ExecuteTask(UBehaviorTreeComponent& OwnerComp, 
 		ADMC_EnemyCharacterBase* Enemy = Cast<ADMC_EnemyCharacterBase>(AIController->GetPawn());
 		if (Enemy)
 		{
-			if (Enemy->PerformAttack() > 0.f)
+			if (Enemy->PerformAttack(AttackIndex) > 0.f)
 			{
 				return EBTNodeResult::InProgress;
 			}
