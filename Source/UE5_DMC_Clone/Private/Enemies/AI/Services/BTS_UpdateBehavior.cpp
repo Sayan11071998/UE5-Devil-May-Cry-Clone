@@ -2,6 +2,7 @@
 #include "Enemies/DMC_AIStates.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "AIController.h"
+#include "PlayerCharacter/DMC_PlayerCharacter.h"
 
 UBTS_UpdateBehavior::UBTS_UpdateBehavior()
 {
@@ -25,6 +26,15 @@ void UBTS_UpdateBehavior::TickNode(UBehaviorTreeComponent& OwnerComp, uint8* Nod
 		
 		if (Target)
 		{
+			if (ADMC_PlayerCharacter* Player = Cast<ADMC_PlayerCharacter>(Target))
+			{
+				if (Player->IsDead())
+				{
+					BB->SetValueAsEnum(StateKey.SelectedKeyName, (uint8)EDMC_AIBehaviorState::EAIS_None);
+					return;
+				}
+			}
+
 			float Distance = Enemy->GetDistanceTo(Target);
 			if (Distance <= AttackDist)
 			{

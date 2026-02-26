@@ -172,10 +172,23 @@ void ADMC_EnemyCharacterBase::Death(bool bIsFinisher)
 	if (bDead) return;
 	bDead = true;
 	
+	// Stop any active weapon collision
+	EndWeaponCollision();
+	
+	if (EquippedWeapon)
+	{
+		if (bIsFinisher)
+		{
+			EquippedWeapon->Destroy();
+		}
+		else
+		{
+			EquippedWeapon->SetLifeSpan(5.0f);
+		}
+	}
+
 	if (bIsFinisher)
 	{
-		// If finished, we don't play death montage and destroy immediately (or very soon)
-		// We can also trigger VXF/SFX here if needed
 		Destroy();
 		return;
 	}
