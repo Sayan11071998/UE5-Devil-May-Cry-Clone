@@ -49,6 +49,9 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Combat|VFX")
 	TObjectPtr<UNiagaraSystem> TrailSystem;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Combat|VFX")
+	bool bShowSlashTrail = true;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat|VFX")
 	TObjectPtr<UNiagaraComponent> TrailComponent;
 

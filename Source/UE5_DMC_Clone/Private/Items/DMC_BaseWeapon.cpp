@@ -5,6 +5,7 @@
 #include "NiagaraComponent.h"
 #include "PlayerCharacter/DMC_PlayerCharacter.h"
 #include "Data/DMC_ComboDataAsset.h"
+#include "Enemies/DMC_EnemyCharacterBase.h"
 
 ADMC_BaseWeapon::ADMC_BaseWeapon()
 {
@@ -63,7 +64,7 @@ void ADMC_BaseWeapon::EndCollision()
 
 void ADMC_BaseWeapon::ToggleTrail(bool bActivate)
 {
-	if (!TrailComponent || !TrailSystem) return;
+	if (!TrailComponent || !TrailSystem || !bShowSlashTrail) return;
 	
 	if (bActivate)
 	{
@@ -111,6 +112,10 @@ void ADMC_BaseWeapon::HandleCollisionTracing()
 				AActor* HitActor = Hit.GetActor();
 				if (IsValid(HitActor) && !AlreadyHitActors.Contains(HitActor))
 				{
+					// Friendly Fire Check
+					if (HitActor->IsA(ADMC_PlayerCharacter::StaticClass()) && GetOwner()->IsA(ADMC_PlayerCharacter::StaticClass())) continue;
+					if (HitActor->IsA(ADMC_EnemyCharacterBase::StaticClass()) && GetOwner()->IsA(ADMC_EnemyCharacterBase::StaticClass())) continue;
+
 					AlreadyHitActors.AddUnique(HitActor);
 					
 					float FinalDamage = BaseDamage;
