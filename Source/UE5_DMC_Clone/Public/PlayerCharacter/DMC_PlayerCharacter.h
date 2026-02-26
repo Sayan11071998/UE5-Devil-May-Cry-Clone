@@ -6,6 +6,7 @@
 #include "DMC_CharacterTypes.h"
 #include "DamageTypes/DMC_DamageType.h"
 #include "Data/DMC_ComboDataAsset.h"
+#include "Blueprint/UserWidget.h"
 #include "DMC_PlayerCharacter.generated.h"
 
 class USpringArmComponent;
@@ -13,6 +14,7 @@ class UCameraComponent;
 class UInputMappingContext;
 class UInputAction;
 struct FInputActionValue;
+class UDMC_PlayerHUD;
 class UDMC_CombatBufferComponent;
 class UDMC_RageComponent;
 class UDMC_TargetingComponent;
@@ -57,6 +59,13 @@ public:
 	// ~ Begin AActor Interface
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
 	// ~ End AActor Interface
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "DMC|UI")
+	TSubclassOf<UDMC_PlayerHUD> PlayerHUDClass;
+
+	UPROPERTY(BlueprintReadOnly, Category = "DMC|UI")
+	TObjectPtr<UDMC_PlayerHUD> PlayerHUD;
+
+	void UpdateHUD();
 
 	// ~ Begin IDMC_CombatInterface Implementation
 	virtual void EnableHitStop(bool bInEnable) override { bHitStopEnabled = bInEnable; }

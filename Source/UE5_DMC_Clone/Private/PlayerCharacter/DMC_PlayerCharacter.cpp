@@ -21,6 +21,8 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "DamageTypes/DMC_DamageType.h"
 #include "Engine/DamageEvents.h"
+#include "UI/DMC_PlayerHUD.h"
+#include "Blueprint/UserWidget.h"
 
 ADMC_PlayerCharacter::ADMC_PlayerCharacter()
 {
@@ -71,6 +73,17 @@ void ADMC_PlayerCharacter::BeginPlay()
 		Health = ComboData->MaxHealth;
 	}
 	
+	
+	if (PlayerHUDClass)
+	{
+		PlayerHUD = CreateWidget<UDMC_PlayerHUD>(GetWorld(), PlayerHUDClass);
+		if (PlayerHUD)
+		{
+			PlayerHUD->AddToViewport();
+			UpdateHUD();
+		}
+	}
+
 	EquipWeapon();
 }
 
@@ -95,7 +108,10 @@ float ADMC_PlayerCharacter::TakeDamage(float DamageAmount, struct FDamageEvent c
 	{
 		Death();
 	}
-	else if (DamageEvent.DamageTypeClass)
+	
+	UpdateHUD();
+
+	if (DamageEvent.DamageTypeClass)
 	{
 		UDMC_DamageType* DamageTypeObject = Cast<UDMC_DamageType>(DamageEvent.DamageTypeClass->GetDefaultObject());
 		if (DamageTypeObject)
@@ -472,4 +488,12 @@ void ADMC_PlayerCharacter::EquipWeapon()
 	SpawnParams.Instigator = GetInstigator();
 	EquippedWeapon = GetWorld()->SpawnActor<ADMC_BaseWeapon>(WeaponClass, SpawnParams);
 	if (EquippedWeapon) EquippedWeapon->Equip(GetMesh(), WeaponSocketName, this, this);
+}
+
+void ADMC_PlayerCharacter::UpdateHUD()
+{
+	if (PlayerHUD && ComboData)
+	{
+		PlayerHUD->SetHealthPercent(Health / ComboData->MaxHealth);
+	}
 }
