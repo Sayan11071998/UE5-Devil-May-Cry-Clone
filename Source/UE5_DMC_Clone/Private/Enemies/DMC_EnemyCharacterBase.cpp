@@ -215,15 +215,12 @@ void ADMC_EnemyCharacterBase::EndWeaponCollision()
 	if (EquippedWeapon) EquippedWeapon->EndCollision();
 }
 
-float ADMC_EnemyCharacterBase::PerformAttack(int32 AttackIndex)
+float ADMC_EnemyCharacterBase::PerformAttack()
 {
 	if (bDead || AttackMontages.Num() == 0 || bIsAttacking) return 0.f;
 
-	int32 SelectedIndex = (AttackIndex >= 0 && AttackIndex < AttackMontages.Num()) 
-		? AttackIndex 
-		: FMath::RandRange(0, AttackMontages.Num() - 1);
-
-	if (UAnimMontage* SelectedMontage = AttackMontages[SelectedIndex])
+	int32 RandomIndex = FMath::RandRange(0, AttackMontages.Num() - 1);
+	if (UAnimMontage* SelectedMontage = AttackMontages[RandomIndex])
 	{
 		float Duration = PlayAnimMontage(SelectedMontage);
 		if (Duration > 0.f)
