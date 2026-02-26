@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Engine/DataAsset.h"
+#include "PlayerCharacter/DMC_CharacterTypes.h"
 #include "DMC_ComboDataAsset.generated.h"
 
 UENUM(BlueprintType)
@@ -121,4 +122,16 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Combat|Rage")
 	float RageDuration = 10.0f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Combat|Player")
+	float MaxHealth = 100.f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Combat|Player")
+	TMap<EDMC_DamageType, FDMC_HitReactionData> HitReactionMap;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Combat|Player")
+	TObjectPtr<UAnimMontage> DeathMontage;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Combat|Player")
+	TObjectPtr<UParticleSystem> HitVFX;
 };

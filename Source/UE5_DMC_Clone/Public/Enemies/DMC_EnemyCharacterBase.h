@@ -4,22 +4,11 @@
 #include "GameFramework/Character.h"
 #include "DamageTypes/DMC_DamageType.h"
 #include "Interfaces/DMC_CombatInterface.h"
+#include "PlayerCharacter/DMC_CharacterTypes.h"
 #include "DMC_EnemyCharacterBase.generated.h"
 
 class UWidgetComponent;
 class ADMC_BaseWeapon;
-
-USTRUCT(BlueprintType)
-struct FDMC_HitReactionData
-{
-	GENERATED_BODY()
-	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TObjectPtr<UAnimMontage> HitReactMontage;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float PushbackAmount = -6.f;
-};
 
 UCLASS()
 class UE5_DMC_CLONE_API ADMC_EnemyCharacterBase : public ACharacter, public IDMC_CombatInterface

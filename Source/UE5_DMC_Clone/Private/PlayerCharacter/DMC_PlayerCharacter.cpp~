@@ -19,6 +19,7 @@
 #include "TimerManager.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "NiagaraFunctionLibrary.h"
 #include "DamageTypes/DMC_DamageType.h"
 #include "Engine/DamageEvents.h"
 
@@ -60,17 +61,15 @@ ADMC_PlayerCharacter::ADMC_PlayerCharacter()
 	CombatComp = CreateDefaultSubobject<UDMC_CombatComponent>(TEXT("CombatComp"));
 	
 	CurrentState = EDMC_PlayerState::ECS_Nothing;
+	
+	Health = MaxHealth;
 }
 
 void ADMC_PlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 	
-	if (ComboData)
-	{
-		Health = ComboData->MaxHealth;
-	}
-	
+	Health = MaxHealth;
 	EquipWeapon();
 }
 
@@ -89,7 +88,7 @@ float ADMC_PlayerCharacter::TakeDamage(float DamageAmount, struct FDamageEvent c
 		SpawnHitFX(DamageCauser, PointDamageEvent->HitInfo);
 	}
 
-	Health = FMath::Clamp(Health - DamageAmount, 0.f, ComboData ? ComboData->MaxHealth : 100.f);
+	Health = FMath::Clamp(Health - DamageAmount, 0.f, MaxHealth);
 
 	if (Health <= 0.f)
 	{
@@ -109,22 +108,22 @@ float ADMC_PlayerCharacter::TakeDamage(float DamageAmount, struct FDamageEvent c
 
 void ADMC_PlayerCharacter::SpawnHitFX(AActor* DamageCauser, const FHitResult& HitResult)
 {
-	if (!ComboData || !ComboData->HitVFX || !DamageCauser) return;
+	if (!HitVFX || !DamageCauser) return;
 
 	FRotator YawRot = UKismetMathLibrary::FindLookAtRotation(DamageCauser->GetActorLocation(), GetActorLocation());
 	FRotator TiltRot = UKismetMathLibrary::FindLookAtRotation(HitResult.ImpactPoint, HitResult.TraceEnd);
 	FRotator FinalRot = FRotator(TiltRot.Pitch, YawRot.Yaw + 90.f, TiltRot.Roll);
 
-	UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ComboData->HitVFX, HitResult.ImpactPoint, FinalRot);
+	UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), HitVFX, HitResult.ImpactPoint, FinalRot);
 }
 
 void ADMC_PlayerCharacter::PlayHitReaction(EDMC_DamageType DamageDirection)
 {
-	if (IsDodging() || IsBusy() || !ComboData) return;
+	if (IsDodging() || IsBusy()) return; // Don't interrupt busy states for minor hits, or add poise logic here
 
-	if (ComboData->HitReactionMap.Contains(DamageDirection))
+	if (HitReactionMap.Contains(DamageDirection))
 	{
-		const FDMC_HitReactionData& Data = ComboData->HitReactionMap[DamageDirection];
+		const FDMC_HitReactionData& Data = HitReactionMap[DamageDirection];
 
 		if (BufferComponent)
 		{
@@ -144,9 +143,9 @@ void ADMC_PlayerCharacter::Death()
 	if (bDead) return;
 	bDead = true;
 
-	if (ComboData && ComboData->DeathMontage)
+	if (DeathMontage)
 	{
-		PlayAnimMontage(ComboData->DeathMontage);
+		PlayAnimMontage(DeathMontage);
 	}
 
 	if (GetCapsuleComponent())
