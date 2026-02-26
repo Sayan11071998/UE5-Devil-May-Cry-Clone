@@ -94,7 +94,7 @@ void ADMC_PlayerCharacter::Tick(float DeltaTime)
 
 float ADMC_PlayerCharacter::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser)
 {
-	if (bDead) return 0.f;
+	if (bDead || IsDodging()) return 0.f;
 
 	if (DamageEvent.IsOfType(FPointDamageEvent::ClassID))
 	{

@@ -6,7 +6,6 @@
 #include "DMC_CharacterTypes.h"
 #include "DamageTypes/DMC_DamageType.h"
 #include "Data/DMC_ComboDataAsset.h"
-#include "Blueprint/UserWidget.h"
 #include "DMC_PlayerCharacter.generated.h"
 
 class USpringArmComponent;
