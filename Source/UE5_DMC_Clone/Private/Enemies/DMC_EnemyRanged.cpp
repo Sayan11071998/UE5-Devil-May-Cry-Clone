@@ -1,6 +1,8 @@
 #include "Enemies/DMC_EnemyRanged.h"
 #include "Items/DMC_BaseProjectile.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "Kismet/GameplayStatics.h"
+#include "GameFramework/ProjectileMovementComponent.h"
 
 ADMC_EnemyRanged::ADMC_EnemyRanged()
 {
@@ -20,11 +22,28 @@ void ADMC_EnemyRanged::Fire()
 	if (!ProjectileClass || bDead) return;
 
 	FVector SocketLocation = GetMesh()->GetSocketLocation(MuzzleSocketName);
-	FRotator SocketRotation = GetMesh()->GetSocketRotation(MuzzleSocketName);
+	
+	APawn* PlayerPawn = UGameplayStatics::GetPlayerPawn(this, 0);
+	if (!PlayerPawn) return;
+
+	// Target center of player
+	FVector TargetLocation = PlayerPawn->GetActorLocation() + FVector(0.f, 0.f, 45.f);
+	FRotator FireRotation = UKismetMathLibrary::FindLookAtRotation(SocketLocation, TargetLocation);
 
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.Owner = this;
 	SpawnParams.Instigator = this;
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 
-	ADMC_BaseProjectile* Projectile = GetWorld()->SpawnActor<ADMC_BaseProjectile>(ProjectileClass, SocketLocation, SocketRotation, SpawnParams);
+	ADMC_BaseProjectile* Projectile = GetWorld()->SpawnActor<ADMC_BaseProjectile>(ProjectileClass, SocketLocation, FireRotation, SpawnParams);
+	
+	if (Projectile)
+	{
+		// Ensure the projectile doesn't collide with the enemy that fired it
+		Projectile->SetInstigator(this);
+		if (UPrimitiveComponent* RootPrim = Cast<UPrimitiveComponent>(Projectile->GetRootComponent()))
+		{
+			RootPrim->IgnoreActorWhenMoving(this, true);
+		}
+	}
 }
