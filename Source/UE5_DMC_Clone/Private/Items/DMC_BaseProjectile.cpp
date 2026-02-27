@@ -4,6 +4,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "DamageTypes/DMC_DamageType.h"
 #include "Particles/ParticleSystemComponent.h"
+#include "PlayerCharacter/DMC_PlayerCharacter.h"
 
 ADMC_BaseProjectile::ADMC_BaseProjectile()
 {
@@ -39,15 +40,18 @@ void ADMC_BaseProjectile::OnProjectileHit(UPrimitiveComponent* HitComponent, AAc
 {
 	if (OtherActor && OtherActor != GetOwner() && OtherActor != this)
 	{
-		UGameplayStatics::ApplyPointDamage(
-			OtherActor,
-			Damage,
-			Hit.ImpactNormal,
-			Hit,
-			GetInstigatorController(),
-			GetOwner(),
-			DamageTypeClass
-		);
+		if (ADMC_PlayerCharacter* Player = Cast<ADMC_PlayerCharacter>(OtherActor))
+		{
+			UGameplayStatics::ApplyPointDamage(
+				Player,
+				Damage,
+				Hit.ImpactNormal,
+				Hit,
+				GetInstigatorController(),
+				GetOwner(),
+				DamageTypeClass
+			);
+		}
 
 		Destroy();
 	}
