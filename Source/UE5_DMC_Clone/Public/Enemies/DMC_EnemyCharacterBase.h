@@ -103,4 +103,13 @@ public:
 	FORCEINLINE bool IsAttacking() const { return bIsAttacking; }
 	FORCEINLINE float GetHealth() const { return Health; }
 	FORCEINLINE float GetMaxHealth() const { return MaxHealth; }
+	FORCEINLINE float GetAttackDistance() const { return AttackDistance; }
+	FORCEINLINE float GetStrafeDistance() const { return StrafeDistance; }
+
+protected:
+	UPROPERTY(EditDefaultsOnly, Category = "DMC|Combat|AI")
+	float AttackDistance = 175.f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "DMC|Combat|AI")
+	float StrafeDistance = 450.f;
 };

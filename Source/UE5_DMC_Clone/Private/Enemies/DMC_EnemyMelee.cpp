@@ -3,6 +3,8 @@
 
 ADMC_EnemyMelee::ADMC_EnemyMelee()
 {
+	AttackDistance = 175.f;
+	StrafeDistance = 450.f;
 }
 
 void ADMC_EnemyMelee::BeginPlay()

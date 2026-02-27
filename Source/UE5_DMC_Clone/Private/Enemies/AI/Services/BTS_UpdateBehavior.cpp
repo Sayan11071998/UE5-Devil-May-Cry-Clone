@@ -15,10 +15,18 @@ void UBTS_UpdateBehavior::TickNode(UBehaviorTreeComponent& OwnerComp, uint8* Nod
 {
 	Super::TickNode(OwnerComp, NodeMemory, DeltaSeconds);
 	
-	APawn* Enemy = OwnerComp.GetAIOwner()->GetPawn();
-	
 	UBlackboardComponent* BB = OwnerComp.GetBlackboardComponent();
-	if (Enemy && BB)
+	if (!BB) return;
+
+	// Auto-initialize keys if names are not set in the editor
+	if (TargetKey.SelectedKeyName.IsNone()) TargetKey.SelectedKeyName = FName("Target");
+	if (StrafeDistanceKey.SelectedKeyName.IsNone()) StrafeDistanceKey.SelectedKeyName = FName("StrafeDistance");
+	if (AttackDistanceKey.SelectedKeyName.IsNone()) AttackDistanceKey.SelectedKeyName = FName("AttackDistance");
+	if (StateKey.SelectedKeyName.IsNone()) StateKey.SelectedKeyName = FName("State");
+
+	APawn* Enemy = OwnerComp.GetAIOwner() ? OwnerComp.GetAIOwner()->GetPawn() : nullptr;
+	
+	if (Enemy)
 	{
 		AActor* Target = Cast<AActor>(BB->GetValueAsObject(TargetKey.SelectedKeyName));
 		float StrafeDist = BB->GetValueAsFloat(StrafeDistanceKey.SelectedKeyName);

@@ -4,6 +4,8 @@
 
 ADMC_EnemyRanged::ADMC_EnemyRanged()
 {
+	AttackDistance = 800.f;
+	StrafeDistance = 1200.f;
 }
 
 float ADMC_EnemyRanged::PerformAttack()
