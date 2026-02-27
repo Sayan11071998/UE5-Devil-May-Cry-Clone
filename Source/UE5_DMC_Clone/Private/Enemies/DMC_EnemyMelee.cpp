@@ -48,6 +48,11 @@ void ADMC_EnemyMelee::Death(bool bIsFinisher)
 		}
 		else
 		{
+			if (UStaticMeshComponent* WeaponMesh = EquippedWeapon->GetWeaponMesh())
+			{
+				WeaponMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+				WeaponMesh->SetCollisionResponseToAllChannels(ECR_Ignore);
+			}
 			EquippedWeapon->SetLifeSpan(5.0f);
 		}
 	}

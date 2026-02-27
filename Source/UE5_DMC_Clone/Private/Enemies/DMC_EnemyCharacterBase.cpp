@@ -10,6 +10,7 @@
 #include "PlayerCharacter/DMC_PlayerCharacter.h"
 #include "Kismet/GameplayStatics.h"
 #include "Components/WidgetComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 ADMC_EnemyCharacterBase::ADMC_EnemyCharacterBase()
 {
@@ -174,6 +175,21 @@ void ADMC_EnemyCharacterBase::Death(bool bIsFinisher)
 	// Stop any active weapon collision
 	EndWeaponCollision();
 	
+	// Completely stop AI logic and detach
+	if (AController* AICon = GetController())
+	{
+		AICon->StopMovement();
+	}
+	DetachFromControllerPendingDestroy();
+
+	// Shut down movement component
+	if (UCharacterMovementComponent* MoveComp = GetCharacterMovement())
+	{
+		MoveComp->StopMovementImmediately();
+		MoveComp->DisableMovement();
+		MoveComp->SetComponentTickEnabled(false);
+	}
+
 	if (bIsFinisher)
 	{
 		Destroy();
@@ -195,6 +211,7 @@ void ADMC_EnemyCharacterBase::Death(bool bIsFinisher)
 	{
 		GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		GetMesh()->SetCollisionResponseToAllChannels(ECR_Ignore);
+		GetMesh()->SetCollisionProfileName(TEXT("NoCollision"));
 	}
 
 	if (HealthBarWidget)
