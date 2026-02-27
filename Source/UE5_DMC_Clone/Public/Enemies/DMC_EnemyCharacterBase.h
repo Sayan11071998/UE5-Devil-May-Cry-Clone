@@ -56,15 +56,17 @@ protected:
 
 	virtual void ResetAttackState();
 
+	virtual void Death(bool bIsFinisher = false);
+
 	UPROPERTY(EditDefaultsOnly, Category = "DMC|Combat")
 	TArray<TObjectPtr<UAnimMontage>> AttackMontages;
 
 	bool bDead = false;
+	bool bIsBeingFinished = false;
 	bool bIsAttacking = false;
 	FTimerHandle AttackTimerHandle;
 	
 private:
-	void Death(bool bIsFinisher = false);
 	
 	// Combat Properties
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "DMC|Combat", meta = (AllowPrivateAccess = "true"))

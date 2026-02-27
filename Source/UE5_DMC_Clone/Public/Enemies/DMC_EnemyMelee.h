@@ -21,6 +21,7 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
+	virtual void Death(bool bIsFinisher = false) override;
 
 private:
 	void EquipWeapon();

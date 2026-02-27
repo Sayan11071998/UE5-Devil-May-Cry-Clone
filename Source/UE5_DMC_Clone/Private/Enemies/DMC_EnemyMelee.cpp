@@ -35,3 +35,20 @@ void ADMC_EnemyMelee::EndWeaponCollision()
 {
 	if (EquippedWeapon) EquippedWeapon->EndCollision();
 }
+
+void ADMC_EnemyMelee::Death(bool bIsFinisher)
+{
+	if (EquippedWeapon)
+	{
+		if (bIsFinisher)
+		{
+			EquippedWeapon->Destroy();
+		}
+		else
+		{
+			EquippedWeapon->SetLifeSpan(5.0f);
+		}
+	}
+
+	Super::Death(bIsFinisher);
+}

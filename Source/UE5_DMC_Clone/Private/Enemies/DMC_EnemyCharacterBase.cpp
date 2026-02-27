@@ -76,31 +76,31 @@ bool ADMC_EnemyCharacterBase::CanBeFinished() const
 
 void ADMC_EnemyCharacterBase::OnFinished(TObjectPtr<AActor> Attacker)
 {
-	if (bDead) return;
+	if (bDead || bIsBeingFinished) return;
+	bIsBeingFinished = true;
 
 	Health = 0.f;
+	EndWeaponCollision();
 
 	if (FinishedMontage)
 	{
-		PlayAnimMontage(FinishedMontage);
+		float Duration = PlayAnimMontage(FinishedMontage);
 		
-		// Delay Death() until after the Finished montage completes
-		float MontageLength = FinishedMontage->GetPlayLength();
 		FTimerHandle FinishedTimerHandle;
 		GetWorldTimerManager().SetTimer(FinishedTimerHandle, [this]()
 		{
 			Death(true);
-		}, MontageLength, false);
+		}, Duration, false);
 	}
 	else
 	{
-		Death();
+		Death(true);
 	}
 }
 
 float ADMC_EnemyCharacterBase::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser)
 {
-	if (bDead) return 0.f;
+	if (bDead || bIsBeingFinished) return 0.f;
 	
 	if (DamageEvent.IsOfType(FPointDamageEvent::ClassID))
 	{
