@@ -29,8 +29,8 @@ public:
 	virtual void SetAllowPhysicsRotation(bool bAllow) override {}
 	virtual TObjectPtr<AActor> GetCombatTarget() const override { return nullptr; }
 	virtual TObjectPtr<AActor> GetSoftTarget() const override { return nullptr; }
-	virtual void StartWeaponCollision(TSubclassOf<class UDMC_DamageType> DamageType) override;
-	virtual void EndWeaponCollision() override;
+	virtual void StartWeaponCollision(TSubclassOf<class UDMC_DamageType> DamageType) override {}
+	virtual void EndWeaponCollision() override {}
 	// ~ End IDMC_CombatInterface Implementation
 	
 	// ~ Begin AActor Interface
@@ -41,7 +41,7 @@ public:
 	void SpawnHitFX(TObjectPtr<AActor> DamageCauser, const FHitResult& HitResult);
 
 	UFUNCTION(BlueprintCallable, Category = "DMC|Combat")
-	float PerformAttack();
+	virtual float PerformAttack();
 
 protected:
 	virtual void BeginPlay() override;
@@ -53,17 +53,19 @@ protected:
 	
 	// Triggers a hit reaction animation and pushback
 	void PlayHitReaction(EDMC_DamageType DamageDirection);
-	
-private:
-	void Death(bool bIsFinisher = false);
-	void EquipWeapon();
-	
-	void ResetAttackState();
-	
+
+	virtual void ResetAttackState();
+
+	UPROPERTY(EditDefaultsOnly, Category = "DMC|Combat")
+	TArray<TObjectPtr<UAnimMontage>> AttackMontages;
+
 	bool bDead = false;
 	bool bIsAttacking = false;
 	FTimerHandle AttackTimerHandle;
-
+	
+private:
+	void Death(bool bIsFinisher = false);
+	
 	// Combat Properties
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "DMC|Combat", meta = (AllowPrivateAccess = "true"))
 	float Health = 100.f;
@@ -82,18 +84,6 @@ private:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "DMC|Combat", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UNiagaraSystem> HitVFX;
-
-	UPROPERTY(EditDefaultsOnly, Category = "DMC|Combat")
-	TArray<TObjectPtr<UAnimMontage>> AttackMontages;
-
-	UPROPERTY(EditDefaultsOnly, Category = "DMC|Combat")
-	TSubclassOf<ADMC_BaseWeapon> WeaponClass;
-
-	UPROPERTY()
-	TObjectPtr<ADMC_BaseWeapon> EquippedWeapon;
-
-	UPROPERTY(EditDefaultsOnly, Category = "DMC|Combat")
-	FName WeaponSocketName = FName("WeaponSocket");
 
 	// UI Components
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "DMC|UI", meta = (AllowPrivateAccess = "true"))

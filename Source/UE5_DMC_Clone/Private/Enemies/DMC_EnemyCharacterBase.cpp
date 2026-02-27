@@ -29,7 +29,6 @@ ADMC_EnemyCharacterBase::ADMC_EnemyCharacterBase()
 void ADMC_EnemyCharacterBase::BeginPlay()
 {
 	Super::BeginPlay();
-	EquipWeapon();
 
 	if (HealthBarWidget)
 	{
@@ -175,18 +174,6 @@ void ADMC_EnemyCharacterBase::Death(bool bIsFinisher)
 	// Stop any active weapon collision
 	EndWeaponCollision();
 	
-	if (EquippedWeapon)
-	{
-		if (bIsFinisher)
-		{
-			EquippedWeapon->Destroy();
-		}
-		else
-		{
-			EquippedWeapon->SetLifeSpan(5.0f);
-		}
-	}
-
 	if (bIsFinisher)
 	{
 		Destroy();
@@ -218,16 +205,6 @@ void ADMC_EnemyCharacterBase::Death(bool bIsFinisher)
 	SetLifeSpan(5.0f);
 }
 
-void ADMC_EnemyCharacterBase::StartWeaponCollision(TSubclassOf<class UDMC_DamageType> DamageType)
-{
-	if (EquippedWeapon) EquippedWeapon->StartCollision(DamageType);
-}
-
-void ADMC_EnemyCharacterBase::EndWeaponCollision()
-{
-	if (EquippedWeapon) EquippedWeapon->EndCollision();
-}
-
 float ADMC_EnemyCharacterBase::PerformAttack()
 {
 	if (bDead || AttackMontages.Num() == 0 || bIsAttacking) return 0.f;
@@ -249,19 +226,4 @@ float ADMC_EnemyCharacterBase::PerformAttack()
 void ADMC_EnemyCharacterBase::ResetAttackState()
 {
 	bIsAttacking = false;
-}
-
-void ADMC_EnemyCharacterBase::EquipWeapon()
-{
-	if (!WeaponClass || EquippedWeapon) return;
-
-	FActorSpawnParameters SpawnParams;
-	SpawnParams.Owner = this;
-	SpawnParams.Instigator = this;
-
-	EquippedWeapon = GetWorld()->SpawnActor<ADMC_BaseWeapon>(WeaponClass, SpawnParams);
-	if (EquippedWeapon)
-	{
-		EquippedWeapon->Equip(GetMesh(), WeaponSocketName, this, this);
-	}
 }
