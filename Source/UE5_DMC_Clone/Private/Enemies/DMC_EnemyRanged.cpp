@@ -23,12 +23,8 @@ void ADMC_EnemyRanged::Fire()
 
 	FVector SocketLocation = GetMesh()->GetSocketLocation(MuzzleSocketName);
 	
-	APawn* PlayerPawn = UGameplayStatics::GetPlayerPawn(this, 0);
-	if (!PlayerPawn) return;
-
-	// Target center of player
-	FVector TargetLocation = PlayerPawn->GetActorLocation() + FVector(0.f, 0.f, 45.f);
-	FRotator FireRotation = UKismetMathLibrary::FindLookAtRotation(SocketLocation, TargetLocation);
+	// Projectile travels in the enemy's forward direction
+	FRotator FireRotation = GetActorRotation();
 
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.Owner = this;

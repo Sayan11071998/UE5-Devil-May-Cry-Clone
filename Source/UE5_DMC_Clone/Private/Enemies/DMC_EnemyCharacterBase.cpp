@@ -226,6 +226,13 @@ float ADMC_EnemyCharacterBase::PerformAttack()
 {
 	if (bDead || AttackMontages.Num() == 0 || bIsAttacking) return 0.f;
 
+	// Orient towards player before starting the montage
+	if (APawn* PlayerPawn = UGameplayStatics::GetPlayerPawn(this, 0))
+	{
+		FRotator LookAtRotation = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), PlayerPawn->GetActorLocation());
+		SetActorRotation(FRotator(0.f, LookAtRotation.Yaw, 0.f));
+	}
+
 	int32 RandomIndex = FMath::RandRange(0, AttackMontages.Num() - 1);
 	if (UAnimMontage* SelectedMontage = AttackMontages[RandomIndex])
 	{
