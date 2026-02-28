@@ -75,6 +75,13 @@ void ADMC_PlayerCharacter::BeginPlay()
 		Health = ComboData->MaxHealth;
 	}
 	
+	// Reset Input Mode to Game Only and hide cursor on start/restart
+	if (APlayerController* PC = Cast<APlayerController>(GetController()))
+	{
+		FInputModeGameOnly InputMode;
+		PC->SetInputMode(InputMode);
+		PC->bShowMouseCursor = false;
+	}
 	
 	if (PlayerHUDClass)
 	{
