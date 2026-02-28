@@ -86,6 +86,8 @@ void UDMC_CombatComponent::PerformDodge()
 
 bool UDMC_CombatComponent::SpecialAttack()
 {
+	if (!PlayerOwner || PlayerOwner->IsBusy()) return false;
+
 	UDMC_ComboDataAsset* ComboData = PlayerOwner->GetComboData();
 	if (!ComboData || ComboData->SpecialAttacks.Num() == 0) return false;
 
@@ -176,11 +178,13 @@ void UDMC_CombatComponent::TryConsumeBufferedInput()
 		break;
 		
 	case EDMC_BufferedInput::EBI_LightAttack:
+		if (SpecialAttack()) return;
 		if (ComboState.HeavyIndex > 0) Internal_PerformComboStarter();
 		else PerformLightAttack();
 		break;
 		
 	case EDMC_BufferedInput::EBI_HeavyAttack:
+		if (SpecialAttack()) return;
 		if (ComboState.ExtenderIndex > 0) Internal_PerformComboExtender();
 		else PerformHeavyAttack();
 		break;
