@@ -429,6 +429,17 @@ void ADMC_PlayerCharacter::ParryReleased()
 	ResetParryState();
 }
 
+void ADMC_PlayerCharacter::ReturnToParryPose()
+{
+	if (CurrentState != EDMC_PlayerState::ECS_Parry || !ComboData) return;
+
+	const FDMC_ParryData& Data = ComboData->ParryData;
+	if (Data.ParryStartMontage)
+	{
+		PlayAnimMontage(Data.ParryStartMontage);
+	}
+}
+
 void ADMC_PlayerCharacter::HandleSuccessfulParry(AActor* DamageCauser)
 {
 	if (!ComboData) return;
@@ -456,7 +467,14 @@ void ADMC_PlayerCharacter::HandleSuccessfulParry(AActor* DamageCauser)
 	// Success Animation (clash/recoil)
 	if (Data.ParrySuccessMontage)
 	{
-		PlayAnimMontage(Data.ParrySuccessMontage);
+		float Duration = PlayAnimMontage(Data.ParrySuccessMontage);
+		
+		// Re-trigger the parry pose after the clash finishes, if still holding the key
+		GetWorldTimerManager().SetTimer(ParryTimerHandle, this, &ADMC_PlayerCharacter::ReturnToParryPose, Duration, false);
+	}
+	else
+	{
+		ReturnToParryPose();
 	}
 
 	// Stagger Enemy

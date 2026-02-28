@@ -111,6 +111,7 @@ protected:
 
 	// Parry helpers
 	void HandleSuccessfulParry(AActor* DamageCauser);
+	void ReturnToParryPose();
 	void ResetParryState();
 
 	// Triggers a hit reaction animation and pushback
