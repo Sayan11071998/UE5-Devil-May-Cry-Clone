@@ -18,6 +18,30 @@ enum class EDMC_SpecialAttackRequirement : uint8
 };
 
 USTRUCT(BlueprintType)
+struct FDMC_ParryData
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	TObjectPtr<UAnimMontage> ParryStartMontage;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	TObjectPtr<UAnimMontage> ParryEndMontage;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	TObjectPtr<UAnimMontage> ParrySuccessMontage;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	TObjectPtr<class UNiagaraSystem> ParryFX;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	TObjectPtr<class USoundBase> ParrySound;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	float PerfectParryWindow = 0.2f;
+};
+
+USTRUCT(BlueprintType)
 struct FDMC_AttackData
 {
 	GENERATED_BODY()
@@ -104,6 +128,9 @@ public:
 	// New Data-Driven Special Attacks
 	UPROPERTY(EditDefaultsOnly, Category = "Attack|SpecialAttacks")
 	TArray<FDMC_SpecialAttackData> SpecialAttacks;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Combat|Parry")
+	FDMC_ParryData ParryData;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Combat|Dodge")
 	FDMC_AttackData DodgeData;

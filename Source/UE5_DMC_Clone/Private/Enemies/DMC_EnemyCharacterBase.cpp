@@ -244,3 +244,17 @@ void ADMC_EnemyCharacterBase::ResetAttackState()
 {
 	bIsAttacking = false;
 }
+
+void ADMC_EnemyCharacterBase::HandleParried(AActor* ParriedBy)
+{
+	if (bDead || bIsBeingFinished) return;
+
+	ResetAttackState();
+	GetWorldTimerManager().ClearTimer(AttackTimerHandle);
+	EndWeaponCollision();
+
+	if (StaggerMontage)
+	{
+		PlayAnimMontage(StaggerMontage);
+	}
+}

@@ -16,6 +16,8 @@
 #include "Enemies/DMC_EnemyCharacterBase.h"
 #include "Data/DMC_ComboDataAsset.h"
 #include "Items/DMC_BaseWeapon.h"
+#include "NiagaraFunctionLibrary.h"
+#include "Sound/SoundBase.h"
 #include "TimerManager.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
@@ -95,6 +97,13 @@ void ADMC_PlayerCharacter::Tick(float DeltaTime)
 float ADMC_PlayerCharacter::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser)
 {
 	if (bDead || IsDodging()) return 0.f;
+
+	// Parry Detection
+	if (IsParrying())
+	{
+		HandleSuccessfulParry(DamageCauser);
+		return 0.f;
+	}
 
 	if (DamageEvent.IsOfType(FPointDamageEvent::ClassID))
 	{
@@ -232,6 +241,9 @@ void ADMC_PlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 		
 		EnhancedInputComponent->BindAction(ModifierAction, ETriggerEvent::Started, this, &ADMC_PlayerCharacter::ModifierPressed);
 		EnhancedInputComponent->BindAction(ModifierAction, ETriggerEvent::Completed, this, &ADMC_PlayerCharacter::ModifierReleased);
+
+		EnhancedInputComponent->BindAction(ParryAction, ETriggerEvent::Started, this, &ADMC_PlayerCharacter::ParryPressed);
+		EnhancedInputComponent->BindAction(ParryAction, ETriggerEvent::Completed, this, &ADMC_PlayerCharacter::ParryReleased);
 	}
 }
 
@@ -279,6 +291,7 @@ void ADMC_PlayerCharacter::ResetState()
 		TargetingComp->StopRotation();
 		TargetingComp->ClearSoftTarget();
 	}
+	ResetParryState();
 	bHitStopEnabled = false;
 }
 
@@ -383,6 +396,80 @@ void ADMC_PlayerCharacter::Dodge()
 void ADMC_PlayerCharacter::FinisherAttack()
 {
 	if (FinisherComp) FinisherComp->TryExecuteFinisher();
+}
+
+void ADMC_PlayerCharacter::ParryPressed()
+{
+	if (IsBusy() || CurrentState == EDMC_PlayerState::ECS_Finisher || GetCharacterMovement()->IsFalling()) return;
+
+	if (ComboData)
+	{
+		const FDMC_ParryData& Data = ComboData->ParryData;
+		if (Data.ParryStartMontage)
+		{
+			PlayAnimMontage(Data.ParryStartMontage);
+			SetState(EDMC_PlayerState::ECS_Parry);
+		}
+	}
+}
+
+void ADMC_PlayerCharacter::ParryReleased()
+{
+	if (CurrentState != EDMC_PlayerState::ECS_Parry) return;
+
+	if (ComboData)
+	{
+		const FDMC_ParryData& Data = ComboData->ParryData;
+		if (Data.ParryEndMontage)
+		{
+			PlayAnimMontage(Data.ParryEndMontage);
+		}
+	}
+	
+	ResetParryState();
+}
+
+void ADMC_PlayerCharacter::HandleSuccessfulParry(AActor* DamageCauser)
+{
+	if (!ComboData) return;
+
+	const FDMC_ParryData& Data = ComboData->ParryData;
+
+	// Visual Feedback
+	if (DamageCauser && Data.ParryFX)
+	{
+		UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), Data.ParryFX, GetActorLocation() + GetActorForwardVector() * 50.f);
+	}
+
+	// Audio Feedback
+	if (Data.ParrySound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, Data.ParrySound, GetActorLocation());
+	}
+
+	// Success Animation (clash/recoil)
+	if (Data.ParrySuccessMontage)
+	{
+		PlayAnimMontage(Data.ParrySuccessMontage);
+	}
+
+	// Stagger Enemy
+	if (ADMC_EnemyCharacterBase* Enemy = Cast<ADMC_EnemyCharacterBase>(DamageCauser))
+	{
+		Enemy->HandleParried(this);
+	}
+
+	// Note: We don't call ResetParryState() here because the user is still holding the key.
+	// The state will be reset when they release the key.
+}
+
+void ADMC_PlayerCharacter::ResetParryState()
+{
+	if (CurrentState == EDMC_PlayerState::ECS_Parry)
+	{
+		SetState(EDMC_PlayerState::ECS_Nothing);
+	}
+	GetWorldTimerManager().ClearTimer(ParryTimerHandle);
 }
 
 void ADMC_PlayerCharacter::Rage()

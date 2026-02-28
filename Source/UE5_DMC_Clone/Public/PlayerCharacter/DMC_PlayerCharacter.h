@@ -47,6 +47,10 @@ public:
 	// Dodge input
 	void Dodge();
 	
+	// Parry input
+	void ParryPressed();
+	void ParryReleased();
+	
 	// Animation Notify Callbacks
 	void SaveLightAttack();
 	void SaveHeavyAttack();
@@ -104,6 +108,10 @@ protected:
 	void ModifierPressed();
 	void ModifierReleased();
 	void OnChargeTimerFinished();
+
+	// Parry helpers
+	void HandleSuccessfulParry(AActor* DamageCauser);
+	void ResetParryState();
 
 	// Triggers a hit reaction animation and pushback
 	void PlayHitReaction(EDMC_DamageType DamageDirection);
@@ -177,6 +185,7 @@ private:
 	float HitStopTimeDilation = 0.005f;
 
 	FTimerHandle HitStopTimerHandle;
+	FTimerHandle ParryTimerHandle;
 	bool bHitStopEnabled = false;
 	bool bModifierHeld = false;
 
@@ -214,6 +223,9 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "DMC|Input")
 	TObjectPtr<UInputAction> ModifierAction;
 
+	UPROPERTY(EditDefaultsOnly, Category = "DMC|Input")
+	TObjectPtr<UInputAction> ParryAction;
+
 	FTimerHandle ChargeTimerHandle;
 	
 	void EquipWeapon();
@@ -223,7 +235,8 @@ public:
 	// State Checkers
 	FORCEINLINE bool IsAttacking() const { return CurrentState == EDMC_PlayerState::ECS_Attack; }
 	FORCEINLINE bool IsDodging() const { return CurrentState == EDMC_PlayerState::ECS_Dodge || CurrentState == EDMC_PlayerState::ECS_GeneralActions; }
-	FORCEINLINE bool IsBusy() const { return IsAttacking() || IsDodging(); }
+	FORCEINLINE bool IsParrying() const { return CurrentState == EDMC_PlayerState::ECS_Parry; }
+	FORCEINLINE bool IsBusy() const { return IsAttacking() || IsDodging() || IsParrying(); }
 	FORCEINLINE bool IsStateEqualToAny(const TArray<EDMC_PlayerState>& StatesToCheck) const { return StatesToCheck.Contains(CurrentState); }
 	FORCEINLINE bool IsModifierHeld() const { return bModifierHeld; }
 	FORCEINLINE bool IsDead() const { return bDead; }

@@ -31,6 +31,8 @@ public:
 	virtual TObjectPtr<AActor> GetSoftTarget() const override { return nullptr; }
 	virtual void StartWeaponCollision(TSubclassOf<class UDMC_DamageType> DamageType) override {}
 	virtual void EndWeaponCollision() override {}
+	
+	virtual void HandleParried(AActor* ParriedBy);
 	// ~ End IDMC_CombatInterface Implementation
 	
 	// ~ Begin AActor Interface
@@ -80,6 +82,9 @@ private:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "DMC|Combat", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UAnimMontage> DeathMontage;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "DMC|Combat", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UAnimMontage> StaggerMontage;
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "DMC|Combat", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UDMC_CombatBufferComponent> BufferComponent;
