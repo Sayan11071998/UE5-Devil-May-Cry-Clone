@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Engine/DataAsset.h"
+#include "PlayerCharacter/DMC_CharacterTypes.h"
 #include "DMC_ComboDataAsset.generated.h"
 
 UENUM(BlueprintType)
@@ -14,6 +15,30 @@ enum class EDMC_SpecialAttackRequirement : uint8
 	ESAR_GroundOnly			UMETA(DisplayName = "Ground Only"),
 	ESAR_AirOnly			UMETA(DisplayName = "Air Only"),
 	ESAR_FinisherOnly		UMETA(DisplayName = "Finisher Only")
+};
+
+USTRUCT(BlueprintType)
+struct FDMC_ParryData
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	TObjectPtr<UAnimMontage> ParryStartMontage;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	TObjectPtr<UAnimMontage> ParryEndMontage;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	TObjectPtr<UAnimMontage> ParrySuccessMontage;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	TObjectPtr<class UNiagaraSystem> ParryFX;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	TObjectPtr<class USoundBase> ParrySound;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	float PerfectParryWindow = 0.2f;
 };
 
 USTRUCT(BlueprintType)
@@ -104,6 +129,9 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "Attack|SpecialAttacks")
 	TArray<FDMC_SpecialAttackData> SpecialAttacks;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Combat|Parry")
+	FDMC_ParryData ParryData;
+
 	UPROPERTY(EditDefaultsOnly, Category = "Combat|Dodge")
 	FDMC_AttackData DodgeData;
 	
@@ -121,4 +149,16 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Combat|Rage")
 	float RageDuration = 10.0f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Combat|Player")
+	float MaxHealth = 100.f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Combat|Player")
+	TMap<EDMC_DamageType, FDMC_HitReactionData> HitReactionMap;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Combat|Player")
+	TObjectPtr<UAnimMontage> DeathMontage;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Combat|Player")
+	TObjectPtr<UParticleSystem> HitVFX;
 };

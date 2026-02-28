@@ -16,7 +16,15 @@
 #include "Enemies/DMC_EnemyCharacterBase.h"
 #include "Data/DMC_ComboDataAsset.h"
 #include "Items/DMC_BaseWeapon.h"
+#include "NiagaraFunctionLibrary.h"
+#include "Sound/SoundBase.h"
 #include "TimerManager.h"
+#include "Kismet/GameplayStatics.h"
+#include "Kismet/KismetMathLibrary.h"
+#include "DamageTypes/DMC_DamageType.h"
+#include "Engine/DamageEvents.h"
+#include "UI/DMC_PlayerHUD.h"
+#include "Blueprint/UserWidget.h"
 
 ADMC_PlayerCharacter::ADMC_PlayerCharacter()
 {
@@ -61,12 +69,129 @@ ADMC_PlayerCharacter::ADMC_PlayerCharacter()
 void ADMC_PlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+	
+	if (ComboData)
+	{
+		Health = ComboData->MaxHealth;
+	}
+	
+	
+	if (PlayerHUDClass)
+	{
+		PlayerHUD = CreateWidget<UDMC_PlayerHUD>(GetWorld(), PlayerHUDClass);
+		if (PlayerHUD)
+		{
+			PlayerHUD->AddToViewport();
+			UpdateHUD();
+		}
+	}
+
 	EquipWeapon();
 }
 
 void ADMC_PlayerCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+}
+
+float ADMC_PlayerCharacter::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser)
+{
+	if (bDead || IsDodging()) return 0.f;
+
+	// Parry Detection
+	if (IsParrying())
+	{
+		HandleSuccessfulParry(DamageCauser);
+		return 0.f;
+	}
+
+	if (DamageEvent.IsOfType(FPointDamageEvent::ClassID))
+	{
+		const FPointDamageEvent* PointDamageEvent = static_cast<const FPointDamageEvent*>(&DamageEvent);
+		SpawnHitFX(DamageCauser, PointDamageEvent->HitInfo);
+	}
+
+	Health = FMath::Clamp(Health - DamageAmount, 0.f, ComboData ? ComboData->MaxHealth : 100.f);
+
+	if (Health <= 0.f)
+	{
+		Death();
+	}
+	
+	UpdateHUD();
+
+	if (DamageEvent.DamageTypeClass)
+	{
+		UDMC_DamageType* DamageTypeObject = Cast<UDMC_DamageType>(DamageEvent.DamageTypeClass->GetDefaultObject());
+		if (DamageTypeObject)
+		{
+			PlayHitReaction(DamageTypeObject->DamageType);
+		}
+	}
+
+	return DamageAmount;
+}
+
+void ADMC_PlayerCharacter::SpawnHitFX(AActor* DamageCauser, const FHitResult& HitResult)
+{
+	if (!ComboData || !ComboData->HitVFX || !DamageCauser) return;
+
+	FRotator YawRot = UKismetMathLibrary::FindLookAtRotation(DamageCauser->GetActorLocation(), GetActorLocation());
+	FRotator TiltRot = UKismetMathLibrary::FindLookAtRotation(HitResult.ImpactPoint, HitResult.TraceEnd);
+	FRotator FinalRot = FRotator(TiltRot.Pitch, YawRot.Yaw + 90.f, TiltRot.Roll);
+
+	UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ComboData->HitVFX, HitResult.ImpactPoint, FinalRot);
+}
+
+void ADMC_PlayerCharacter::PlayHitReaction(EDMC_DamageType DamageDirection)
+{
+	if (IsDodging() || IsBusy() || !ComboData) return;
+
+	if (ComboData->HitReactionMap.Contains(DamageDirection))
+	{
+		const FDMC_HitReactionData& Data = ComboData->HitReactionMap[DamageDirection];
+
+		if (BufferComponent)
+		{
+			BufferComponent->StopBuffer();
+			BufferComponent->StartBuffer(Data.PushbackAmount);
+		}
+
+		if (Data.HitReactMontage)
+		{
+			PlayAnimMontage(Data.HitReactMontage);
+		}
+	}
+}
+
+void ADMC_PlayerCharacter::Death()
+{
+	if (bDead) return;
+	bDead = true;
+
+	if (ComboData && ComboData->DeathMontage)
+	{
+		PlayAnimMontage(ComboData->DeathMontage);
+	}
+
+	if (GetCapsuleComponent())
+	{
+		GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		GetCapsuleComponent()->SetCollisionResponseToAllChannels(ECR_Ignore);
+	}
+
+	if (GetMesh())
+	{
+		GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		// Keep visible but ignore combat
+		GetMesh()->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
+	}
+
+	// Disable input
+	if (APlayerController* PC = Cast<APlayerController>(GetController()))
+	{
+		DisableInput(PC);
+	}
 }
 
 void ADMC_PlayerCharacter::Landed(const FHitResult& Hit)
@@ -116,6 +241,9 @@ void ADMC_PlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 		
 		EnhancedInputComponent->BindAction(ModifierAction, ETriggerEvent::Started, this, &ADMC_PlayerCharacter::ModifierPressed);
 		EnhancedInputComponent->BindAction(ModifierAction, ETriggerEvent::Completed, this, &ADMC_PlayerCharacter::ModifierReleased);
+
+		EnhancedInputComponent->BindAction(ParryAction, ETriggerEvent::Started, this, &ADMC_PlayerCharacter::ParryPressed);
+		EnhancedInputComponent->BindAction(ParryAction, ETriggerEvent::Completed, this, &ADMC_PlayerCharacter::ParryReleased);
 	}
 }
 
@@ -163,6 +291,7 @@ void ADMC_PlayerCharacter::ResetState()
 		TargetingComp->StopRotation();
 		TargetingComp->ClearSoftTarget();
 	}
+	ResetParryState();
 	bHitStopEnabled = false;
 }
 
@@ -269,6 +398,104 @@ void ADMC_PlayerCharacter::FinisherAttack()
 	if (FinisherComp) FinisherComp->TryExecuteFinisher();
 }
 
+void ADMC_PlayerCharacter::ParryPressed()
+{
+	if (IsBusy() || CurrentState == EDMC_PlayerState::ECS_Finisher || GetCharacterMovement()->IsFalling()) return;
+
+	if (ComboData)
+	{
+		const FDMC_ParryData& Data = ComboData->ParryData;
+		if (Data.ParryStartMontage)
+		{
+			PlayAnimMontage(Data.ParryStartMontage);
+			SetState(EDMC_PlayerState::ECS_Parry);
+		}
+	}
+}
+
+void ADMC_PlayerCharacter::ParryReleased()
+{
+	if (CurrentState != EDMC_PlayerState::ECS_Parry) return;
+
+	if (ComboData)
+	{
+		const FDMC_ParryData& Data = ComboData->ParryData;
+		if (Data.ParryEndMontage)
+		{
+			PlayAnimMontage(Data.ParryEndMontage);
+		}
+	}
+	
+	ResetParryState();
+}
+
+void ADMC_PlayerCharacter::ReturnToParryPose()
+{
+	if (CurrentState != EDMC_PlayerState::ECS_Parry || !ComboData) return;
+
+	const FDMC_ParryData& Data = ComboData->ParryData;
+	if (Data.ParryStartMontage)
+	{
+		PlayAnimMontage(Data.ParryStartMontage);
+	}
+}
+
+void ADMC_PlayerCharacter::HandleSuccessfulParry(AActor* DamageCauser)
+{
+	if (!ComboData) return;
+
+	const FDMC_ParryData& Data = ComboData->ParryData;
+
+	// Visual Feedback
+	if (DamageCauser && Data.ParryFX)
+	{
+		UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), Data.ParryFX, GetActorLocation() + GetActorForwardVector() * 50.f);
+	}
+
+	// Rotate towards attacker
+	if (TargetingComp && DamageCauser)
+	{
+		TargetingComp->RotateTowards(DamageCauser);
+	}
+
+	// Audio Feedback
+	if (Data.ParrySound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, Data.ParrySound, GetActorLocation());
+	}
+
+	// Success Animation (clash/recoil)
+	if (Data.ParrySuccessMontage)
+	{
+		float Duration = PlayAnimMontage(Data.ParrySuccessMontage);
+		
+		// Re-trigger the parry pose after the clash finishes, if still holding the key
+		GetWorldTimerManager().SetTimer(ParryTimerHandle, this, &ADMC_PlayerCharacter::ReturnToParryPose, Duration, false);
+	}
+	else
+	{
+		ReturnToParryPose();
+	}
+
+	// Stagger Enemy
+	if (ADMC_EnemyCharacterBase* Enemy = Cast<ADMC_EnemyCharacterBase>(DamageCauser))
+	{
+		Enemy->HandleParried(this);
+	}
+
+	// Note: We don't call ResetParryState() here because the user is still holding the key.
+	// The state will be reset when they release the key.
+}
+
+void ADMC_PlayerCharacter::ResetParryState()
+{
+	if (CurrentState == EDMC_PlayerState::ECS_Parry)
+	{
+		SetState(EDMC_PlayerState::ECS_Nothing);
+	}
+	GetWorldTimerManager().ClearTimer(ParryTimerHandle);
+}
+
 void ADMC_PlayerCharacter::Rage()
 {
 	if (RageComp) RageComp->StartRage();
@@ -372,4 +599,12 @@ void ADMC_PlayerCharacter::EquipWeapon()
 	SpawnParams.Instigator = GetInstigator();
 	EquippedWeapon = GetWorld()->SpawnActor<ADMC_BaseWeapon>(WeaponClass, SpawnParams);
 	if (EquippedWeapon) EquippedWeapon->Equip(GetMesh(), WeaponSocketName, this, this);
+}
+
+void ADMC_PlayerCharacter::UpdateHUD()
+{
+	if (PlayerHUD && ComboData)
+	{
+		PlayerHUD->SetHealthPercent(Health / ComboData->MaxHealth);
+	}
 }

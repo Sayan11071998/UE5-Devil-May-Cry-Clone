@@ -19,7 +19,8 @@ public class UE5_DMC_Clone : ModuleRules
 			"Niagara",
 			"UMG",
 			"Slate",
-			"SlateCore"
+			"SlateCore",
+			"NavigationSystem"
 		});
 	}
 }

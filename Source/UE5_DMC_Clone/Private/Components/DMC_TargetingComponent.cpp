@@ -91,8 +91,14 @@ AActor* UDMC_TargetingComponent::FindBestContextualTarget()
 
 void UDMC_TargetingComponent::RotateToTarget()
 {
-	if (IsValid(FocusedTarget) && RotationCurve)
+	RotateTowards(FocusedTarget);
+}
+
+void UDMC_TargetingComponent::RotateTowards(AActor* Target)
+{
+	if (IsValid(Target) && RotationCurve)
 	{
+		TargetToRotateTo = Target;
 		FOnTimelineFloat ProgressFunction;
 		ProgressFunction.BindUFunction(this, FName("HandleRotationTimelineProgress"));
 		RotationTimeline.AddInterpFloat(RotationCurve, ProgressFunction);
@@ -127,13 +133,13 @@ void UDMC_TargetingComponent::ClearSoftTarget()
 void UDMC_TargetingComponent::HandleRotationTimelineProgress(float Value)
 {
 	AActor* Owner = GetOwner();
-	if (!Owner || !IsValid(FocusedTarget))
+	if (!Owner || !IsValid(TargetToRotateTo))
 	{
 		StopRotation();
 		return;
 	}
 	
-	FRotator LookAtRot = UKismetMathLibrary::FindLookAtRotation(Owner->GetActorLocation(), FocusedTarget->GetActorLocation());
+	FRotator LookAtRot = UKismetMathLibrary::FindLookAtRotation(Owner->GetActorLocation(), TargetToRotateTo->GetActorLocation());
 	FRotator CurrentRot = Owner->GetActorRotation();
 	FRotator TargetRot = FRotator(CurrentRot.Pitch, LookAtRot.Yaw, CurrentRot.Roll);
 	Owner->SetActorRotation(FMath::Lerp(CurrentRot, TargetRot, Value));

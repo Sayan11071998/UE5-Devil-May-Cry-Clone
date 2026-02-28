@@ -1,4 +1,5 @@
 #include "Enemies/DMC_EnemyCharacterBase.h"
+#include "Items/DMC_BaseWeapon.h"
 #include "NiagaraFunctionLibrary.h"
 #include "Components/CapsuleComponent.h"
 #include "DamageTypes/DMC_DamageType.h"
@@ -7,8 +8,9 @@
 #include "Components/DMC_CombatBufferComponent.h"
 #include "UI/DMC_EnemyHealthBar.h"
 #include "PlayerCharacter/DMC_PlayerCharacter.h"
-#include "Components/DMC_TargetingComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "Components/WidgetComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 ADMC_EnemyCharacterBase::ADMC_EnemyCharacterBase()
 {
@@ -75,31 +77,31 @@ bool ADMC_EnemyCharacterBase::CanBeFinished() const
 
 void ADMC_EnemyCharacterBase::OnFinished(TObjectPtr<AActor> Attacker)
 {
-	if (bDead) return;
+	if (bDead || bIsBeingFinished) return;
+	bIsBeingFinished = true;
 
 	Health = 0.f;
+	EndWeaponCollision();
 
 	if (FinishedMontage)
 	{
-		PlayAnimMontage(FinishedMontage);
+		float Duration = PlayAnimMontage(FinishedMontage);
 		
-		// Delay Death() until after the Finished montage completes
-		float MontageLength = FinishedMontage->GetPlayLength();
 		FTimerHandle FinishedTimerHandle;
 		GetWorldTimerManager().SetTimer(FinishedTimerHandle, [this]()
 		{
 			Death(true);
-		}, MontageLength, false);
+		}, Duration, false);
 	}
 	else
 	{
-		Death();
+		Death(true);
 	}
 }
 
 float ADMC_EnemyCharacterBase::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser)
 {
-	if (bDead) return 0.f;
+	if (bDead || bIsBeingFinished) return 0.f;
 	
 	if (DamageEvent.IsOfType(FPointDamageEvent::ClassID))
 	{
@@ -170,10 +172,26 @@ void ADMC_EnemyCharacterBase::Death(bool bIsFinisher)
 	if (bDead) return;
 	bDead = true;
 	
+	// Stop any active weapon collision
+	EndWeaponCollision();
+	
+	// Completely stop AI logic and detach
+	if (AController* AICon = GetController())
+	{
+		AICon->StopMovement();
+	}
+	DetachFromControllerPendingDestroy();
+
+	// Shut down movement component
+	if (UCharacterMovementComponent* MoveComp = GetCharacterMovement())
+	{
+		MoveComp->StopMovementImmediately();
+		MoveComp->DisableMovement();
+		MoveComp->SetComponentTickEnabled(false);
+	}
+
 	if (bIsFinisher)
 	{
-		// If finished, we don't play death montage and destroy immediately (or very soon)
-		// We can also trigger VXF/SFX here if needed
 		Destroy();
 		return;
 	}
@@ -193,6 +211,7 @@ void ADMC_EnemyCharacterBase::Death(bool bIsFinisher)
 	{
 		GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		GetMesh()->SetCollisionResponseToAllChannels(ECR_Ignore);
+		GetMesh()->SetCollisionProfileName(TEXT("NoCollision"));
 	}
 
 	if (HealthBarWidget)
@@ -201,4 +220,48 @@ void ADMC_EnemyCharacterBase::Death(bool bIsFinisher)
 	}
 
 	SetLifeSpan(5.0f);
+}
+
+float ADMC_EnemyCharacterBase::PerformAttack()
+{
+	if (bDead || AttackMontages.Num() == 0 || bIsAttacking) return 0.f;
+
+	// Orient towards player before starting the montage
+	if (APawn* PlayerPawn = UGameplayStatics::GetPlayerPawn(this, 0))
+	{
+		FRotator LookAtRotation = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), PlayerPawn->GetActorLocation());
+		SetActorRotation(FRotator(0.f, LookAtRotation.Yaw, 0.f));
+	}
+
+	int32 RandomIndex = FMath::RandRange(0, AttackMontages.Num() - 1);
+	if (UAnimMontage* SelectedMontage = AttackMontages[RandomIndex])
+	{
+		float Duration = PlayAnimMontage(SelectedMontage);
+		if (Duration > 0.f)
+		{
+			bIsAttacking = true;
+			GetWorldTimerManager().SetTimer(AttackTimerHandle, this, &ADMC_EnemyCharacterBase::ResetAttackState, Duration, false);
+			return Duration;
+		}
+	}
+	return 0.f;
+}
+
+void ADMC_EnemyCharacterBase::ResetAttackState()
+{
+	bIsAttacking = false;
+}
+
+void ADMC_EnemyCharacterBase::HandleParried(AActor* ParriedBy)
+{
+	if (bDead || bIsBeingFinished) return;
+
+	ResetAttackState();
+	GetWorldTimerManager().ClearTimer(AttackTimerHandle);
+	EndWeaponCollision();
+
+	if (StaggerMontage)
+	{
+		PlayAnimMontage(StaggerMontage);
+	}
 }

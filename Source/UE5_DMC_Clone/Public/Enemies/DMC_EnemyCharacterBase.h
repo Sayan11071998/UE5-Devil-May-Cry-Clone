@@ -3,21 +3,12 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "DamageTypes/DMC_DamageType.h"
-#include "Components/WidgetComponent.h"
 #include "Interfaces/DMC_CombatInterface.h"
+#include "PlayerCharacter/DMC_CharacterTypes.h"
 #include "DMC_EnemyCharacterBase.generated.h"
 
-USTRUCT(BlueprintType)
-struct FDMC_HitReactionData
-{
-	GENERATED_BODY()
-	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TObjectPtr<UAnimMontage> HitReactMontage;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float PushbackAmount = -6.f;
-};
+class UWidgetComponent;
+class ADMC_BaseWeapon;
 
 UCLASS()
 class UE5_DMC_CLONE_API ADMC_EnemyCharacterBase : public ACharacter, public IDMC_CombatInterface
@@ -38,6 +29,10 @@ public:
 	virtual void SetAllowPhysicsRotation(bool bAllow) override {}
 	virtual TObjectPtr<AActor> GetCombatTarget() const override { return nullptr; }
 	virtual TObjectPtr<AActor> GetSoftTarget() const override { return nullptr; }
+	virtual void StartWeaponCollision(TSubclassOf<class UDMC_DamageType> DamageType) override {}
+	virtual void EndWeaponCollision() override {}
+	
+	virtual void HandleParried(AActor* ParriedBy);
 	// ~ End IDMC_CombatInterface Implementation
 	
 	// ~ Begin AActor Interface
@@ -46,6 +41,9 @@ public:
 	
 	// Visual feedback for hits
 	void SpawnHitFX(TObjectPtr<AActor> DamageCauser, const FHitResult& HitResult);
+
+	UFUNCTION(BlueprintCallable, Category = "DMC|Combat")
+	virtual float PerformAttack();
 
 protected:
 	virtual void BeginPlay() override;
@@ -57,12 +55,21 @@ protected:
 	
 	// Triggers a hit reaction animation and pushback
 	void PlayHitReaction(EDMC_DamageType DamageDirection);
+
+	virtual void ResetAttackState();
+
+	virtual void Death(bool bIsFinisher = false);
+
+	UPROPERTY(EditDefaultsOnly, Category = "DMC|Combat")
+	TArray<TObjectPtr<UAnimMontage>> AttackMontages;
+
+	bool bDead = false;
+	bool bIsBeingFinished = false;
+	bool bIsAttacking = false;
+	FTimerHandle AttackTimerHandle;
 	
 private:
-	void Death(bool bIsFinisher = false);
 	
-	bool bDead = false;
-
 	// Combat Properties
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "DMC|Combat", meta = (AllowPrivateAccess = "true"))
 	float Health = 100.f;
@@ -75,6 +82,9 @@ private:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "DMC|Combat", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UAnimMontage> DeathMontage;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "DMC|Combat", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UAnimMontage> StaggerMontage;
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "DMC|Combat", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UDMC_CombatBufferComponent> BufferComponent;
@@ -95,6 +105,16 @@ private:
 public:
 	// Public state accessors
 	FORCEINLINE bool IsDead() const { return bDead; }
+	FORCEINLINE bool IsAttacking() const { return bIsAttacking; }
 	FORCEINLINE float GetHealth() const { return Health; }
 	FORCEINLINE float GetMaxHealth() const { return MaxHealth; }
+	FORCEINLINE float GetAttackDistance() const { return AttackDistance; }
+	FORCEINLINE float GetStrafeDistance() const { return StrafeDistance; }
+
+protected:
+	UPROPERTY(EditDefaultsOnly, Category = "DMC|Combat|AI")
+	float AttackDistance = 175.f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "DMC|Combat|AI")
+	float StrafeDistance = 450.f;
 };

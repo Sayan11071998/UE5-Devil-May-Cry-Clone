@@ -4,6 +4,8 @@
 #include "GameFramework/Character.h"
 #include "Interfaces/DMC_CombatInterface.h"
 #include "DMC_CharacterTypes.h"
+#include "DamageTypes/DMC_DamageType.h"
+#include "Data/DMC_ComboDataAsset.h"
 #include "DMC_PlayerCharacter.generated.h"
 
 class USpringArmComponent;
@@ -11,7 +13,7 @@ class UCameraComponent;
 class UInputMappingContext;
 class UInputAction;
 struct FInputActionValue;
-class UDMC_ComboDataAsset;
+class UDMC_PlayerHUD;
 class UDMC_CombatBufferComponent;
 class UDMC_RageComponent;
 class UDMC_TargetingComponent;
@@ -45,6 +47,10 @@ public:
 	// Dodge input
 	void Dodge();
 	
+	// Parry input
+	void ParryPressed();
+	void ParryReleased();
+	
 	// Animation Notify Callbacks
 	void SaveLightAttack();
 	void SaveHeavyAttack();
@@ -52,6 +58,17 @@ public:
 	
 	// State Check
 	bool IsRaging() const;
+
+	// ~ Begin AActor Interface
+	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
+	// ~ End AActor Interface
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "DMC|UI")
+	TSubclassOf<UDMC_PlayerHUD> PlayerHUDClass;
+
+	UPROPERTY(BlueprintReadOnly, Category = "DMC|UI")
+	TObjectPtr<UDMC_PlayerHUD> PlayerHUD;
+
+	void UpdateHUD();
 
 	// ~ Begin IDMC_CombatInterface Implementation
 	virtual void EnableHitStop(bool bInEnable) override { bHitStopEnabled = bInEnable; }
@@ -71,6 +88,9 @@ public:
 	void StopRotation();
 	void SoftLockOn();
 
+	// Visual feedback for hits
+	void SpawnHitFX(AActor* DamageCauser, const FHitResult& HitResult);
+
 protected:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
@@ -88,6 +108,15 @@ protected:
 	void ModifierPressed();
 	void ModifierReleased();
 	void OnChargeTimerFinished();
+
+	// Parry helpers
+	void HandleSuccessfulParry(AActor* DamageCauser);
+	void ReturnToParryPose();
+	void ResetParryState();
+
+	// Triggers a hit reaction animation and pushback
+	void PlayHitReaction(EDMC_DamageType DamageDirection);
+	void Death();
 
 private:
 	// Private Components
@@ -114,6 +143,13 @@ private:
 
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 	TObjectPtr<USceneComponent> Scene;
+
+	// Health and Damage
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "DMC|Combat", meta = (AllowPrivateAccess = "true"))
+	float Health = 100.f;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "DMC|Combat", meta = (AllowPrivateAccess = "true"))
+	bool bDead = false;
 
 	// State Properties
 	UPROPERTY(VisibleAnywhere, Category = "DMC|State")
@@ -150,6 +186,7 @@ private:
 	float HitStopTimeDilation = 0.005f;
 
 	FTimerHandle HitStopTimerHandle;
+	FTimerHandle ParryTimerHandle;
 	bool bHitStopEnabled = false;
 	bool bModifierHeld = false;
 
@@ -187,6 +224,9 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "DMC|Input")
 	TObjectPtr<UInputAction> ModifierAction;
 
+	UPROPERTY(EditDefaultsOnly, Category = "DMC|Input")
+	TObjectPtr<UInputAction> ParryAction;
+
 	FTimerHandle ChargeTimerHandle;
 	
 	void EquipWeapon();
@@ -196,14 +236,19 @@ public:
 	// State Checkers
 	FORCEINLINE bool IsAttacking() const { return CurrentState == EDMC_PlayerState::ECS_Attack; }
 	FORCEINLINE bool IsDodging() const { return CurrentState == EDMC_PlayerState::ECS_Dodge || CurrentState == EDMC_PlayerState::ECS_GeneralActions; }
-	FORCEINLINE bool IsBusy() const { return IsAttacking() || IsDodging(); }
+	FORCEINLINE bool IsParrying() const { return CurrentState == EDMC_PlayerState::ECS_Parry; }
+	FORCEINLINE bool IsBusy() const { return IsAttacking() || IsDodging() || IsParrying(); }
 	FORCEINLINE bool IsStateEqualToAny(const TArray<EDMC_PlayerState>& StatesToCheck) const { return StatesToCheck.Contains(CurrentState); }
 	FORCEINLINE bool IsModifierHeld() const { return bModifierHeld; }
+	FORCEINLINE bool IsDead() const { return bDead; }
 
 	// Getters & Setters
 	FORCEINLINE TObjectPtr<UCameraComponent> GetFollowCamera() const { return FollowCamera; }
 	FORCEINLINE bool GetDoubleJumpState() const { return bDoubleJump; }
 	FORCEINLINE EDMC_PlayerState GetState() const { return CurrentState; }
+
+	FORCEINLINE float GetHealth() const { return Health; }
+	FORCEINLINE float GetMaxHealth() const { return ComboData ? ComboData->MaxHealth : 100.f; }
 
 	FORCEINLINE TObjectPtr<UDMC_ComboDataAsset> GetComboData() const { return ComboData; }
 	FORCEINLINE TObjectPtr<UDMC_RageComponent> GetRageComp() const { return RageComp; }
