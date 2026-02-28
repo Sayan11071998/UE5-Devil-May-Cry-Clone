@@ -75,6 +75,13 @@ void ADMC_PlayerCharacter::BeginPlay()
 		Health = ComboData->MaxHealth;
 	}
 	
+	// Reset Input Mode to Game Only and hide cursor on start/restart
+	if (APlayerController* PC = Cast<APlayerController>(GetController()))
+	{
+		FInputModeGameOnly InputMode;
+		PC->SetInputMode(InputMode);
+		PC->bShowMouseCursor = false;
+	}
 	
 	if (PlayerHUDClass)
 	{
@@ -192,6 +199,8 @@ void ADMC_PlayerCharacter::Death()
 	{
 		DisableInput(PC);
 	}
+
+	GetWorldTimerManager().SetTimer(GameOverTimerHandle, this, &ADMC_PlayerCharacter::ShowGameOver, 3.0f, false);
 }
 
 void ADMC_PlayerCharacter::Landed(const FHitResult& Hit)
@@ -606,5 +615,25 @@ void ADMC_PlayerCharacter::UpdateHUD()
 	if (PlayerHUD && ComboData)
 	{
 		PlayerHUD->SetHealthPercent(Health / ComboData->MaxHealth);
+	}
+}
+
+void ADMC_PlayerCharacter::ShowGameOver()
+{
+	if (!GameOverWidgetClass) return;
+
+	if (APlayerController* PC = Cast<APlayerController>(GetController()))
+	{
+		UUserWidget* GameOverWidget = CreateWidget<UUserWidget>(GetWorld(), GameOverWidgetClass);
+		if (GameOverWidget)
+		{
+			GameOverWidget->AddToViewport();
+
+			// Set Input Mode to UI Only and show cursor
+			FInputModeUIOnly InputMode;
+			InputMode.SetWidgetToFocus(GameOverWidget->TakeWidget());
+			PC->SetInputMode(InputMode);
+			PC->bShowMouseCursor = true;
+		}
 	}
 }

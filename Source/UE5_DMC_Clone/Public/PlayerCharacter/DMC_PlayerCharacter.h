@@ -68,6 +68,13 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category = "DMC|UI")
 	TObjectPtr<UDMC_PlayerHUD> PlayerHUD;
 
+	UPROPERTY(EditDefaultsOnly, Category = "DMC|UI")
+	TSubclassOf<UUserWidget> GameOverWidgetClass;
+
+	FTimerHandle GameOverTimerHandle;
+
+	void ShowGameOver();
+
 	void UpdateHUD();
 
 	// ~ Begin IDMC_CombatInterface Implementation
