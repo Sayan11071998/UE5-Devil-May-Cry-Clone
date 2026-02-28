@@ -441,6 +441,12 @@ void ADMC_PlayerCharacter::HandleSuccessfulParry(AActor* DamageCauser)
 		UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), Data.ParryFX, GetActorLocation() + GetActorForwardVector() * 50.f);
 	}
 
+	// Rotate towards attacker
+	if (TargetingComp && DamageCauser)
+	{
+		TargetingComp->RotateTowards(DamageCauser);
+	}
+
 	// Audio Feedback
 	if (Data.ParrySound)
 	{
