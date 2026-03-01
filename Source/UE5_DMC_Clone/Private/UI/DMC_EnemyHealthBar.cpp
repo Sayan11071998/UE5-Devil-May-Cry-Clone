@@ -1,7 +1,6 @@
 #include "UI/DMC_EnemyHealthBar.h"
 #include "Components/ProgressBar.h"
 #include "Components/TextBlock.h"
-#include "Kismet/GameplayStatics.h"
 #include "Enemies/DMC_EnemyCharacterBase.h"
 
 void UDMC_EnemyHealthBar::SetHealthPercent(float InPercent)
@@ -23,7 +22,11 @@ void UDMC_EnemyHealthBar::NativeTick(const FGeometry& MyGeometry, float InDeltaT
 
 	if (Enemy->CanBeFinished())
 	{
-		if (HealthProgressBar) HealthProgressBar->SetVisibility(ESlateVisibility::Collapsed);
+		if (HealthProgressBar)
+		{
+			HealthProgressBar->SetVisibility(ESlateVisibility::Collapsed);
+		}
+		
 		if (ExecuteText)
 		{
 			ExecuteText->SetVisibility(ESlateVisibility::Visible);
@@ -38,7 +41,11 @@ void UDMC_EnemyHealthBar::NativeTick(const FGeometry& MyGeometry, float InDeltaT
 	}
 	else
 	{
-		if (HealthProgressBar) HealthProgressBar->SetVisibility(ESlateVisibility::Visible);
+		if (HealthProgressBar)
+		{
+			HealthProgressBar->SetVisibility(ESlateVisibility::Visible);
+		}
+		
 		if (ExecuteText)
 		{
 			ExecuteText->SetVisibility(ESlateVisibility::Collapsed);
