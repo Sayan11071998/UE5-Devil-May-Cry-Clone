@@ -80,6 +80,8 @@ void ADMC_EnemyCharacterBase::OnFinished(TObjectPtr<AActor> Attacker)
 	bIsBeingFinished = true;
 
 	Health = 0.f;
+	GetWorldTimerManager().ClearTimer(AttackTimerHandle);
+	ResetAttackState();
 	EndWeaponCollision();
 
 	if (FinishedMontage)
@@ -167,7 +169,7 @@ void ADMC_EnemyCharacterBase::SpawnHitFX(TObjectPtr<AActor> DamageCauser, const 
 
 float ADMC_EnemyCharacterBase::PerformAttack()
 {
-	if (bDead || AttackMontages.Num() == 0 || bIsAttacking) return 0.f;
+	if (bDead || bIsBeingFinished || AttackMontages.Num() == 0 || bIsAttacking) return 0.f;
 
 	// Orient towards player before starting the montage
 	if (APawn* PlayerPawn = UGameplayStatics::GetPlayerPawn(this, 0))
