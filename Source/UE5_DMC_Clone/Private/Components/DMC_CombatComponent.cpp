@@ -151,6 +151,7 @@ bool UDMC_CombatComponent::SpecialAttack()
 		{
 			PlayerOwner->ResetLightAttackVariables();
 			PlayerOwner->ResetHeavyAttackVariables();
+			
 			if (UDMC_TargetingComponent* Targeting = PlayerOwner->GetTargetingComp())
 			{
 				Targeting->SnapToTarget();

@@ -2,9 +2,9 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
-#include "Data/DMC_ComboDataAsset.h"
 #include "DMC_CombatComponent.generated.h"
 
+struct FDMC_AttackData;
 class ADMC_PlayerCharacter;
 
 USTRUCT(BlueprintType)
