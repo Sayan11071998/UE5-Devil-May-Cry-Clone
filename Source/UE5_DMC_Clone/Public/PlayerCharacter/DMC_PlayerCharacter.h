@@ -2,17 +2,16 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
-#include "Interfaces/DMC_CombatInterface.h"
-#include "DMC_CharacterTypes.h"
-#include "DamageTypes/DMC_DamageType.h"
 #include "Data/DMC_ComboDataAsset.h"
+#include "DMC_CharacterTypes.h"
+#include "Interfaces/DMC_CombatInterface.h"
 #include "DMC_PlayerCharacter.generated.h"
 
+struct FInputActionValue;
 class USpringArmComponent;
 class UCameraComponent;
 class UInputMappingContext;
 class UInputAction;
-struct FInputActionValue;
 class UDMC_PlayerHUD;
 class UDMC_CombatBufferComponent;
 class UDMC_RageComponent;
@@ -52,16 +51,22 @@ public:
 	void ParryReleased();
 	
 	// Animation Notify Callbacks
-	void SaveLightAttack();
-	void SaveHeavyAttack();
-	void SaveDodge();
+	virtual void SaveLightAttack() override;
+	virtual void SaveHeavyAttack() override;
+	virtual void SaveDodge() override;
 	
 	// State Check
 	bool IsRaging() const;
 
 	// ~ Begin AActor Interface
-	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
+	virtual float TakeDamage(
+		float DamageAmount,
+		struct FDamageEvent const& DamageEvent,
+		class AController* EventInstigator,
+		AActor* DamageCauser	
+	) override;
 	// ~ End AActor Interface
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "DMC|UI")
 	TSubclassOf<UDMC_PlayerHUD> PlayerHUDClass;
 
@@ -74,7 +79,6 @@ public:
 	FTimerHandle GameOverTimerHandle;
 
 	void ShowGameOver();
-
 	void UpdateHUD();
 
 	// ~ Begin IDMC_CombatInterface Implementation
@@ -96,7 +100,7 @@ public:
 	void SoftLockOn();
 
 	// Visual feedback for hits
-	void SpawnHitFX(AActor* DamageCauser, const FHitResult& HitResult);
+	void SpawnHitFX(TObjectPtr<AActor> DamageCauser, const FHitResult& HitResult);
 
 protected:
 	virtual void BeginPlay() override;
@@ -194,6 +198,7 @@ private:
 
 	FTimerHandle HitStopTimerHandle;
 	FTimerHandle ParryTimerHandle;
+	
 	bool bHitStopEnabled = false;
 	bool bModifierHeld = false;
 
