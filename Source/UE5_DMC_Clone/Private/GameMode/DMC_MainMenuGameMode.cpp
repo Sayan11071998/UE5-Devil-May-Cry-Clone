@@ -1,6 +1,5 @@
 #include "GameMode/DMC_MainMenuGameMode.h"
 #include "Blueprint/UserWidget.h"
-#include "Kismet/GameplayStatics.h"
 
 ADMC_MainMenuGameMode::ADMC_MainMenuGameMode()
 {
@@ -18,12 +17,12 @@ void ADMC_MainMenuGameMode::BeginPlay()
 			MainMenu->AddToViewport();
 
 			// Set Input Mode to UI Only for the Main Menu
-			if (APlayerController* PC = GetWorld()->GetFirstPlayerController())
+			if (APlayerController* PlayerController = GetWorld()->GetFirstPlayerController())
 			{
 				FInputModeUIOnly InputMode;
 				InputMode.SetWidgetToFocus(MainMenu->TakeWidget());
-				PC->SetInputMode(InputMode);
-				PC->bShowMouseCursor = true;
+				PlayerController->SetInputMode(InputMode);
+				PlayerController->bShowMouseCursor = true;
 			}
 		}
 	}
