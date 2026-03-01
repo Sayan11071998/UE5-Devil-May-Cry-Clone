@@ -1,8 +1,5 @@
 #include "Enemies/DMC_EnemyRanged.h"
 #include "Items/DMC_BaseProjectile.h"
-#include "Kismet/KismetMathLibrary.h"
-#include "Kismet/GameplayStatics.h"
-#include "GameFramework/ProjectileMovementComponent.h"
 
 ADMC_EnemyRanged::ADMC_EnemyRanged()
 {
@@ -12,8 +9,6 @@ ADMC_EnemyRanged::ADMC_EnemyRanged()
 
 float ADMC_EnemyRanged::PerformAttack()
 {
-	// Similar to base but ensures we have a projectile class? 
-	// Or just use base implementation for montage playing and let Anim Notify call Fire()
 	return Super::PerformAttack();
 }
 
@@ -30,12 +25,10 @@ void ADMC_EnemyRanged::Fire()
 	SpawnParams.Owner = this;
 	SpawnParams.Instigator = this;
 	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-
-	ADMC_BaseProjectile* Projectile = GetWorld()->SpawnActor<ADMC_BaseProjectile>(ProjectileClass, SocketLocation, FireRotation, SpawnParams);
 	
-	if (Projectile)
+	if (ADMC_BaseProjectile* Projectile = GetWorld()->SpawnActor<ADMC_BaseProjectile>(ProjectileClass, SocketLocation, FireRotation, SpawnParams))
 	{
-		// Ensure the projectile doesn't collide with the enemy that fired it
+		// Projectile doesn't collide with the enemy that fired it
 		Projectile->SetInstigator(this);
 		if (UPrimitiveComponent* RootPrim = Cast<UPrimitiveComponent>(Projectile->GetRootComponent()))
 		{
