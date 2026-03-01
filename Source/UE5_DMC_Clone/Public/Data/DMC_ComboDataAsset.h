@@ -35,7 +35,7 @@ struct FDMC_ParryData
 	TObjectPtr<class UNiagaraSystem> ParryFX;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	TObjectPtr<class USoundBase> ParrySound;
+	TObjectPtr<USoundBase> ParrySound;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	float PerfectParryWindow = 0.2f;
@@ -125,7 +125,7 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "Attack|Special")
 	TObjectPtr<UAnimMontage> RageMontage;
 	
-	// New Data-Driven Special Attacks
+	// Data-Driven Special Attacks
 	UPROPERTY(EditDefaultsOnly, Category = "Attack|SpecialAttacks")
 	TArray<FDMC_SpecialAttackData> SpecialAttacks;
 
