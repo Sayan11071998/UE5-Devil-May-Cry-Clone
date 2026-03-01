@@ -15,8 +15,8 @@ void UBTS_UpdateBehavior::TickNode(UBehaviorTreeComponent& OwnerComp, uint8* Nod
 {
 	Super::TickNode(OwnerComp, NodeMemory, DeltaSeconds);
 	
-	UBlackboardComponent* BB = OwnerComp.GetBlackboardComponent();
-	if (!BB) return;
+	UBlackboardComponent* BlackboardComponent = OwnerComp.GetBlackboardComponent();
+	if (!BlackboardComponent) return;
 
 	// Auto-initialize keys if names are not set in the editor
 	if (TargetKey.SelectedKeyName.IsNone()) TargetKey.SelectedKeyName = FName("Target");
@@ -25,12 +25,11 @@ void UBTS_UpdateBehavior::TickNode(UBehaviorTreeComponent& OwnerComp, uint8* Nod
 	if (StateKey.SelectedKeyName.IsNone()) StateKey.SelectedKeyName = FName("State");
 
 	APawn* Enemy = OwnerComp.GetAIOwner() ? OwnerComp.GetAIOwner()->GetPawn() : nullptr;
-	
 	if (Enemy)
 	{
-		AActor* Target = Cast<AActor>(BB->GetValueAsObject(TargetKey.SelectedKeyName));
-		float StrafeDist = BB->GetValueAsFloat(StrafeDistanceKey.SelectedKeyName);
-		float AttackDist = BB->GetValueAsFloat(AttackDistanceKey.SelectedKeyName);
+		AActor* Target = Cast<AActor>(BlackboardComponent->GetValueAsObject(TargetKey.SelectedKeyName));
+		float StrafeDist = BlackboardComponent->GetValueAsFloat(StrafeDistanceKey.SelectedKeyName);
+		float AttackDist = BlackboardComponent->GetValueAsFloat(AttackDistanceKey.SelectedKeyName);
 		
 		if (Target)
 		{
@@ -38,7 +37,7 @@ void UBTS_UpdateBehavior::TickNode(UBehaviorTreeComponent& OwnerComp, uint8* Nod
 			{
 				if (Player->IsDead())
 				{
-					BB->SetValueAsEnum(StateKey.SelectedKeyName, (uint8)EDMC_AIBehaviorState::EAIS_None);
+					BlackboardComponent->SetValueAsEnum(StateKey.SelectedKeyName, static_cast<uint8>(EDMC_AIBehaviorState::EAIS_None));
 					return;
 				}
 			}
@@ -46,15 +45,15 @@ void UBTS_UpdateBehavior::TickNode(UBehaviorTreeComponent& OwnerComp, uint8* Nod
 			float Distance = Enemy->GetDistanceTo(Target);
 			if (Distance <= AttackDist)
 			{
-				BB->SetValueAsEnum(StateKey.SelectedKeyName, (uint8)EDMC_AIBehaviorState::EAIS_Attack);
+				BlackboardComponent->SetValueAsEnum(StateKey.SelectedKeyName, static_cast<uint8>(EDMC_AIBehaviorState::EAIS_Attack));
 			}
 			else if (Distance <= StrafeDist)
 			{
-				BB->SetValueAsEnum(StateKey.SelectedKeyName, (uint8)EDMC_AIBehaviorState::EAIS_Strafe);
+				BlackboardComponent->SetValueAsEnum(StateKey.SelectedKeyName, static_cast<uint8>(EDMC_AIBehaviorState::EAIS_Strafe));
 			}
 			else
 			{
-				BB->SetValueAsEnum(StateKey.SelectedKeyName, (uint8)EDMC_AIBehaviorState::EAIS_Chase);
+				BlackboardComponent->SetValueAsEnum(StateKey.SelectedKeyName, static_cast<uint8>(EDMC_AIBehaviorState::EAIS_Chase));
 			}
 		}
 	}
