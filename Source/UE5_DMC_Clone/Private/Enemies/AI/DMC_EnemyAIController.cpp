@@ -15,22 +15,22 @@ void ADMC_EnemyAIController::OnPossess(APawn* InPawn)
 	{
 		RunBehaviorTree(BehaviorTree);
 		
-		if (UBlackboardComponent* BB = GetBlackboardComponent())
+		if (UBlackboardComponent* BlackboardComponent = GetBlackboardComponent())
 		{
 			APawn* Player = UGameplayStatics::GetPlayerPawn(GetWorld(), 0);
 			ADMC_EnemyCharacterBase* Enemy = Cast<ADMC_EnemyCharacterBase>(InPawn);
 			
-			BB->SetValueAsObject(TargetKeyName, Player);
+			BlackboardComponent->SetValueAsObject(TargetKeyName, Player);
 			
 			if (Enemy)
 			{
-				BB->SetValueAsFloat(StrafeDistanceKeyName, Enemy->GetStrafeDistance());
-				BB->SetValueAsFloat(AttackDistanceKeyName, Enemy->GetAttackDistance());
+				BlackboardComponent->SetValueAsFloat(StrafeDistanceKeyName, Enemy->GetStrafeDistance());
+				BlackboardComponent->SetValueAsFloat(AttackDistanceKeyName, Enemy->GetAttackDistance());
 			}
 			else
 			{
-				BB->SetValueAsFloat(StrafeDistanceKeyName, StrafeDistance);
-				BB->SetValueAsFloat(AttackDistanceKeyName, AttackDistance);
+				BlackboardComponent->SetValueAsFloat(StrafeDistanceKeyName, StrafeDistance);
+				BlackboardComponent->SetValueAsFloat(AttackDistanceKeyName, AttackDistance);
 			}
 		}
 	}

@@ -18,30 +18,34 @@ void ADMC_EnemySpawner::BeginPlay()
 {
 	Super::BeginPlay();
 	SpawnTrigger->OnComponentBeginOverlap.AddDynamic(this, &ADMC_EnemySpawner::OnOverlapBegin);
+	SpawnTrigger->OnComponentEndOverlap.AddDynamic(this, &ADMC_EnemySpawner::OnOverlapEnd);
 }
 
 void ADMC_EnemySpawner::OnOverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	if (bHasSpawned) return;
-	
-	if (ADMC_PlayerCharacter* Player = Cast<ADMC_PlayerCharacter>(OtherActor))
+	if (Cast<ADMC_PlayerCharacter>(OtherActor))
 	{
-		bHasSpawned = true;
+		// Spawn immediately and then start timer
 		SpawnEnemies();
-        
-		if (bDebugSpawn)
-		{
-			DrawDebugSphere(GetWorld(), GetActorLocation(), SpawnRadius, 12, FColor::Yellow, false, 10.f);
-		}
+		GetWorldTimerManager().SetTimer(SpawnTimerHandle, this, &ADMC_EnemySpawner::SpawnEnemies, SpawnInterval, true);
+	}
+}
+
+void ADMC_EnemySpawner::OnOverlapEnd(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
+	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+{
+	if (Cast<ADMC_PlayerCharacter>(OtherActor))
+	{
+		GetWorldTimerManager().ClearTimer(SpawnTimerHandle);
 	}
 }
 
 void ADMC_EnemySpawner::SpawnEnemies()
 {
-	UNavigationSystemV1* NavSys = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld());
+	UNavigationSystemV1* NavSystem = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld());
 	
-	if (!NavSys) return;
+	if (!NavSystem) return;
 	
 	APawn* PlayerPawn = UGameplayStatics::GetPlayerPawn(GetWorld(), 0);
 	for (auto& EnemyPair : EnemiesToSpawn)
@@ -54,7 +58,7 @@ void ADMC_EnemySpawner::SpawnEnemies()
 		for (int32 i = 0; i < Count; ++i)
 		{
 			FNavLocation RandomLocation;
-			if (NavSys->GetRandomReachablePointInRadius(GetActorLocation(), SpawnRadius, RandomLocation))
+			if (NavSystem->GetRandomReachablePointInRadius(GetActorLocation(), SpawnRadius, RandomLocation))
 			{
 				FActorSpawnParameters SpawnParams;
 				SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;

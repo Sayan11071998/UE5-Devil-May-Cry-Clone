@@ -16,5 +16,5 @@ protected:
 	virtual void BeginPlay() override;
 
 	UPROPERTY(EditDefaultsOnly, Category = "DMC|Menu")
-	TSubclassOf<class UUserWidget> MainMenuWidgetClass;
+	TSubclassOf<UUserWidget> MainMenuWidgetClass;
 };

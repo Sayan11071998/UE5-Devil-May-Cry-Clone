@@ -47,7 +47,6 @@ AActor* UDMC_TargetingComponent::FindBestContextualTarget()
 	AActor* BestTarget = nullptr;
 	float BestScore = -1.f;
 
-	FVector CameraLocation = Player->GetFollowCamera()->GetComponentLocation();
 	FVector CameraForward = Player->GetFollowCamera()->GetForwardVector();
 	FVector PlayerInput = Player->GetCharacterMovement()->GetLastInputVector().GetSafeNormal();
 
@@ -62,7 +61,7 @@ AActor* UDMC_TargetingComponent::FindBestContextualTarget()
 		float DotToCamera = FVector::DotProduct(CameraForward, ToEnemy);
 		float AngleDegree = FMath::RadiansToDegrees(FMath::Acos(DotToCamera));
 		
-		if (AngleDegree > MaxFieldOfViewAngle) continue; // Outside of "Combat FOV"
+		if (AngleDegree > MaxFieldOfViewAngle) continue; // Outside the "Combat FOV"
 
 		// Proximity Scoring (Normalizing distance)
 		float Distance = Player->GetDistanceTo(Enemy);
@@ -94,7 +93,7 @@ void UDMC_TargetingComponent::RotateToTarget()
 	RotateTowards(FocusedTarget);
 }
 
-void UDMC_TargetingComponent::RotateTowards(AActor* Target)
+void UDMC_TargetingComponent::RotateTowards(TObjectPtr<AActor> Target)
 {
 	if (IsValid(Target) && RotationCurve)
 	{

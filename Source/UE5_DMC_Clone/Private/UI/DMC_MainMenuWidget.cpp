@@ -7,8 +7,15 @@ void UDMC_MainMenuWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 
-	if (StartButton) StartButton->OnClicked.AddDynamic(this, &UDMC_MainMenuWidget::OnStartClicked);
-	if (QuitButton) QuitButton->OnClicked.AddDynamic(this, &UDMC_MainMenuWidget::OnQuitClicked);
+	if (StartButton)
+	{
+		StartButton->OnClicked.AddDynamic(this, &UDMC_MainMenuWidget::OnStartClicked);
+	}
+	
+	if(QuitButton)
+	{
+		QuitButton->OnClicked.AddDynamic(this, &UDMC_MainMenuWidget::OnQuitClicked);
+	}
 }
 
 void UDMC_MainMenuWidget::OnStartClicked()

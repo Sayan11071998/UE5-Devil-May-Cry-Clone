@@ -2,7 +2,6 @@
 #include "Components/SphereComponent.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
-#include "DamageTypes/DMC_DamageType.h"
 #include "Particles/ParticleSystemComponent.h"
 #include "PlayerCharacter/DMC_PlayerCharacter.h"
 

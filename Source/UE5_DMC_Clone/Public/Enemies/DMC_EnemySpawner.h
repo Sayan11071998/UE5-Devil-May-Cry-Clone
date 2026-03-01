@@ -27,7 +27,7 @@ protected:
 	float SpawnRadius = 500.f;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spawner")
-	bool bDebugSpawn = true;
+	float SpawnInterval = 5.0f;
 	
 	UFUNCTION()
 	void OnOverlapBegin(
@@ -39,8 +39,16 @@ protected:
 		const FHitResult& SweepResult	
 	);
 	
+	UFUNCTION()
+	void OnOverlapEnd(
+		UPrimitiveComponent* OverlappedComponent,
+		AActor* OtherActor,
+		UPrimitiveComponent* OtherComp,
+		int32 OtherBodyIndex
+	);
+	
 	void SpawnEnemies();
 	
 private:
-	bool bHasSpawned = false;
+	FTimerHandle SpawnTimerHandle;
 };

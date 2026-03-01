@@ -10,11 +10,11 @@ UBTT_SetFocus::UBTT_SetFocus()
 EBTNodeResult::Type UBTT_SetFocus::ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
 {
 	AAIController* AIController = OwnerComp.GetAIOwner();
-	UBlackboardComponent* BB = OwnerComp.GetBlackboardComponent();
+	UBlackboardComponent* BlackboardComponent = OwnerComp.GetBlackboardComponent();
 	
-	if (AIController && BB)
+	if (AIController && BlackboardComponent)
 	{
-		AActor* FocusTarget = Cast<AActor>(BB->GetValueAsObject(TargetKey.SelectedKeyName));
+		AActor* FocusTarget = Cast<AActor>(BlackboardComponent->GetValueAsObject(TargetKey.SelectedKeyName));
 		if (FocusTarget)
 		{
 			AIController->SetFocus(FocusTarget);

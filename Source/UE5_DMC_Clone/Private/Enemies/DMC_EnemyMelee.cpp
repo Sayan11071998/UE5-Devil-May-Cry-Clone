@@ -30,12 +30,18 @@ void ADMC_EnemyMelee::EquipWeapon()
 
 void ADMC_EnemyMelee::StartWeaponCollision(TSubclassOf<class UDMC_DamageType> DamageType)
 {
-	if (EquippedWeapon) EquippedWeapon->StartCollision(DamageType);
+	if (EquippedWeapon)
+	{
+		EquippedWeapon->StartCollision(DamageType);
+	}
 }
 
 void ADMC_EnemyMelee::EndWeaponCollision()
 {
-	if (EquippedWeapon) EquippedWeapon->EndCollision();
+	if (EquippedWeapon)
+	{
+		EquippedWeapon->EndCollision();
+	}
 }
 
 void ADMC_EnemyMelee::Death(bool bIsFinisher)

@@ -76,11 +76,11 @@ void ADMC_PlayerCharacter::BeginPlay()
 	}
 	
 	// Reset Input Mode to Game Only and hide cursor on start/restart
-	if (APlayerController* PC = Cast<APlayerController>(GetController()))
+	if (APlayerController* PlayerController = Cast<APlayerController>(GetController()))
 	{
 		FInputModeGameOnly InputMode;
-		PC->SetInputMode(InputMode);
-		PC->bShowMouseCursor = false;
+		PlayerController->SetInputMode(InputMode);
+		PlayerController->bShowMouseCursor = false;
 	}
 	
 	if (PlayerHUDClass)
@@ -139,7 +139,7 @@ float ADMC_PlayerCharacter::TakeDamage(float DamageAmount, struct FDamageEvent c
 	return DamageAmount;
 }
 
-void ADMC_PlayerCharacter::SpawnHitFX(AActor* DamageCauser, const FHitResult& HitResult)
+void ADMC_PlayerCharacter::SpawnHitFX(TObjectPtr<AActor> DamageCauser, const FHitResult& HitResult)
 {
 	if (!ComboData || !ComboData->HitVFX || !DamageCauser) return;
 
@@ -190,7 +190,6 @@ void ADMC_PlayerCharacter::Death()
 	if (GetMesh())
 	{
 		GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-		// Keep visible but ignore combat
 		GetMesh()->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
 	}
 
@@ -206,11 +205,15 @@ void ADMC_PlayerCharacter::Death()
 void ADMC_PlayerCharacter::Landed(const FHitResult& Hit)
 {
 	Super::Landed(Hit);
+	
 	if (Hit.GetActor())
 	{
 		for (TSubclassOf<AActor> AllowedClass : CanLandClasses)
 		{
-			if (Hit.GetActor()->IsA(AllowedClass)) { ResetDoubleJump(); break; }
+			if (Hit.GetActor()->IsA(AllowedClass))
+			{
+				ResetDoubleJump(); break;
+			}
 		}
 	}
 	bHitStopEnabled = false;
@@ -281,7 +284,10 @@ void ADMC_PlayerCharacter::ResetLightAttackVariables()
 
 void ADMC_PlayerCharacter::ResetHeavyAttackVariables()
 {
-	if (CombatComp) CombatComp->ResetHeavyCombo();
+	if (CombatComp)
+	{
+		CombatComp->ResetHeavyCombo();
+	}
 }
 
 void ADMC_PlayerCharacter::ResetState()
@@ -404,7 +410,10 @@ void ADMC_PlayerCharacter::Dodge()
 
 void ADMC_PlayerCharacter::FinisherAttack()
 {
-	if (FinisherComp) FinisherComp->TryExecuteFinisher();
+	if (FinisherComp)
+	{
+		FinisherComp->TryExecuteFinisher();
+	}
 }
 
 void ADMC_PlayerCharacter::ParryPressed()
@@ -434,7 +443,6 @@ void ADMC_PlayerCharacter::ParryReleased()
 			PlayAnimMontage(Data.ParryEndMontage);
 		}
 	}
-	
 	ResetParryState();
 }
 
@@ -491,9 +499,6 @@ void ADMC_PlayerCharacter::HandleSuccessfulParry(AActor* DamageCauser)
 	{
 		Enemy->HandleParried(this);
 	}
-
-	// Note: We don't call ResetParryState() here because the user is still holding the key.
-	// The state will be reset when they release the key.
 }
 
 void ADMC_PlayerCharacter::ResetParryState()
@@ -543,6 +548,7 @@ void ADMC_PlayerCharacter::SaveDodge()
 void ADMC_PlayerCharacter::HitStop()
 {
 	if (!bHitStopEnabled) return;
+	
 	CustomTimeDilation = HitStopTimeDilation;
 	GetWorldTimerManager().SetTimer(HitStopTimerHandle, FTimerDelegate::CreateLambda([this]()
 	{
@@ -603,11 +609,16 @@ TObjectPtr<AActor> ADMC_PlayerCharacter::GetCombatTarget() const
 void ADMC_PlayerCharacter::EquipWeapon()
 {
 	if (!WeaponClass || EquippedWeapon) return;
+	
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.Owner = this;
 	SpawnParams.Instigator = GetInstigator();
+	
 	EquippedWeapon = GetWorld()->SpawnActor<ADMC_BaseWeapon>(WeaponClass, SpawnParams);
-	if (EquippedWeapon) EquippedWeapon->Equip(GetMesh(), WeaponSocketName, this, this);
+	if (EquippedWeapon)
+	{
+		EquippedWeapon->Equip(GetMesh(), WeaponSocketName, this, this);
+	}
 }
 
 void ADMC_PlayerCharacter::UpdateHUD()
@@ -622,7 +633,7 @@ void ADMC_PlayerCharacter::ShowGameOver()
 {
 	if (!GameOverWidgetClass) return;
 
-	if (APlayerController* PC = Cast<APlayerController>(GetController()))
+	if (APlayerController* PlayerController = Cast<APlayerController>(GetController()))
 	{
 		UUserWidget* GameOverWidget = CreateWidget<UUserWidget>(GetWorld(), GameOverWidgetClass);
 		if (GameOverWidget)
@@ -632,8 +643,8 @@ void ADMC_PlayerCharacter::ShowGameOver()
 			// Set Input Mode to UI Only and show cursor
 			FInputModeUIOnly InputMode;
 			InputMode.SetWidgetToFocus(GameOverWidget->TakeWidget());
-			PC->SetInputMode(InputMode);
-			PC->bShowMouseCursor = true;
+			PlayerController->SetInputMode(InputMode);
+			PlayerController->bShowMouseCursor = true;
 		}
 	}
 }

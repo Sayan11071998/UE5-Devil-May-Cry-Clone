@@ -21,6 +21,7 @@ public:
 	// ~ Begin IDMC_CombatInterface Implementation
 	virtual bool CanBeFinished() const override;
 	virtual void OnFinished(TObjectPtr<AActor> Attacker) override;
+	
 	virtual void SaveLightAttack() override {}
 	virtual void SaveHeavyAttack() override {}
 	virtual void SaveDodge() override {}
@@ -31,9 +32,9 @@ public:
 	virtual TObjectPtr<AActor> GetSoftTarget() const override { return nullptr; }
 	virtual void StartWeaponCollision(TSubclassOf<class UDMC_DamageType> DamageType) override {}
 	virtual void EndWeaponCollision() override {}
-	
-	virtual void HandleParried(AActor* ParriedBy);
 	// ~ End IDMC_CombatInterface Implementation
+	
+	virtual void HandleParried(TObjectPtr<AActor> ParriedBy);
 	
 	// ~ Begin AActor Interface
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
@@ -49,16 +50,11 @@ protected:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
 	
-	// Map of damage types to their corresponding reactions
-	UPROPERTY(EditDefaultsOnly, Category = "DMC|Combat")
-	TMap<EDMC_DamageType, FDMC_HitReactionData> HitReactionMap;
+	virtual void ResetAttackState();
+	virtual void Death(bool bIsFinisher = false);
 	
 	// Triggers a hit reaction animation and pushback
 	void PlayHitReaction(EDMC_DamageType DamageDirection);
-
-	virtual void ResetAttackState();
-
-	virtual void Death(bool bIsFinisher = false);
 
 	UPROPERTY(EditDefaultsOnly, Category = "DMC|Combat")
 	TArray<TObjectPtr<UAnimMontage>> AttackMontages;
@@ -66,7 +62,18 @@ protected:
 	bool bDead = false;
 	bool bIsBeingFinished = false;
 	bool bIsAttacking = false;
+	
 	FTimerHandle AttackTimerHandle;
+	
+	// Map of damage types to their corresponding reactions
+	UPROPERTY(EditDefaultsOnly, Category = "DMC|Combat")
+	TMap<EDMC_DamageType, FDMC_HitReactionData> HitReactionMap;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "DMC|Combat|AI")
+	float AttackDistance = 175.f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "DMC|Combat|AI")
+	float StrafeDistance = 450.f;
 	
 private:
 	
@@ -110,11 +117,4 @@ public:
 	FORCEINLINE float GetMaxHealth() const { return MaxHealth; }
 	FORCEINLINE float GetAttackDistance() const { return AttackDistance; }
 	FORCEINLINE float GetStrafeDistance() const { return StrafeDistance; }
-
-protected:
-	UPROPERTY(EditDefaultsOnly, Category = "DMC|Combat|AI")
-	float AttackDistance = 175.f;
-
-	UPROPERTY(EditDefaultsOnly, Category = "DMC|Combat|AI")
-	float StrafeDistance = 450.f;
 };

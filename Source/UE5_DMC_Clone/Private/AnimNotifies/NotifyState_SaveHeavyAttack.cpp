@@ -2,7 +2,7 @@
 #include "Interfaces/DMC_CombatInterface.h"
 
 void UNotifyState_SaveHeavyAttack::NotifyTick(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation,
-                                              float FrameDeltaTime, const FAnimNotifyEventReference& EventReference)
+	float FrameDeltaTime, const FAnimNotifyEventReference& EventReference)
 {
 	Super::NotifyTick(MeshComp, Animation, FrameDeltaTime, EventReference);
 	

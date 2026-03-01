@@ -6,9 +6,6 @@
 
 class UProgressBar;
 
-/**
- * Player HUD Widget for health and other stats.
- */
 UCLASS()
 class UE5_DMC_CLONE_API UDMC_PlayerHUD : public UUserWidget
 {

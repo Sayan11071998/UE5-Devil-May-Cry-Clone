@@ -1,5 +1,4 @@
 #include "Enemies/DMC_EnemyCharacterBase.h"
-#include "Items/DMC_BaseWeapon.h"
 #include "NiagaraFunctionLibrary.h"
 #include "Components/CapsuleComponent.h"
 #include "DamageTypes/DMC_DamageType.h"
@@ -81,6 +80,8 @@ void ADMC_EnemyCharacterBase::OnFinished(TObjectPtr<AActor> Attacker)
 	bIsBeingFinished = true;
 
 	Health = 0.f;
+	GetWorldTimerManager().ClearTimer(AttackTimerHandle);
+	ResetAttackState();
 	EndWeaponCollision();
 
 	if (FinishedMontage)
@@ -96,6 +97,20 @@ void ADMC_EnemyCharacterBase::OnFinished(TObjectPtr<AActor> Attacker)
 	else
 	{
 		Death(true);
+	}
+}
+
+void ADMC_EnemyCharacterBase::HandleParried(TObjectPtr<AActor> ParriedBy)
+{
+	if (bDead || bIsBeingFinished) return;
+
+	ResetAttackState();
+	GetWorldTimerManager().ClearTimer(AttackTimerHandle);
+	EndWeaponCollision();
+
+	if (StaggerMontage)
+	{
+		PlayAnimMontage(StaggerMontage);
 	}
 }
 
@@ -152,19 +167,29 @@ void ADMC_EnemyCharacterBase::SpawnHitFX(TObjectPtr<AActor> DamageCauser, const 
 	UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), HitVFX, HitResult.ImpactPoint, FinalRot);
 }
 
-void ADMC_EnemyCharacterBase::PlayHitReaction(EDMC_DamageType DamageDirection)
+float ADMC_EnemyCharacterBase::PerformAttack()
 {
-	if (HitReactionMap.Contains(DamageDirection))
+	if (bDead || bIsBeingFinished || AttackMontages.Num() == 0 || bIsAttacking) return 0.f;
+
+	// Orient towards player before starting the montage
+	if (APawn* PlayerPawn = UGameplayStatics::GetPlayerPawn(this, 0))
 	{
-		const FDMC_HitReactionData& Data = HitReactionMap[DamageDirection];
-		
-		BufferComponent->StopBuffer();
-		BufferComponent->StartBuffer(Data.PushbackAmount);
-		if (Data.HitReactMontage)
+		FRotator LookAtRotation = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), PlayerPawn->GetActorLocation());
+		SetActorRotation(FRotator(0.f, LookAtRotation.Yaw, 0.f));
+	}
+
+	int32 RandomIndex = FMath::RandRange(0, AttackMontages.Num() - 1);
+	if (UAnimMontage* SelectedMontage = AttackMontages[RandomIndex])
+	{
+		float Duration = PlayAnimMontage(SelectedMontage);
+		if (Duration > 0.f)
 		{
-			PlayAnimMontage(Data.HitReactMontage);
+			bIsAttacking = true;
+			GetWorldTimerManager().SetTimer(AttackTimerHandle, this, &ADMC_EnemyCharacterBase::ResetAttackState, Duration, false);
+			return Duration;
 		}
 	}
+	return 0.f;
 }
 
 void ADMC_EnemyCharacterBase::Death(bool bIsFinisher)
@@ -176,18 +201,18 @@ void ADMC_EnemyCharacterBase::Death(bool bIsFinisher)
 	EndWeaponCollision();
 	
 	// Completely stop AI logic and detach
-	if (AController* AICon = GetController())
+	if (AController* AIController = GetController())
 	{
-		AICon->StopMovement();
+		AIController->StopMovement();
 	}
 	DetachFromControllerPendingDestroy();
 
 	// Shut down movement component
-	if (UCharacterMovementComponent* MoveComp = GetCharacterMovement())
+	if (UCharacterMovementComponent* MovementComponent = GetCharacterMovement())
 	{
-		MoveComp->StopMovementImmediately();
-		MoveComp->DisableMovement();
-		MoveComp->SetComponentTickEnabled(false);
+		MovementComponent->StopMovementImmediately();
+		MovementComponent->DisableMovement();
+		MovementComponent->SetComponentTickEnabled(false);
 	}
 
 	if (bIsFinisher)
@@ -222,46 +247,22 @@ void ADMC_EnemyCharacterBase::Death(bool bIsFinisher)
 	SetLifeSpan(5.0f);
 }
 
-float ADMC_EnemyCharacterBase::PerformAttack()
+void ADMC_EnemyCharacterBase::PlayHitReaction(EDMC_DamageType DamageDirection)
 {
-	if (bDead || AttackMontages.Num() == 0 || bIsAttacking) return 0.f;
-
-	// Orient towards player before starting the montage
-	if (APawn* PlayerPawn = UGameplayStatics::GetPlayerPawn(this, 0))
+	if (HitReactionMap.Contains(DamageDirection))
 	{
-		FRotator LookAtRotation = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), PlayerPawn->GetActorLocation());
-		SetActorRotation(FRotator(0.f, LookAtRotation.Yaw, 0.f));
-	}
-
-	int32 RandomIndex = FMath::RandRange(0, AttackMontages.Num() - 1);
-	if (UAnimMontage* SelectedMontage = AttackMontages[RandomIndex])
-	{
-		float Duration = PlayAnimMontage(SelectedMontage);
-		if (Duration > 0.f)
+		const FDMC_HitReactionData& Data = HitReactionMap[DamageDirection];
+		
+		BufferComponent->StopBuffer();
+		BufferComponent->StartBuffer(Data.PushbackAmount);
+		if (Data.HitReactMontage)
 		{
-			bIsAttacking = true;
-			GetWorldTimerManager().SetTimer(AttackTimerHandle, this, &ADMC_EnemyCharacterBase::ResetAttackState, Duration, false);
-			return Duration;
+			PlayAnimMontage(Data.HitReactMontage);
 		}
 	}
-	return 0.f;
 }
 
 void ADMC_EnemyCharacterBase::ResetAttackState()
 {
 	bIsAttacking = false;
-}
-
-void ADMC_EnemyCharacterBase::HandleParried(AActor* ParriedBy)
-{
-	if (bDead || bIsBeingFinished) return;
-
-	ResetAttackState();
-	GetWorldTimerManager().ClearTimer(AttackTimerHandle);
-	EndWeaponCollision();
-
-	if (StaggerMontage)
-	{
-		PlayAnimMontage(StaggerMontage);
-	}
 }
