@@ -25,23 +25,18 @@ void ADMC_EnemySpawner::OnOverlapBegin(UPrimitiveComponent* OverlappedComponent,
 {
 	if (bHasSpawned) return;
 	
-	if (ADMC_PlayerCharacter* Player = Cast<ADMC_PlayerCharacter>(OtherActor))
+	if (Cast<ADMC_PlayerCharacter>(OtherActor))
 	{
 		bHasSpawned = true;
 		SpawnEnemies();
-        
-		if (bDebugSpawn)
-		{
-			DrawDebugSphere(GetWorld(), GetActorLocation(), SpawnRadius, 12, FColor::Yellow, false, 10.f);
-		}
 	}
 }
 
 void ADMC_EnemySpawner::SpawnEnemies()
 {
-	UNavigationSystemV1* NavSys = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld());
+	UNavigationSystemV1* NavSystem = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld());
 	
-	if (!NavSys) return;
+	if (!NavSystem) return;
 	
 	APawn* PlayerPawn = UGameplayStatics::GetPlayerPawn(GetWorld(), 0);
 	for (auto& EnemyPair : EnemiesToSpawn)
@@ -54,7 +49,7 @@ void ADMC_EnemySpawner::SpawnEnemies()
 		for (int32 i = 0; i < Count; ++i)
 		{
 			FNavLocation RandomLocation;
-			if (NavSys->GetRandomReachablePointInRadius(GetActorLocation(), SpawnRadius, RandomLocation))
+			if (NavSystem->GetRandomReachablePointInRadius(GetActorLocation(), SpawnRadius, RandomLocation))
 			{
 				FActorSpawnParameters SpawnParams;
 				SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
