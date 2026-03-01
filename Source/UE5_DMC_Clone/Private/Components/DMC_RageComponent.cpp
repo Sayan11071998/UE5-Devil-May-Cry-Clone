@@ -58,7 +58,7 @@ void UDMC_RageComponent::StopRage()
 	GetWorld()->GetTimerManager().ClearTimer(DurationTimerHandle);
 	GetWorld()->GetTimerManager().ClearTimer(RageTimerHandle);
 
-	for (TObjectPtr<UParticleSystemComponent> Emitter : ActiveRageEmitters)
+	for (UParticleSystemComponent* Emitter : ActiveRageEmitters)
 	{
 		if (Emitter)
 		{
@@ -78,7 +78,7 @@ void UDMC_RageComponent::ExecuteNextRageStage()
 	
 	if (!ComboData->RageSequence.IsValidIndex(CurrentStageIndex))
 	{
-		for (TObjectPtr<UParticleSystemComponent> Emitter : ActiveRageEmitters)
+		for (UParticleSystemComponent* Emitter : ActiveRageEmitters)
 		{
 			if (Emitter)
 			{
