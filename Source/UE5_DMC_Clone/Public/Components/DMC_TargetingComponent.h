@@ -16,7 +16,7 @@ public:
 	
 	void SoftLockOn();
 	void RotateToTarget();
-	void RotateTowards(AActor* Target);
+	void RotateTowards(TObjectPtr<AActor> Target);
 	void SnapToTarget(); // Instant rotation for combat snapping
 	void StopRotation();
 	void ClearSoftTarget();
