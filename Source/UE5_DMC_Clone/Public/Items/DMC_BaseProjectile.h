@@ -2,11 +2,11 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "DamageTypes/DMC_DamageType.h"
 #include "DMC_BaseProjectile.generated.h"
 
 class USphereComponent;
 class UProjectileMovementComponent;
-class UDMC_DamageType;
 class UParticleSystemComponent;
 
 UCLASS()
@@ -36,7 +36,13 @@ protected:
 	TSubclassOf<UDMC_DamageType> DamageTypeClass;
 
 	UFUNCTION()
-	void OnProjectileHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
+	void OnProjectileHit(
+		UPrimitiveComponent* HitComponent,
+		AActor* OtherActor,
+		UPrimitiveComponent* OtherComp,
+		FVector NormalImpulse,
+		const FHitResult& Hit	
+	);
 
 public:
 	FORCEINLINE TObjectPtr<UProjectileMovementComponent> GetProjectileMovement() const { return ProjectileMovement; }
