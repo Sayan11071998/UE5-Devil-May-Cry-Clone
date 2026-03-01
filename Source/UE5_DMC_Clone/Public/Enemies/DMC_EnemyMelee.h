@@ -15,7 +15,7 @@ public:
 	ADMC_EnemyMelee();
 
 	// ~ Begin IDMC_CombatInterface Implementation
-	virtual void StartWeaponCollision(TSubclassOf<class UDMC_DamageType> DamageType) override;
+	virtual void StartWeaponCollision(TSubclassOf<UDMC_DamageType> DamageType) override;
 	virtual void EndWeaponCollision() override;
 	// ~ End IDMC_CombatInterface Implementation
 
