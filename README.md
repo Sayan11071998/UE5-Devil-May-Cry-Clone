@@ -75,15 +75,13 @@ The same structure keeps enemies clean:
 
 ### Animation Graph & Locomotion
 
-| Screenshot | Description |
-|------------|-------------|
-| ![Anim Graph](Screenshot%202026-03-02%20004130.png) | Animation Graph |
-| ![Directional Strafe](Screenshot%202026-03-02%20004257.png) | Directional Strafe Blendspace |
-| ![Locomotion Debug](Screenshot%202026-03-02%20004228.png) | Locomotion Debug |
-
 Locomotion and airborne states live in the **Katana animation layer**, driven by `bIsFalling`, `bDoubleJump`, and speed from `NativeUpdateAnimation`.
 
 When a soft target is active, movement switches to **controller-rotation yaw** and directional blending uses `BS_DirectionalWalk` for **8-directional strafing**.
+
+<img width="1430" height="976" alt="Image" src="https://github.com/user-attachments/assets/0cfb434f-6974-460b-94ab-a09c58ea7566" />
+
+<img width="1453" height="977" alt="Image" src="https://github.com/user-attachments/assets/e4243940-4f2b-4c17-b08f-984522f4e839" />
 
 ---
 
@@ -94,6 +92,8 @@ All enemies share a single **`BT_MeleeEnemy`** tree.
 - `BTS_UpdateBehavior` ticks every **0.2–0.4s**, updating a Blackboard enum based on distance: `Chase` → `Strafe` → `Attack`
 - Attack thresholds are **configured per enemy in C++** — no hardcoded values in the tree
 - `BTT_Attack` stays **InProgress** until the montage ends, preventing mid-swing interruptions
+
+<img width="1507" height="948" alt="Image" src="https://github.com/user-attachments/assets/e89f98fe-0813-4de9-ae70-57320e4a8d0d" />
 
 ---
 
