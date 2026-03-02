@@ -28,8 +28,6 @@ This allows:
 
 ### Combo System & State Management
 
-![Light Attack](Light%20Attack.png)
-
 Combo state is tracked using **three indices**:
 
 | Index | Purpose |
@@ -46,11 +44,13 @@ Resets are **selective** — starting a heavy clears `LightIndex`, and vice vers
 
 Inputs during an active attack are **buffered** (`EBI_LightAttack`, `EBI_HeavyAttack`, `EBI_Dodge`) and consumed when a **save window** opens. Save windows are placed directly on montage timelines using **`AnimNotifyState` tracks**.
 
+<img width="1358" height="947" alt="Image" src="https://github.com/user-attachments/assets/f5c7f30d-2866-4ce1-b8d2-9a6b39ea3f96" />
+
+<img width="1453" height="985" alt="Image" src="https://github.com/user-attachments/assets/d977778f-0d64-4d2e-9622-9772a6977dd8" />
+
 ---
 
 ### Component-Based Architecture
-
-![Heavy Attack](Heavy%20Attack.png)
 
 Instead of a monolithic character class, the player is composed of small, focused components:
 
