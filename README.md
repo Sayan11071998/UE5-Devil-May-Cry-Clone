@@ -6,21 +6,21 @@ A Devil May Cry–inspired action game focused on **combat feel** — featuring 
 Built primarily in **C++** with a **data-driven architecture**, keeping gameplay logic modular, extensible, and iteration-friendly.
 
 **Tech Stack:**  
-Unreal Engine 5 · C++17 · Behavior Trees · Enhanced Input · Animation Blueprints · Data Assets
+`Unreal Engine 5` `C++17` `Behavior Trees` `Enhanced Input` `Animation Blueprints` `Data Assets`
 
 ---
 
-## Development Approach
+## Architecture Overview
+
+![Architecture Overview](Arch.png)
 
 The player is split into **focused components**, each owning exactly one responsibility.  
-All gameplay actors communicate through **`IDMC_CombatInterface`**, which is implemented by the player and all enemy types.
+All gameplay actors communicate through **`IDMC_CombatInterface`**, implemented by the player and all enemy types.
 
 This allows:
 - AnimNotifies to be written **once**
 - The same animation events to work across **players, melee enemies, and ranged enemies**
 - Animation logic to stay fully **decoupled** from gameplay code
-
-![Architecture Overview](Arch.png)
 
 ---
 
@@ -28,70 +28,60 @@ This allows:
 
 ### Combo System & State Management
 
+![Light Attack](Light%20Attack.png)
+
 Combo state is tracked using **three indices**:
-- `LightIndex`
-- `HeavyIndex`
-- `ExtenderIndex`
+
+| Index | Purpose |
+|-------|---------|
+| `LightIndex` | Tracks light attack chain |
+| `HeavyIndex` | Tracks heavy attack chain |
+| `ExtenderIndex` | Triggers extender phase |
 
 Mixed combos work in **two phases**:
 1. **Starter phase** — determined by how many heavies landed
 2. **Extender phase** — triggered on the next heavy input
 
-Resets are **selective**:
-- Starting a heavy clears the light index
-- Starting a light clears the heavy index
+Resets are **selective** — starting a heavy clears `LightIndex`, and vice versa.
 
-Inputs during an active attack are **buffered**:
-- `EBI_LightAttack`
-- `EBI_HeavyAttack`
-- `EBI_Dodge`
-
-Buffered inputs are consumed when a **save window** opens.  
-Save windows are implemented using **`AnimNotifyState` tracks**, placed directly on montage timelines.
-
-![Light Attack](Light Attack.png)
+Inputs during an active attack are **buffered** (`EBI_LightAttack`, `EBI_HeavyAttack`, `EBI_Dodge`) and consumed when a **save window** opens. Save windows are placed directly on montage timelines using **`AnimNotifyState` tracks**.
 
 ---
 
 ### Component-Based Architecture
 
+![Heavy Attack](Heavy%20Attack.png)
+
 Instead of a monolithic character class, the player is composed of small, focused components:
 
-- **CombatComponent** — combo logic and attack flow  
-- **TargetingComponent** — soft lock-on and rotation control  
-- **RageComponent** — rage mode state and VFX sequencing  
-- **FinisherComponent** — execution logic  
-- **CombatBufferComponent** — input buffering and movement lunges  
+| Component | Responsibility |
+|-----------|---------------|
+| `CombatComponent` | Combo logic and attack flow |
+| `TargetingComponent` | Soft lock-on and rotation control |
+| `RageComponent` | Rage mode state and VFX sequencing |
+| `FinisherComponent` | Execution logic |
+| `CombatBufferComponent` | Input buffering and movement lunges |
 
-The immediate payoff was **debugging clarity**:
-- Combo issues → open `CombatComponent`
-- Rotation issues mid-attack → open `TargetingComponent`
+The immediate payoff is **debugging clarity** — combo issues go to `CombatComponent`, rotation issues go to `TargetingComponent`.
 
 The same structure keeps enemies clean:
-- `EnemyCharacterBase` only contains shared enemy logic
-- `EnemyMelee` handles melee-specific behavior
-- `EnemyRanged` handles ranged attacks
-
-Each class stays **small, readable, and focused**.
-
-![Heavy Attack](Heavy Attack.png)
+- `EnemyCharacterBase` — shared enemy logic only
+- `EnemyMelee` — melee-specific behavior
+- `EnemyRanged` — ranged attacks
 
 ---
 
 ### Animation Graph & Locomotion
 
-Locomotion and airborne states (Idle, Walk/Run, Jump, DoubleJump) live in the **Katana animation layer**, driven by:
-- `bIsFalling`
-- `bDoubleJump`
-- Speed from `NativeUpdateAnimation`
+| Screenshot | Description |
+|------------|-------------|
+| ![Anim Graph](Screenshot%202026-03-02%20004130.png) | Animation Graph |
+| ![Directional Strafe](Screenshot%202026-03-02%20004257.png) | Directional Strafe Blendspace |
+| ![Locomotion Debug](Screenshot%202026-03-02%20004228.png) | Locomotion Debug |
 
-When a soft target is active:
-- Movement switches to **controller-rotation yaw**
-- Directional blending uses `BS_DirectionalWalk` for **8-directional strafing**
+Locomotion and airborne states live in the **Katana animation layer**, driven by `bIsFalling`, `bDoubleJump`, and speed from `NativeUpdateAnimation`.
 
-![Anim Graph](Screenshot 2026-03-02 004130.png)  
-![Directional Strafe](Screenshot 2026-03-02 004257.png)  
-![Locomotion Debug](Screenshot 2026-03-02 004228.png)
+When a soft target is active, movement switches to **controller-rotation yaw** and directional blending uses `BS_DirectionalWalk` for **8-directional strafing**.
 
 ---
 
@@ -99,15 +89,9 @@ When a soft target is active:
 
 All enemies share a single **`BT_MeleeEnemy`** tree.
 
-- `BTS_UpdateBehavior` runs every **0.2–0.4s**
-- Updates a Blackboard enum based on distance:
-  - `Chase`
-  - `Strafe`
-  - `Attack`
-
-Attack thresholds are configured **per enemy in C++**, so the tree contains **no hardcoded values**.
-
-`BTT_Attack` remains **InProgress** until the attack montage ends, preventing the tree from interrupting attacks mid-swing.
+- `BTS_UpdateBehavior` ticks every **0.2–0.4s**, updating a Blackboard enum based on distance: `Chase` → `Strafe` → `Attack`
+- Attack thresholds are **configured per enemy in C++** — no hardcoded values in the tree
+- `BTT_Attack` stays **InProgress** until the montage ends, preventing mid-swing interruptions
 
 ---
 
@@ -115,64 +99,38 @@ Attack thresholds are configured **per enemy in C++**, so the tree contains **no
 
 `IDMC_CombatInterface` defines the contract every combatant implements.
 
-When adding a **ranged enemy**:
-- No AnimNotifies were changed
-- Only the relevant interface functions were overridden
-- Unused methods remained no-ops
-
-This keeps the **animation layer completely decoupled** from gameplay classes.
+When adding a **ranged enemy**, no AnimNotifies were changed — only the relevant interface functions were overridden, and unused methods remained no-ops. The **animation layer stays completely decoupled** from gameplay classes.
 
 ---
 
 ### Data-Driven Design
 
-All combat data lives in **`DMC_ComboDataAsset`**, including:
+All combat data lives in **`DMC_ComboDataAsset`**:
 - Montage references
 - Special attack flags
 - Damage multipliers
 - Rage settings
 - Hit reactions
 
-There are **no hardcoded gameplay values**.  
-Tuning combat feel or adding new combos is **editor-only** — no recompiles required.
+There are **no hardcoded gameplay values**. Tuning combat feel or adding new combos is **editor-only** — no recompiles required.
 
 ---
 
 ## Technical Challenges
 
 ### Combo Chaining & Mixed Inputs
+An early single-index approach broke as soon as mixed LMB/RMB combos were introduced. Splitting into **Light, Heavy, and Extender indices** and treating mixed combos as two phases solved it. Incorrect resets were fixed by resetting the appropriate index on attack-type switch and firing `Notify_ResetState` at montage end.
 
-An early single-index approach broke as soon as mixed LMB/RMB combos were introduced.  
-Splitting logic into **Light, Heavy, and Extender indices** and treating mixed combos as two phases solved the issue.
+### State Explosion
+With attacking, dodging, parrying, jumping, finisher, and rage all active simultaneously, logic checks became scattered. Centralizing everything into **`EDMC_PlayerState`** and validating state at the **entry point of every action** eliminated most edge-case bugs.
 
-Incorrect resets caused attacks to resume from the wrong position.  
-This was fixed by:
-- Resetting the appropriate index when switching attack types
-- Firing `Notify_ResetState` at montage end
-
----
-
-### Too Many States, Too Many Edge Cases
-
-With attacking, dodging, parrying, jumping, finisher, and rage all active, logic checks became scattered and error-prone.
-
-Centralizing everything into **`EDMC_PlayerState`** and validating state at the **entry point of every action** eliminated most edge-case bugs.
-
----
-
-### Player Drifting Past Enemies
-
-Root motion pushed the player forward slightly each hit, eventually causing them to pass through enemies.
-
-Locking movement felt too stiff.  
-Instead, calling `SnapToTarget()` at the start of every `ExecuteAttack()` re-aligns yaw per hit, keeping the player naturally positioned in front of the enemy throughout the combo.
+### Player Drifting Through Enemies
+Root motion pushed the player forward each hit, eventually causing pass-throughs. Locking movement felt too stiff — instead, calling `SnapToTarget()` at the start of every `ExecuteAttack()` re-aligns yaw per hit, keeping the player naturally positioned throughout the combo.
 
 ---
 
 ## What I Learned
 
-State management is the backbone of any action game — and I learned that the hard way.  
-Once `EDMC_PlayerState` was centralized, most edge-case bugs simply disappeared.
+> State management is the backbone of any action game — and I learned that the hard way.
 
-The component-based approach dramatically improved debugging speed, and the interface-driven design is something I’ll carry into every future project.  
-Writing a system once and having it work everywhere is genuinely satisfying.
+Once `EDMC_PlayerState` was centralized, most edge-case bugs simply disappeared. The component-based approach dramatically improved debugging speed, and the interface-driven design is something I'll carry into every future project. Writing a system once and having it work everywhere is genuinely satisfying.
