@@ -133,9 +133,9 @@ Root motion pushed the player forward each hit, eventually causing pass-throughs
 
 ## What I Learned
 
-> State management is the backbone of any action game — and I learned that the hard way.
-
+State management is the backbone of any action game — and I learned that the hard way.
 Once `EDMC_PlayerState` was centralized, most edge-case bugs simply disappeared. The component-based approach dramatically improved debugging speed, and the interface-driven design is something I'll carry into every future project. Writing a system once and having it work everywhere is genuinely satisfying.
+
 ---
 [![Watch the video](https://img.youtube.com/vi/n6X03u8bapQ/maxresdefault.jpg)](https://youtu.be/n6X03u8bapQ)
 ### [Gameplay Video](https://youtu.be/n6X03u8bapQ)
