@@ -69,6 +69,8 @@ The same structure keeps enemies clean:
 - `EnemyMelee` — melee-specific behavior
 - `EnemyRanged` — ranged attacks
 
+<img width="1188" height="962" alt="Image" src="https://github.com/user-attachments/assets/1f56c9e2-ac94-4b36-b01f-ee0006235d56" />
+
 ---
 
 ### Animation Graph & Locomotion
