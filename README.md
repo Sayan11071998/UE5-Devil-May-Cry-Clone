@@ -136,3 +136,18 @@ Root motion pushed the player forward each hit, eventually causing pass-throughs
 > State management is the backbone of any action game — and I learned that the hard way.
 
 Once `EDMC_PlayerState` was centralized, most edge-case bugs simply disappeared. The component-based approach dramatically improved debugging speed, and the interface-driven design is something I'll carry into every future project. Writing a system once and having it work everywhere is genuinely satisfying.
+---
+
+<img width="1920" height="1080" alt="Image" src="https://github.com/user-attachments/assets/21f576c3-6874-437d-a528-48c615f2cb12" />
+
+<img width="1920" height="1080" alt="Image" src="https://github.com/user-attachments/assets/46a4ebd7-2fb8-4d2e-b52f-7b5636b5fc69" />
+
+<img width="1920" height="1080" alt="Image" src="https://github.com/user-attachments/assets/c0fc473b-f341-434d-b3de-e9bda83eb6cf" />
+
+<img width="1920" height="1080" alt="Image" src="https://github.com/user-attachments/assets/1a15489c-ded0-4f03-a0f1-67f22f032d52" />
+
+<img width="1920" height="1080" alt="Image" src="https://github.com/user-attachments/assets/00b03f67-875e-4940-930d-4a0537a1e8cf" />
+
+<img width="1920" height="1080" alt="Image" src="https://github.com/user-attachments/assets/c4b6f88e-0fb0-4404-9f38-d12e40fb057e" />
+
+<img width="1920" height="1080" alt="Image" src="https://github.com/user-attachments/assets/921b25b3-df39-4cac-ad67-f6bb6f125b66" />
