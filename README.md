@@ -12,8 +12,6 @@ Built primarily in **C++** with a **data-driven architecture**, keeping gameplay
 
 ## Architecture Overview
 
-![Architecture Overview](Arch.png)
-
 The player is split into **focused components**, each owning exactly one responsibility.  
 All gameplay actors communicate through **`IDMC_CombatInterface`**, implemented by the player and all enemy types.
 
@@ -21,6 +19,8 @@ This allows:
 - AnimNotifies to be written **once**
 - The same animation events to work across **players, melee enemies, and ranged enemies**
 - Animation logic to stay fully **decoupled** from gameplay code
+
+<img width="6777" height="2840" alt="Image" src="https://github.com/user-attachments/assets/f6a7106e-a694-444e-8f0d-06f07a0719b7" />
 
 ---
 
